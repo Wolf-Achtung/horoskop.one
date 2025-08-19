@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Gold‑Standard‑Horoskop‑Seite</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(180deg, #f5f3fa 0%, #e7e2f2 100%);
+      color: #2c2541;
+    }
+    header {
+      background: linear-gradient(135deg, #5b3e9e, #37205d);
+      color: #fff;
+      padding: 2rem 1rem;
+      text-align: center;
+    }
+    main {
+      max-width: 800px;
+      margin: 2rem auto;
+      padding: 1.5rem;
+      background: #fff;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+      border-radius: 14px;
+    }
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+    select, button, input[type="text"], input[type="date"] {
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+      margin-top: 0.5rem;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+    button {
+      cursor: pointer;
+      background-color: #5b3e9e;
+      color: white;
+      border: none;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #4a2f7d;
+    }
+    .result {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: #faf7ff;
+      border-radius: 8px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+    .disclaimer {
+      font-size: 0.85rem;
+      color: #666;
+      margin-top: 2rem;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Gold‑Standard‑Horoskop‑Seite</h1>
+    <p>Dein persönliches Horoskop – individuell, mystisch, unterhaltsam.</p>
+  </header>
+  <main>
+    <section id="birthInfo">
+      <h2>Deine Geburtsdaten</h2>
+      <p>Bitte gib dein Geburtsdatum und den Geburtsort ein, um deine persönliche Analyse zu erhalten.</p>
+      <label for="birthDate">Geburtsdatum:</label>
+      <input type="date" id="birthDate">
+      <label for="birthPlace">Geburtsort:</label>
+      <input type="text" id="birthPlace" placeholder="z. B. Berlin">
+      <label for="partnerDate">Zweites Geburtsdatum (optional):</label>
+      <input type="date" id="partnerDate">
+      <label for="timeFrame">Vorhersagezeitraum:</label>
+      <select id="timeFrame">
+        <option value="morgen">Morgen</option>
+        <option value="woche">Nächste Woche</option>
+        <option value="monat">Nächster Monat</option>
+        <option value="restjahr">Restliches Jahr</option>
+        <option value="jahr">Nächstes Jahr</option>
+      </select>
+      <button onclick="generateAnalysis()">Analyse anzeigen</button>
+      <div id="result" class="result"></div>
+    </section>
+    <p class="disclaimer">Hinweis: Dieses Angebot dient ausschließlich der Unterhaltung und ersetzt keine professionelle Beratung.</p>
+  </main>
+  <script>
+    // Deutsche Horoskoptexte nach Sternzeichen
+    const horoscopes = {
+      Widder: "Heute könnte dein Tatendrang dich zu neuen Projekten inspirieren. Nutze deine Energie, um etwas Kreatives zu beginnen.",
+      Stier: "Geduld zahlt sich aus. Gönn dir eine Auszeit und genieße die kleinen Freuden des Lebens.",
+      Zwillinge: "Kommunikation steht im Mittelpunkt. Ein Gespräch kann überraschende Einsichten bringen.",
+      Krebs: "Vertraue auf deine Intuition. Zeit mit nahestehenden Personen wird dir neue Kraft geben.",
+      Löwe: "Selbstbewusstsein bringt dich voran. Zeige deine Ideen der Welt – dein Charisma wirkt anziehend.",
+      Jungfrau: "Struktur und Ordnung helfen dir heute, Aufgaben erfolgreich abzuschließen. Lass dich nicht von Kleinigkeiten ablenken.",
+      Waage: "Ausgewogenheit ist der Schlüssel. Suche nach Harmonie in Beziehungen und entscheide nicht vorschnell.",
+      Skorpion: "Tiefe Gespräche können einen Wendepunkt bringen. Gib dich nicht mit oberflächlichen Antworten zufrieden.",
+      Schütze: "Entdeckergeist erfüllt dich. Plane einen kleinen Ausflug oder lerne etwas Neues, das deinen Horizont erweitert.",
+      Steinbock: "Durchhaltevermögen wird belohnt. Setze deine Ziele konsequent um und plane langfristig.",
+      Wassermann: "Kreative Ideen fließen mühelos. Sei offen für ungewöhnliche Lösungswege und teile deine Visionen.",
+      Fische: "Empathie begleitet dich. Suche Momente der Ruhe – Musik oder Kunst können dich besonders inspirieren."
+    };
+    // Chinesische Tierkreiszeichen
+    const chineseHoroscopes = {
+      Ratte: "Die Ratte zeichnet sich durch Kreativität und Anpassungsfähigkeit aus. Heute ist ein guter Tag für neue Ideen.",
+      Büffel: "Beharrlichkeit bringt dich weiter. Nimm dir Zeit, um deine Pläne zu festigen.",
+      Tiger: "Mut und Tatkraft bestimmen deinen Tag. Wage einen Schritt ins Unbekannte.",
+      Hase: "Sanftmut und Diplomatie führen zum Erfolg. Ein harmonischer Austausch belebt deine Beziehungen.",
+      Drache: "Deine natürliche Autorität strahlt. Zeige Selbstvertrauen und inspiriere andere.",
+      Schlange: "Intuition und Weisheit begleiten dich. Vertraue auf deine inneren Eingebungen.",
+      Pferd: "Freiheitsdrang motiviert dich. Eine spontane Unternehmung bringt Freude.",
+      Ziege: "Kreativität und Sensibilität stehen im Mittelpunkt. Widme dich Kunst oder Natur.",
+      Affe: "Deine Spontaneität sorgt für Überraschungen. Humor bringt dir Sympathie ein.",
+      Hahn: "Strukturiertes Vorgehen zahlt sich aus. Organisiere deine Vorhaben sorgfältig.",
+      Hund: "Loyalität und Freundschaft werden belohnt. Verbringe Zeit mit Menschen, die dir wichtig sind.",
+      Schwein: "Genuss und Großzügigkeit prägen den Tag. Teile deine Freude mit anderen."
+    };
+    // Numerologie Bedeutungen
+    const numerologyMeanings = {
+      1: "Die 1 steht für Neuanfang, Initiative und Selbstvertrauen. Deine Energie hilft dir, deine Ziele zu verwirklichen.",
+      2: "Die 2 symbolisiert Harmonie und Kooperation. Teamwork und Balance sind heute wichtig.",
+      3: "Die 3 bringt Kreativität und Kommunikation. Nutze deine Ausdruckskraft, um dich mitzuteilen.",
+      4: "Die 4 steht für Stabilität und Struktur. Konzentriere dich auf Planung und Bodenständigkeit.",
+      5: "Die 5 verkörpert Veränderung und Freiheit. Sei offen für neue Erfahrungen.",
+      6: "Die 6 betont Verantwortung und Fürsorge. Familie und Gemeinschaft haben Priorität.",
+      7: "Die 7 symbolisiert Spiritualität und Intuition. Reflektiere und suche nach innerer Weisheit.",
+      8: "Die 8 steht für Erfolg und materielle Fülle. Fokussiere dich auf deine Karriere oder Finanzen.",
+      9: "Die 9 spiegelt Mitgefühl und Vollendung wider. Schließe alte Kapitel ab und teile deine Erfahrungen."
+    };
+    // I‑Ging Hexagramme (deutsch)
+    const ichingMessages = [
+      { name: "Qian – Das Schöpferische", message: "Kraft und Schöpfergeist sind heute auf deiner Seite. Deine Kreativität trägt Früchte." },
+      { name: "Kun – Das Empfangende", message: "Empfange Unterstützung und lass dich tragen. Offenheit bringt dir Erkenntnisse." },
+      { name: "Zhun – Die Anfangsschwierigkeit", message: "Jeder Anfang ist schwer, doch mit Geduld überwindest du erste Hindernisse." },
+      { name: "Meng – Die Jugendtorheit", message: "Lernen und Reifung stehen im Mittelpunkt. Bleibe neugierig und offen für Rat." },
+      { name: "Xu – Das Warten", message: "Geduld wird belohnt. Die richtige Gelegenheit ist bald da, handle nicht übereilt." }
+    ];
+    // Tarotkarten (große Arkana)
+    const tarotCards = [
+      { name: "Der Narr", message: "Neubeginn und Leichtigkeit. Wage einen Schritt ohne Angst und sei offen für Abenteuer." },
+      { name: "Der Magier", message: "Du hast die Mittel, deine Visionen zu verwirklichen. Fokussiere deine Energie." },
+      { name: "Die Hohepriesterin", message: "Vertraue deiner Intuition und inneren Weisheit. Manches bleibt verborgen, bis die Zeit reif ist." },
+      { name: "Der Herrscher", message: "Stabilität und Führung. Übernimm Verantwortung und schaffe Ordnung." },
+      { name: "Die Liebenden", message: "Entscheidungen im Herzen. Harmonie und Partnerschaft stehen im Vordergrund." }
+    ];
+    // Keltischer Baumkreis
+    const celticTrees = [
+      { name: "Birke", start: "12-24", end: "01-20", message: "Birke steht für Neubeginn und Reinheit. Nutze diese Energie für klare Ziele." },
+      { name: "Eberesche", start: "01-21", end: "02-17", message: "Eberesche bringt Schutz und Inspiration. Deine Ideen werden unterstützt." },
+      { name: "Esche", start: "02-18", end: "03-17", message: "Esche symbolisiert Wachstum und Verbindung. Bleibe offen für neue Kontakte." },
+      { name: "Erle", start: "03-18", end: "04-14", message: "Erle steht für Kraft und Entschlossenheit. Du kannst große Fortschritte machen." },
+      { name: "Weide", start: "04-15", end: "05-12", message: "Weide verkörpert Sensibilität und Intuition. Vertraue deinen Gefühlen." },
+      { name: "Eiche", start: "06-10", end: "07-07", message: "Eiche steht für Stärke und Stabilität. Deine Standhaftigkeit wird belohnt." },
+      { name: "Stechpalme", start: "07-08", end: "08-04", message: "Stechpalme zeigt Mut und Edelmut. Unterstütze andere und du wirst Anerkennung finden." },
+      { name: "Hasel", start: "08-05", end: "09-01", message: "Hasel bringt Weisheit und Kreativität. Nutze deinen Verstand und deine Fantasie." },
+      { name: "Weinrebe", start: "09-02", end: "09-29", message: "Weinrebe steht für Fülle und Genuss. Gönne dir etwas Schönes." },
+      { name: "Efeu", start: "09-30", end: "10-27", message: "Efeu symbolisiert Beständigkeit und Loyalität. Pflege deine Beziehungen." },
+      { name: "Schilfrohr", start: "10-28", end: "11-24", message: "Schilfrohr bedeutet Anpassungsfähigkeit. Sei flexibel und du findest Lösungen." },
+      { name: "Holunder", start: "11-25", end: "12-23", message: "Holunder steht für Transformation und Erneuerung. Alte Muster dürfen gehen." }
+    ];
+    // Western zodiac date ranges
+    const westernZodiacs = [
+      { sign: "Widder", start: "03-21", end: "04-19" },
+      { sign: "Stier", start: "04-20", end: "05-20" },
+      { sign: "Zwillinge", start: "05-21", end: "06-20" },
+      { sign: "Krebs", start: "06-21", end: "07-22" },
+      { sign: "Löwe", start: "07-23", end: "08-22" },
+      { sign: "Jungfrau", start: "08-23", end: "09-22" },
+      { sign: "Waage", start: "09-23", end: "10-22" },
+      { sign: "Skorpion", start: "10-23", end: "11-21" },
+      { sign: "Schütze", start: "11-22", end: "12-21" },
+      { sign: "Steinbock", start: "12-22", end: "01-19" },
+      { sign: "Wassermann", start: "01-20", end: "02-18" },
+      { sign: "Fische", start: "02-19", end: "03-20" }
+    ];
+    // Kategoriehinweise
+    const categoryHints = {
+      Beruf: ["Im Berufsleben eröffnen sich dir neue Möglichkeiten. Nutze dein Potenzial und vertraue deiner Intuition."],
+      Liebe: ["In der Liebe wartet Wärme und Harmonie. Öffne dein Herz für tiefe Gespräche."],
+      Glück: ["Das Glück ist auf deiner Seite – erkenne die kleinen Freuden, die dich umgeben."],
+      Beziehung: ["Familie und Freundschaft geben dir Halt. Ein offenes Ohr stärkt eure Verbindung."],
+      Chancen: ["Neue Chancen warten darauf, ergriffen zu werden – vertraue deinem Bauchgefühl bei Entscheidungen."],
+      Gefahr: ["Achte auf Zeichen, die dich vor Überstürzungen warnen. Eine ruhige Analyse schützt dich."],
+      Gesundheit: ["Kümmere dich um dein Wohlbefinden. Ausgewogene Ernährung und Bewegung stärken dich."],
+      Finanzen: ["Deine Finanzen lassen sich mit Sorgfalt stabilisieren. Plane umsichtig und investiere in dich."],
+      Spirituell: ["Dein innerer Kompass führt dich zu tieferen Einsichten. Meditation und Achtsamkeit erweitern dein Bewusstsein."],
+      Kreativität: ["Kreative Ideen sprudeln in dir. Lass deiner Fantasie freien Lauf und probiere Neues aus."],
+      Abenteuer: ["Das Leben lädt dich zu einem Abenteuer ein. Nutze die Chance, deinen Horizont zu erweitern." ]
+    };
+
+    function generateAnalysis() {
+      const dateStr = document.getElementById('birthDate').value;
+      const place = document.getElementById('birthPlace').value.trim();
+      const partner = document.getElementById('partnerDate').value;
+      const timeFrame = document.getElementById('timeFrame').value;
+      const output = document.getElementById('result');
+      if (!dateStr) {
+        output.textContent = 'Bitte gib dein Geburtsdatum an.';
+        return;
+      }
+      const date = new Date(dateStr);
+      if (isNaN(date)) {
+        output.textContent = 'Ungültiges Datum.';
+        return;
+      }
+      const day = String(date.getUTCDate()).padStart(2, '0');
+      const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+      const year = date.getUTCFullYear();
+      // Bestimme westliches Sternzeichen
+      let westernSign = '';
+      for (const z of westernZodiacs) {
+        const [sM, sD] = z.start.split('-').map(Number);
+        const [eM, eD] = z.end.split('-').map(Number);
+        const afterStart = (parseInt(month) > sM) || (parseInt(month) === sM && parseInt(day) >= sD);
+        const beforeEnd = (parseInt(month) < eM) || (parseInt(month) === eM && parseInt(day) <= eD);
+        if ((sM <= eM && afterStart && beforeEnd) || (sM > eM && (afterStart || beforeEnd))) {
+          westernSign = z.sign;
+          break;
+        }
+      }
+      const westernMessage = horoscopes[westernSign];
+      // Chinesischer Tierkreis
+      const animals = ['Affe','Hahn','Hund','Schwein','Ratte','Büffel','Tiger','Hase','Drache','Schlange','Pferd','Ziege'];
+      const animalIndex = (year - 1900) % 12;
+      const chineseSign = animals[(animalIndex + 12) % 12];
+      const chineseMessage = chineseHoroscopes[chineseSign];
+      // Numerologie
+      let sum = 0;
+      `${day}${month}${year}`.split('').forEach(ch => { sum += parseInt(ch, 10); });
+      while (sum > 9) sum = sum.toString().split('').reduce((acc, val) => acc + parseInt(val, 10), 0);
+      const numerologyMsg = numerologyMeanings[sum];
+      // Celtic tree
+      let treeName = '';
+      let treeMsg = '';
+      for (const t of celticTrees) {
+        const [sM, sD] = t.start.split('-').map(Number);
+        const [eM, eD] = t.end.split('-').map(Number);
+        const after = (parseInt(month) > sM) || (parseInt(month) === sM && parseInt(day) >= sD);
+        const before = (parseInt(month) < eM) || (parseInt(month) === eM && parseInt(day) <= eD);
+        if ((sM <= eM && after && before) || (sM > eM && (after || before))) {
+          treeName = t.name;
+          treeMsg = t.message;
+          break;
+        }
+      }
+      // I‑Ging & Tarot
+      const hex = ichingMessages[Math.floor(Math.random() * ichingMessages.length)];
+      const tarot = tarotCards[Math.floor(Math.random() * tarotCards.length)];
+      // Zeitraum Intro
+      const frameIntros = { morgen: 'Im kommenden Tag', woche: 'In der nächsten Woche', monat: 'Im nächsten Monat', restjahr: 'Im restlichen Jahr', jahr: 'Im nächsten Jahr' };
+      const intro = frameIntros[timeFrame] || '';
+      // Compose result
+      let res = '';
+      if (intro) res += `${intro} zeigt sich dir eine vielschichtige energetische Komposition.\n\n`;
+      res += `Als ${westernSign} begleitet dich folgende Botschaft: ${westernMessage}\n\n`;
+      res += `In der chinesischen Astrologie erscheint der ${chineseSign}, der dir zuruft: ${chineseMessage}\n\n`;
+      res += `Deine Lebenszahl ${sum} erinnert dich daran: ${numerologyMsg}\n\n`;
+      if (treeName) res += `Der keltische Baum ${treeName} flüstert: ${treeMsg}\n\n`;
+      res += `Das I‑Ging zeigt dir das Hexagramm ${hex.name}, das dir zuflüstert: ${hex.message}\n\n`;
+      res += `Die Tarotkarte “${tarot.name}” sagt: ${tarot.message}\n\n`;
+      if (place) res += `Der Geburtsort ${place} trägt zu deinem einzigartigen energetischen Gefüge bei und färbt deine Erlebnisse mit seiner Geschichte.\n\n`;
+      // Partneranalyse
+      if (partner) {
+        const pDate = new Date(partner);
+        if (!isNaN(pDate)) {
+          const pDay = String(pDate.getUTCDate()).padStart(2, '0');
+          const pMonth = String(pDate.getUTCMonth() + 1).padStart(2, '0');
+          const pYear = pDate.getUTCFullYear();
+          let pSign = '';
+          for (const z of westernZodiacs) {
+            const [sM, sD] = z.start.split('-').map(Number);
+            const [eM, eD] = z.end.split('-').map(Number);
+            const after = (parseInt(pMonth) > sM) || (parseInt(pMonth) === sM && parseInt(pDay) >= sD);
+            const before = (parseInt(pMonth) < eM) || (parseInt(pMonth) === eM && parseInt(pDay) <= eD);
+            if ((sM <= eM && after && before) || (sM > eM && (after || before))) {
+              pSign = z.sign;
+              break;
+            }
+          }
+          const pAnimal = animals[((pYear - 1900) % 12 + 12) % 12];
+          let pSum = 0;
+          `${pDay}${pMonth}${pYear}`.split('').forEach(ch => { pSum += parseInt(ch, 10); });
+          while (pSum > 9) pSum = pSum.toString().split('').reduce((acc,val) => acc + parseInt(val, 10), 0);
+          // Elemente für Kompatibilität
+          const elements = { Widder:'Feuer', Löwe:'Feuer', Schütze:'Feuer', Stier:'Erde', Jungfrau:'Erde', Steinbock:'Erde', Zwillinge:'Luft', Waage:'Luft', Wassermann:'Luft', Krebs:'Wasser', Skorpion:'Wasser', Fische:'Wasser' };
+          const primaryEl = elements[westernSign];
+          const partnerEl = elements[pSign];
+          let compat = 'Eure Elemente ergänzen sich auf besondere Weise.';
+          if (primaryEl && partnerEl) {
+            if (primaryEl === partnerEl) compat = 'Ihr teilt dasselbe Element – Verständnis und Harmonie prägen eure Beziehung.';
+            else if ((primaryEl === 'Feuer' && partnerEl === 'Luft') || (primaryEl === 'Luft' && partnerEl === 'Feuer') || (primaryEl === 'Erde' && partnerEl === 'Wasser') || (primaryEl === 'Wasser' && partnerEl === 'Erde')) compat = 'Eure Elemente nähren sich gegenseitig – Inspiration und Wachstum sind möglich.';
+            else if ((primaryEl === 'Feuer' && partnerEl === 'Wasser') || (primaryEl === 'Wasser' && partnerEl === 'Feuer') || (primaryEl === 'Erde' && partnerEl === 'Luft') || (primaryEl === 'Luft' && partnerEl === 'Erde')) compat = 'Gegensätze ziehen sich an – eure Verbindung kann leidenschaftlich und lehrreich sein.';
+          }
+          const pairNumMsg = sum === pSum ? 'Ihr teilt dieselbe Lebenszahl – eure Wege verlaufen im Gleichklang.' : 'Eure unterschiedlichen Lebenszahlen bringen Vielfalt in eure Verbindung.';
+          res += `Zusammen mit deinem Partner/deiner Partnerin (${pSign}, chinesisches Tier ${pAnimal}) ergibt sich eine besondere Chemie. ${compat} ${pairNumMsg}\n\n`;
+        }
+      }
+      // Lebensbereiche (automatisch)
+      for (const cat in categoryHints) {
+        const hints = categoryHints[cat];
+        if (hints && hints.length) {
+          const msg = hints[Math.floor(Math.random() * hints.length)];
+          res += `Im Bereich ${cat}: ${msg}\n\n`;
+        }
+      }
+      res += 'Diese Symbiose aus westlicher Astrologie, chinesischem Tierkreis, Numerologie, keltischem Baumkreis, I Ging und Tarot bietet dir eine poetische Gesamtvorhersage. Alle Angaben dienen ausschließlich der Unterhaltung und ersetzen keine professionelle Beratung.';
+      output.textContent = res;
+    }
+  </script>
+</body>
+</html>
