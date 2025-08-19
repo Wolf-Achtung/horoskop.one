@@ -62,6 +62,19 @@
       text-align: center;
     }
   </style>
+
+  <!-- Tailwind CDN (Preflight off to preserve existing CSS) -->
+  <script>
+    tailwind = {};
+    tailwind.config = { corePlugins: { preflight: false } };
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- React + ReactDOM + Babel (for JSX in browser) -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
 </head>
 <body>
   <header>
@@ -69,6 +82,13 @@
     <p>Dein persönliches Horoskop – individuell, mystisch, unterhaltsam.</p>
   </header>
   <main>
+
+    <!-- Kosmischer Mixer – React renders here -->
+    <section id="mixerSection" class="rounded-2xl" style="margin: 0 0 1rem 0;">
+      <h2 style="margin:0 0 .5rem 0;">Kosmischer Mixer</h2>
+      <div id="mixer-root"></div>
+    </section>
+
     <section id="birthInfo">
       <h2>Deine Geburtsdaten</h2>
       <p>Bitte gib dein Geburtsdatum und den Geburtsort ein, um deine persönliche Analyse zu erhalten.</p>
@@ -196,7 +216,9 @@
     };
 
     function generateAnalysis() {
-      const dateStr = document.getElementById('birthDate').value;
+      
+      // Mixer-Status lesen (optional)
+      const mixer = window.__mixerState || { mode: 'mystic', timeframe: 'day', weights: { astro:34, num:13, tarot:17, iching:14, cn:11, tree:11 } };const dateStr = document.getElementById('birthDate').value;
       const place = document.getElementById('birthPlace').value.trim();
       const partner = document.getElementById('partnerDate').value;
       const timeFrame = document.getElementById('timeFrame').value;
@@ -311,8 +333,36 @@
         }
       }
       res += 'Diese Symbiose aus westlicher Astrologie, chinesischem Tierkreis, Numerologie, keltischem Baumkreis, I Ging und Tarot bietet dir eine poetische Gesamtvorhersage. Alle Angaben dienen ausschließlich der Unterhaltung und ersetzen keine professionelle Beratung.';
+      
+      // Fußnote mit Mixer-Infos
+      try {
+        const labelMap = { astro: 'Astro', num: 'Numerologie', tarot: 'Tarot', iching: 'I-Ging', cn: 'Chinesisch', tree: 'Baumkreis' };
+        const weightsLine = Object.entries(mixer.weights).map(([k,v]) => (labelMap[k]||k) + ': ' + v + '%').join(' · ');
+        res += `\n—\nTon: ${mixer.mode} · Zeitraum (Mixer): ${mixer.timeframe}\nGewichte: ${weightsLine}`;
+      } catch(e) {}
+
       output.textContent = res;
     }
   </script>
+
+  <!-- Mixer code -->
+  <script type="text/babel" data-presets="react" src="components/horoskop.cdn.jsx"></script>
+
+  <!-- Mount Mixer and expose global state -->
+  <script type="text/babel">
+    const root = ReactDOM.createRoot(document.getElementById('mixer-root'));
+    root.render(<KosmischerMixer />);
+
+    window.__mixerState = {
+      mode: 'mystic',
+      timeframe: 'day',
+      weights: { astro: 34, num: 13, tarot: 17, iching: 14, cn: 11, tree: 11 }
+    };
+
+    window.addEventListener('horoskop:mixer', (e) => {
+      window.__mixerState = e.detail;
+    });
+  </script>
+
 </body>
 </html>
