@@ -48,7 +48,7 @@
     .constellation svg{width:100%;height:34px;display:block;opacity:.9}
 
     .hero{display:flex;justify-content:center;align-items:center;padding:16px 0 8px}
-    .hero img{width:320px;height:320px;opacity:.95; filter:drop-shadow(0 10px 24px #000a); animation:wheel 160s linear infinite}
+    .hero img{width:360px;height:360px;opacity:.97; filter:drop-shadow(0 14px 28px #000a); animation:wheel 160s linear infinite}
     canvas#starfield{position:fixed; inset:0; z-index:0; pointer-events:none; background: radial-gradient(1000px 600px at 50% -20%, #0e1a35 0%, transparent 60%);}
     nav{margin:6px 0 10px; display:flex; gap:16px; justify-content:center; font-size:14px}
     nav a{color:#a9c4ff; text-decoration:none} nav a:hover{text-decoration:underline}
@@ -153,6 +153,7 @@
   <script>
     // ---- Starfield using assets/stars.json (from netzstruktur.svg, without lines)
     
+    
     (async function(){
       const canvas = document.getElementById('starfield');
       const ctx = canvas.getContext('2d');
@@ -163,24 +164,32 @@
       canvas.style.transformOrigin = '0 0';
 
       const res = await fetch('assets/stars.json').then(r=>r.json()).catch(()=>null);
-      let stars = (res?.stars || Array.from({length:320},()=>({x:Math.random(),y:Math.random(),r:0.8+Math.random()*1.8,p:Math.random()*6.28,d:0.5+Math.random()})))
+      let stars = (res?.stars || Array.from({length:380},()=>({x:Math.random(),y:Math.random(),r:0.7+Math.random()*1.7,p:Math.random()*6.28,d:0.6+Math.random()})))
         .map(s=>({x:s.x,y:s.y,r:s.r,p:s.p,d:s.d, tw: 0.6+Math.random()*1.2, burstAt: performance.now() + Math.random()*8000 + 4000, burstDur: 400+Math.random()*800 }));
 
-      // add a few random extra stars for richness
-      while(stars.length < 380){ stars.push({x:Math.random(),y:Math.random(),r:0.7+Math.random()*1.6,p:Math.random()*6.28,d:0.6+Math.random(),tw:0.8, burstAt: performance.now()+Math.random()*6000, burstDur: 300+Math.random()*900}); }
+      while(stars.length < 420){ stars.push({x:Math.random(),y:Math.random(),r:0.7+Math.random()*1.6,p:Math.random()*6.28,d:0.6+Math.random(),tw:0.8, burstAt: performance.now()+Math.random()*6000, burstDur: 300+Math.random()*900}); }
+
+      let scrollY = 0, mouseX = 0, mouseY = 0;
+      addEventListener('scroll', ()=>{ scrollY = window.scrollY || 0; }, {passive:true});
+      addEventListener('mousemove', (e)=>{ mouseX = (e.clientX / innerWidth - 0.5); mouseY = (e.clientY / innerHeight - 0.5); }, {passive:true});
 
       function draw(t){
         ctx.clearRect(0,0,W,H);
         ctx.globalCompositeOperation = 'lighter';
+        // subtle parallax factors
+        const parY = (scrollY * 0.05) * DPR;            // 5% of scroll in device px
+        const parX = (scrollY * 0.02) * DPR;            // slight sideways drift with scroll
+        const tiltX = mouseX * 6 * DPR;                 // mouse tilt
+        const tiltY = mouseY * 4 * DPR;
+
         for(const s of stars){
           const twinkle = (Math.sin(t*0.001 + s.p)*0.5+0.5)*s.tw + 0.2;
-          // occasional burst (flare)
           let flare = 0;
           const now = performance.now();
           if(now > s.burstAt){
             const phase = (now - s.burstAt) / s.burstDur;
             if(phase < 1){
-              flare = 0.8 * (1 - Math.abs(phase*2-1)); // up and down
+              flare = 0.8 * (1 - Math.abs(phase*2-1));
             } else {
               s.burstAt = now + 6000 + Math.random()*9000;
               s.burstDur = 400 + Math.random()*1000;
@@ -188,11 +197,12 @@
           }
           const driftX = Math.sin(t*0.00006 + s.p) * s.d * 10;
           const driftY = Math.cos(t*0.00005 + s.p) * s.d * 8;
-          const x = s.x*W + driftX, y = s.y*H + driftY;
+          const x = s.x*W + driftX + parX * (0.2 + s.d*0.15) + tiltX;
+          const y = s.y*H + driftY + parY * (0.25 + s.d*0.2) + tiltY;
           const rad = s.r * DPR * (0.8 + twinkle*0.9 + flare);
           const grd = ctx.createRadialGradient(x,y,0,x,y,rad);
           grd.addColorStop(0, 'rgba(245,248,255,0.98)');
-          grd.addColorStop(0.4, 'rgba(190,210,255,0.55)');
+          grd.addColorStop(0.45, 'rgba(190,210,255,0.55)');
           grd.addColorStop(1, 'rgba(0,0,0,0)');
           ctx.fillStyle = grd; ctx.beginPath(); ctx.arc(x,y,rad,0,Math.PI*2); ctx.fill();
         }
@@ -207,6 +217,7 @@
         canvas.style.transform = `scale(${1/DPR})`;
       }, {passive:true});
     })();
+
 
   </script>
 

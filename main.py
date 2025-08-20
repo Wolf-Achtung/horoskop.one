@@ -2,6 +2,12 @@ import os, json, re
 from datetime import datetime
 from typing import Optional, Dict, Any
 from fastapi import FastAPI, Request
+
+LONGFORM_INSTRUCTIONS = (
+    'Schreibe pro Bereich (Fokus, Beruf, Liebe, Energie, Soziales) einen Absatz mit 3–4 wohlklingenden Sätzen im Modus {mode}. '
+    'Schließe mit einem sanften Handlungshinweis als Teil des Fließtextes (realistisch in 1–5 Minuten). '
+    'Achtsam, poetisch, seriös; keine Heilsversprechen; klare Bilder; Begründungen nur andeuten.'
+)
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from openai import OpenAI
@@ -452,3 +458,7 @@ def og_image(title: str = "horoskop.one", subtitle: str = "Mystischer Kompass", 
     b=BytesIO(); img.save(b, format="PNG"); b.seek(0)
     from fastapi.responses import Response
     return Response(content=b.read(), media_type="image/png")
+
+@app.get("/version")
+def version():
+    return {"version":"5.4-longform","default_mode":"mystic_deep","notes":"3-4 Saetze pro Sektion, integrierter Hinweis"}
