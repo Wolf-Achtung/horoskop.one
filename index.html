@@ -234,7 +234,13 @@
     // Mixer mount
     const rootEl = document.getElementById('mixer-root');
     const node = ReactDOM.createRoot(rootEl);
-    function __mountMixer(){ if(window.KosmischerMixer){ node.render(React.createElement(window.KosmischerMixer)); } else { setTimeout(__mountMixer, 60); } } __mountMixer();
+    function __mountMixer(){ if(window.KosmischerMixer){ function __mountMixer(){
+  if (!(window.React && window.ReactDOM && node)) { return setTimeout(__mountMixer, 60); }
+  const Comp = window.KosmischerMixer && (window.KosmischerMixer.default || window.KosmischerMixer);
+  if (Comp) { node.render(React.createElement(Comp)); }
+  else { setTimeout(__mountMixer, 60); }
+}
+__mountMixer(); } else { setTimeout(__mountMixer, 60); } } __mountMixer();
 
     document.getElementById('btn-timehelp').onclick = ()=> document.getElementById('dlg-time').showModal();
     document.getElementById('btn-heute').onclick = ()=>{
@@ -352,7 +358,8 @@
     if (data?.error) throw new Error(String(data.error));
     renderReadingUI(data);
   })().catch(e=>{
-    document.getElementById('result').textContent = 'Fehler: ' + (e?.message || e);
+    const box = document.getElementById('errorBox') || document.getElementById('result');
+box.textContent = 'Fehler: ' + (e?.message || e);
   });
 }
     document.getElementById('btn-gold').onclick = ()=>{ document.getElementById('result').innerHTML='Berechne …'; callReading().catch(e=>{ document.getElementById('result').textContent='Fehler: '+(e?.message||e); }); };

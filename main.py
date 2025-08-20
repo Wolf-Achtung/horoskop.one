@@ -229,6 +229,17 @@ def try_load_json(maybe: str) -> Any:
     except Exception:
         return {"raw": maybe}
 
+
+def ensure_numeric_mixer(mix: Optional[Dict[str, float]]):
+    if not mix: 
+        return None
+    out = {}
+    for k, v in mix.items():
+        try:
+            out[str(k)] = float(v)
+        except Exception:
+            continue
+    return out or None
 # ---------- Schemas ----------
 class ReadingRequest(BaseModel):
     birthDate: str
@@ -238,7 +249,7 @@ class ReadingRequest(BaseModel):
     period: str = Field("day", description="day|week|month")
     tone: str = "mystic_deep"
     seed: Optional[int] = None
-    mixer: Optional[Dict[str,int]] = None
+    mixer: Optional[Dict[str, float]] = None
 
 class Section(BaseModel):
     title: str
@@ -281,7 +292,7 @@ async def reading(req: ReadingRequest = Body(...)):
     # --- SWE Remote (optional) ---
     swe_data = await swe_compute_remote(bdate, btime, lat, lon, tzname)
 
-    mixer = req.mixer or {}
+    mixer = ensure_numeric_mixer(req.mixer) or {}
     mixer_list = [f"{k}:{v}%" for k, v in mixer.items()]
     why_chips = [
         f"Sternzeichen {sun_sign}",
