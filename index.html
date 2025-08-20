@@ -3,16 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <title>horoskop.one – Mystischer Kompass</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="color-scheme" content="dark light" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+  <meta name="description" content="Dein achtsames, erklärbares Horoskop: individuell, mystisch, seriös.">
+  <meta property="og:title" content="horoskop.one – Mystischer Kompass">
+  <meta property="og:description" content="Dein achtsames, erklärbares Horoskop: individuell, mystisch, seriös.">
+  <meta property="og:image" content="/og.png">
+  <meta property="og:type" content="website">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&family=EB+Garamond:ital,wght@0,500;0,600;1,500&display=swap" rel="stylesheet">
   <style>
     :root{
-      --bg:#0b1020; --bg2:#0f1630; --panel:#0f162b; --panel-2:#101a34; --ink:#e7ecff; --muted:#9fb2d9;
-      --brand:#5aa7ff; --brand2:#6bd4ff; --gold:#f1c27d; --chip:#0d203f; --chip-bd:#203a6b;
-      --accent:#3ec4e4;
+      --bg:#0b1020; --bg2:#0f1630; --panel:#0f162b; --ink:#e7ecff; --muted:#9fb2d9;
+      --brand:#5aa7ff; --gold:#f1c27d; --chip:#0d203f; --chip-bd:#203a6b; --focus:#8cc8ff;
     }
     *{box-sizing:border-box}
     body{margin:0;background:radial-gradient(1200px 600px at 20% -10%, #1a2451 0%, transparent 60%),
@@ -25,31 +28,33 @@
                        radial-gradient(1px 1px at 40% 70%, #fff4 60%, transparent 61%),
                        radial-gradient(1px 1px at 85% 60%, #fff6 60%, transparent 61%);
       background-repeat:no-repeat; }
-    header{padding:28px 16px 34px;border-bottom:1px solid #152149;position:relative}
+    header{padding:24px 16px 26px;border-bottom:1px solid #152149;position:relative}
     header .brand{display:flex;justify-content:center;align-items:center;gap:12px}
     .sigil{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-size:18px;
       background:radial-gradient(60% 60% at 50% 40%, #23335f 0%, #111b35 60%);
       border:1px solid #2a3f79; box-shadow:0 0 12px #2a3f7933}
     .title{font-weight:700;letter-spacing:.2px}
     .sub{color:var(--muted);font-size:14px;margin-top:6px}
-    nav{margin-top:8px;display:flex;gap:18px;justify-content:center}
+    nav{margin-top:8px;display:flex;gap:18px;justify-content:center;flex-wrap:wrap}
     nav a{color:#a9c4ff;text-decoration:none;font-size:14px} nav a:hover{text-decoration:underline}
-    main{max-width:980px;margin:24px auto;padding:0 14px 40px}
+    main{max-width:980px;margin:16px auto 40px;padding:0 14px}
     .panel{background:linear-gradient(180deg, #0e1730, #0c1428);border:1px solid #1a2c5a;border-radius:16px;box-shadow:0 12px 36px #0008}
-    .section{padding:18px}
-    h2{margin:0 0 10px 0;font-size:20px}
+    .section{padding:14px}
+    h2{margin:0 0 8px 0;font-size:20px}
     label{display:block;margin:12px 0 6px;font-weight:700;color:#cfe0ff;font-size:14px}
     input[type="text"],input[type="date"],input[type="time"],select{
       width:100%;padding:12px 12px;border-radius:12px;border:1px solid #24417b;background:#0b1530;color:#e7ecff;font-size:16px}
     input::placeholder{color:#6e86b3}
-    .btn{display:inline-flex;gap:8px;align-items:center;padding:10px 14px;border-radius:12px;border:1px solid #2d4b8d;background:#103061;color:#fff;cursor:pointer}
+    input:focus,select:focus,button:focus{outline:2px solid var(--focus);outline-offset:2px}
+    .btn{display:inline-flex;gap:8px;align-items:center;padding:12px 14px;border-radius:12px;border:1px solid #2d4b8d;background:#103061;color:#fff;cursor:pointer}
     .btn:hover{filter:brightness(1.1)}
     .btn.brand{background:linear-gradient(180deg,#1653a8,#0f3c7b);border-color:#2f63b3}
     .btn.ghost{background:#0c1c3e}
     .row{display:flex;gap:12px;flex-wrap:wrap}
     .chip{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--chip-bd);background:var(--chip);padding:6px 10px;border-radius:999px;color:#bdd0ff;font-size:12px}
+    .chip[title]{cursor:help}
     .badge{display:inline-block;padding:4px 10px;border:1px solid #2a446f;border-radius:999px;background:#0c1e3a;color:#a2c5ff;font-size:12px}
-    .reading{margin-top:14px}
+    .reading{margin-top:12px}
     .card{background:linear-gradient(180deg,#0f1933,#0b1328);border:1px solid #1a2c5a;border-radius:14px;padding:16px}
     details{border:1px solid #1a2c5a;border-radius:14px;margin:10px 0;background:#0b142b}
     details[open]{box-shadow:0 0 0 1px #1b2f61 inset}
@@ -58,16 +63,23 @@
     .meta{font-size:12px;color:#95abd9;margin-top:6px}
     .disclaimer{font-size:12px;color:#7e96c9;margin-top:16px;text-align:center}
     .divider{height:1px;background:#152149;margin:14px 0}
-    .icon{opacity:.9}
     .small{font-size:12px;color:#9fb2d9}
-    .ring{display:grid;place-items:center; padding:18px 0}
+    .ring{display:grid;place-items:center; padding:10px 0}
     .wheel{width:220px;height:220px;border-radius:50%;border:1px dashed #2c427a;display:grid;place-items:center;
       background:radial-gradient(60% 60% at 50% 40%, #142044 0%, #0a1226 65%); box-shadow:inset 0 0 24px #000a}
     .wheel:after{content:"☉";font-family:serif;font-size:30px;color:#ffc96a;filter:drop-shadow(0 0 6px #ffc96a)}
-    .top-actions{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
+    .top-actions{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap}
     .switch{font-size:13px;color:#a5bcef}
-    .right{display:flex;gap:8px;align-items:center}
+    .right{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
     .hidden{display:none}
+    .cta{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .cta a{color:#a9c4ff}
+    @media (max-width:560px){
+      .wheel{width:160px;height:160px}
+      summary{padding:12px}
+    }
+    dialog{border:1px solid #1a2c5a;background:#0b142b;color:#e7ecff;border-radius:12px;padding:14px}
+    dialog::backdrop{background:rgba(0,0,0,.5)}
   </style>
 </head>
 <body class="stars">
@@ -91,30 +103,32 @@
       <div class="top-actions">
         <div class="switch">
           <span class="badge">Erweiterte Einstellungen</span>
-          <button id="btn-toggle-mixer" class="btn ghost small">anzeigen ▾</button>
+          <button id="btn-toggle-mixer" class="btn ghost small" aria-expanded="false">anzeigen ▾</button>
         </div>
         <div class="right">
-          <span class="chip"><span class="icon">♟</span><span id="chip-mode">Coach</span></span>
-          <span class="chip"><span class="icon">🕰</span><span id="chip-timeframe">Woche</span></span>
+          <span class="chip" title="Tonfall der Texte"><span class="icon">♟</span><span id="chip-mode">Coach</span></span>
+          <span class="chip" title="Zeitraum der Aussagen"><span class="icon">🕰</span><span id="chip-timeframe">Woche</span></span>
         </div>
       </div>
-      <div id="mixer-wrap" class="hidden">
+      <div id="mixer-wrap" class="hidden" aria-hidden="true">
         <div id="mixer-root"></div>
         <div class="divider"></div>
       </div>
 
-      <div class="ring">
-        <div class="wheel"></div>
-      </div>
+      <div class="ring"><div class="wheel" aria-hidden="true"></div></div>
 
       <h2>Deine Geburtsdaten</h2>
-      <p class="small">Datum & Ort genügen. Falls keine exakte Uhrzeit: „Morgens / Mittags / Abends / Nachts“ wählen.</p>
+      <p class="small">Datum & Ort genügen. Keine exakte Zeit? Wähle „Morgens / Mittags / Abends / Nachts“.</p>
 
       <label for="birthDate">Geburtsdatum</label>
       <input type="date" id="birthDate" />
 
       <label for="birthPlace">Geburtsort</label>
-      <input type="text" id="birthPlace" placeholder="z. B. Berlin" />
+      <div class="row">
+        <input style="flex:1" type="text" id="birthPlace" placeholder="z. B. Berlin" aria-describedby="place-help"/>
+        <button id="btn-timehelp" class="btn ghost" type="button">Geburtszeit finden?</button>
+      </div>
+      <div id="place-help" class="small" style="margin-top:2px">Für genauere Aussagen hilft die Zeitzone deines Geburtsortes.</div>
 
       <div class="row">
         <div style="flex:1 1 220px">
@@ -145,21 +159,31 @@
         <option value="jahr">Nächstes Jahr</option>
       </select>
 
-      <div class="row" style="margin-top:10px">
+      <div class="row cta">
         <button class="btn ghost" onclick="generateAnalysis()">Sofort-Analyse (offline)</button>
         <button class="btn brand" onclick="generateAiReading()">Gold-Reading (AI)</button>
+        <a class="small" href="#" onclick="bookmark()">☆ als Lesezeichen</a>
+        <a class="small" href="#" onclick="copyLink()">URL kopieren</a>
       </div>
 
-      <div id="status" class="meta"></div>
-
+      <div id="status" class="meta" role="status" aria-live="polite"></div>
       <div id="ephemeris" class="row" style="margin-top:8px"></div>
-
       <div id="result" class="reading"></div>
 
       <div class="disclaimer">Unterhaltung & achtsame Selbstreflexion. Keine medizinische, rechtliche oder finanzielle Beratung.
         Bei Krisen oder akuter Gefahr: 112 (EU) / lokale Beratungsstellen.</div>
     </section>
   </main>
+
+  <dialog id="dlg-time">
+    <h3 style="margin:0 0 6px">Geburtszeit – wo finde ich sie?</h3>
+    <ul class="small" style="margin:0 0 8px 18px">
+      <li>Geburtsurkunde / Geburtsregisterauszug (Standesamt)</li>
+      <li>Familienunterlagen, Baby-Tagebuch</li>
+      <li>Frage Eltern / Angehörige nach „ungefähr“ (Morgen, Mittag, Abend, Nacht)</li>
+    </ul>
+    <div class="row"><button class="btn brand" onclick="document.getElementById('dlg-time').close()">Okay</button></div>
+  </dialog>
 
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -178,16 +202,40 @@
         e.detail.timeframe==='day'?'Heute':(e.detail.timeframe==='week'?'Woche':'Monat');
     });
 
-    document.getElementById('btn-toggle-mixer').onclick = () => {
+    const toggleBtn = document.getElementById('btn-toggle-mixer');
+    toggleBtn.onclick = () => {
       const w = document.getElementById('mixer-wrap');
-      const btn = document.getElementById('btn-toggle-mixer');
-      const shown = w.classList.toggle('hidden');
-      btn.textContent = shown ? 'anzeigen ▾' : 'ausblenden ▴';
+      const hidden = w.classList.toggle('hidden');
+      toggleBtn.setAttribute('aria-expanded', String(!hidden));
+      w.setAttribute('aria-hidden', String(hidden));
+      toggleBtn.textContent = hidden ? 'anzeigen ▾' : 'ausblenden ▴';
     };
+
+    document.getElementById('btn-timehelp').onclick = ()=> document.getElementById('dlg-time').showModal();
   </script>
 
   <script>
     const RAILWAY_BASE = "https://horoskopone-production.up.railway.app"; // ggf. anpassen
+
+    function bookmark(){ alert('Drücke Strg/⌘+D, um die Seite zu speichern.'); }
+    async function copyLink(){
+      try{ await navigator.clipboard.writeText(location.href); alert('Link kopiert.'); }catch(e){}
+    }
+
+    const WHY_TIPS = {
+      "Sternzeichen": "Westlicher Tierkreis nach Geburtsdatum. Liefert grobe Grundstimmung.",
+      "Lebenszahl": "Quersumme aus Geburtsdatum (Numerologie). Steht für Lernfelder und Talente.",
+      "Zeitfenster": "Je nach Uhrzeit bzw. grober Tageszeit (Morgen/Mittag/Abend/Nacht).",
+      "Ort": "Geburtsort → Zeitzone & Hemisphäre, beeinflusst Tageslicht am Datum.",
+      "Tag/Nacht": "Ob die Geburt in der Tages- oder Nachtphase lag (aus Sunrise/Sunset).",
+      "Saison": "Meteorologische Jahreszeit der Hemisphäre.",
+      "Mondphase": "Mondzyklus am Datum (z.B. Vollmond)."
+    };
+
+    function chipTitle(text){
+      for(const k of Object.keys(WHY_TIPS)){ if(text.includes(k)) return WHY_TIPS[k]; }
+      return "Grundlage der Aussage";
+    }
 
     function fmtTime(s){
       if(!s) return '';
@@ -202,16 +250,28 @@
       const bar = document.getElementById('ephemeris'); bar.innerHTML='';
       const p = meta?.profile || {}; const e = meta?.ephemeris || {};
       const chips = [];
-      if(p.place) chips.push(['📍', p.place]);
-      if(p.timezone) chips.push(['🕒', p.timezone]);
-      if(typeof e.birth_is_day === 'boolean') chips.push(['☀️', e.birth_is_day?'Taggeburt':'Nachtgeburt']);
-      if(e.season) chips.push(['🜄', e.season==='summer'?'Sommer': e.season==='spring'?'Frühling': e.season==='autumn'?'Herbst':'Winter']);
-      if(e.moon_phase_name) chips.push(['☾', e.moon_phase_name]);
-      if(e.sunrise || e.sunset) chips.push(['⟲', `SR ${fmtTime(e.sunrise)} · SS ${fmtTime(e.sunset)}`]);
-      chips.forEach(([i,t])=>{
+      if(p.place) chips.push(['📍', p.place, 'Geburtsort']);
+      if(p.timezone) chips.push(['🕒', p.timezone, 'Zeitzone']);
+      if(typeof e.birth_is_day === 'boolean') chips.push(['☀️', e.birth_is_day?'Taggeburt':'Nachtgeburt', 'Tag/Nacht']);
+      if(e.season) chips.push(['🜄', e.season==='summer'?'Sommer': e.season==='spring'?'Frühling': e.season==='autumn'?'Herbst':'Winter', 'Saison']);
+      if(e.moon_phase_name) chips.push(['☾', e.moon_phase_name, 'Mondphase']);
+      if(e.sunrise || e.sunset) chips.push(['⟲', `SR ${fmtTime(e.sunrise)} · SS ${fmtTime(e.sunset)}`, 'Sunrise/Sunset']);
+      chips.forEach(([i,t,label])=>{
         const el=document.createElement('span'); el.className='chip';
+        el.setAttribute('title', WHY_TIPS[label] || 'Faktische Begründung');
         el.innerHTML=`<span class="icon">${i}</span><span>${t}</span>`; bar.appendChild(el);
       });
+    }
+
+    function selfCheck(area){
+      switch((area||'').toLowerCase()){
+        case 'fokus': return 'Was ist heute die eine Sache, die dir gut täte?';
+        case 'beruf': return 'Welchen 5‑Minuten‑Schritt kannst du jetzt setzen?';
+        case 'liebe': return 'Welche kleine Geste könnte heute Nähe fördern?';
+        case 'energie': return 'Was gibt dir in 5 Minuten spürbar Kraft?';
+        case 'soziales': return 'Wem könntest du heute kurz Dank sagen?';
+        default: return 'Was ist dein nächster achtsamer Mini‑Schritt?';
+      }
     }
 
     function renderReadingUI(data){
@@ -229,7 +289,7 @@
           const row=document.createElement('div'); row.className='row'; row.style.margin='8px 0';
           row.innerHTML=`<div style="flex:1"><b>${h.title||'Highlight'}</b><div class="small">${h.action||''}</div></div>`;
           const why=document.createElement('div'); why.className='row';
-          (h.why||[]).forEach(w=>{ const chip=document.createElement('span'); chip.className='chip'; chip.textContent=w; why.appendChild(chip) });
+          (h.why||[]).forEach(w=>{ const chip=document.createElement('span'); chip.className='chip'; chip.textContent=w; chip.setAttribute('title', chipTitle(w)); why.appendChild(chip) });
           wrap.appendChild(row); wrap.appendChild(why);
         });
         box.appendChild(wrap);
@@ -241,9 +301,11 @@
         const summary=document.createElement('summary'); summary.textContent=area; det.appendChild(summary);
         const inner=document.createElement('div'); inner.style.padding='0 14px 12px 14px';
         inner.innerHTML = `<div style="margin-bottom:6px">${s.text||''}</div>${s.action?`<div class='small'>Aktion: ${s.action}</div>`:''}`;
+        const sc=document.createElement('div'); sc.className='small'; sc.style.marginTop='6px'; sc.textContent='Selbstcheck: ' + selfCheck(area);
+        inner.appendChild(sc);
         det.appendChild(inner);
         const why=document.createElement('div'); why.className='why';
-        (s.why||[]).forEach(w=>{ const chip=document.createElement('span'); chip.className='chip'; chip.textContent=w; why.appendChild(chip) });
+        (s.why||[]).forEach(w=>{ const chip=document.createElement('span'); chip.className='chip'; chip.textContent=w; chip.setAttribute('title', chipTitle(w)); why.appendChild(chip) });
         det.appendChild(why);
         box.appendChild(det);
       });
@@ -278,7 +340,7 @@
 
       const payload={
         mode:mixer.mode, timeframe:mixer.timeframe, weights:mixer.weights,
-        inputs:{ date:birthDate, time:birthTime||null, timeApprox, place:birthPlace, partnerDate, goals:[], mood:"neutral", style:"pragmatisch" }
+        inputs:{ date:birthDate, time:birthTime||null, timeApprox, place:birthPlace, partnerDate, goals:[], mood:"neutral", style:"premium-mystic" }
       };
 
       statusEl.textContent='Berechne Gold-Reading …'; resultEl.innerHTML='';
