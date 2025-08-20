@@ -2,68 +2,85 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <title>horoskop.one – Mystischer Kompass</title>
+  <title>horoskop.one – Sternenkarte</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
-  <meta name="description" content="Dein achtsames, erklärbares Horoskop: individuell, mystisch, seriös.">
-  <meta property="og:title" content="horoskop.one – Mystischer Kompass">
-  <meta property="og:description" content="Dein achtsames, erklärbares Horoskop: individuell, mystisch, seriös.">
-  <meta property="og:image" content="/og.png">
-  <meta property="og:type" content="website">
+  <meta name="description" content="Mystische Sternenkarte – dein achtsames Horoskop mit echten Ephemeriden (Ort, Zeitzone, Tag/Nacht, Mondphase).">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,500;0,600;1,500&family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
     :root{
-      --bg:#0b1020; --bg2:#0f1630; --ink:#e7ecff; --muted:#9fb2d9;
-      --chip:#0d203f; --chip-bd:#203a6b; --focus:#8cc8ff;
+      --ink:#e7ecff; --muted:#a9b8e1; --panel:#0f162b; --bd:#1a2c5a; --accent:#6bb7ff; --gold:#f1c27d;
+      --bg0:#070b18; --bg1:#0b1020; --bg2:#101a34;
     }
     *{box-sizing:border-box}
-    body{margin:0;background:radial-gradient(1200px 600px at 20% -10%, #1a2451 0%, transparent 60%),
-                            radial-gradient(900px 600px at 90% 10%, #10204a 0%, transparent 60%),
-                            linear-gradient(180deg, var(--bg), var(--bg2));
-         color:var(--ink); font-family:system-ui,Arial,sans-serif; line-height:1.45}
-    .panel{background:linear-gradient(180deg, #0e1730, #0c1428);border:1px solid #1a2c5a;border-radius:16px;box-shadow:0 12px 36px #0008}
+    body{margin:0;background:radial-gradient(1200px 600px at 10% -10%, #1a245144 0%, transparent 60%),
+                            radial-gradient(900px 600px at 90% 10%, #10204a55 0%, transparent 60%),
+                            linear-gradient(180deg, var(--bg1), var(--bg2)); color:var(--ink);
+         font-family:'Plus Jakarta Sans', system-ui, Arial, sans-serif; line-height:1.45; overflow-x:hidden}
+    header{position:relative; z-index:2; padding:18px 14px 8px; text-align:center}
+    .brand{display:flex; gap:10px; align-items:center; justify-content:center}
+    .sigil{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;
+      background:radial-gradient(60% 60% at 50% 40%, #23335f 0%, #111b35 60%); border:1px solid #2a3f79; box-shadow:0 0 12px #2a3f7944}
+    h1{font-family:'EB Garamond', serif; font-weight:600; letter-spacing:.04em; margin:0; font-size:24px}
+    .sub{color:var(--muted); font-size:14px; font-family:'EB Garamond', serif; font-style:italic}
+    main{max-width:980px;margin:0 auto 40px;padding:0 14px; position:relative; z-index:2}
+    .panel{background:linear-gradient(180deg, #0e1730, #0c1428);border:1px solid var(--bd);border-radius:16px;box-shadow:0 12px 36px #0008}
     .section{padding:14px}
-    input,select,button{font-size:16px}
-    input[type="text"],input[type="date"],input[type="time"],select{width:100%;padding:12px 12px;border-radius:12px;border:1px solid #24417b;background:#0b1530;color:#e7ecff}
-    input:focus,select:focus,button:focus{outline:2px solid var(--focus);outline-offset:2px}
+    label{display:block;margin:12px 0 6px;font-weight:700;color:#cfe0ff;font-size:14px}
+    input[type="text"],input[type="date"],input[type="time"],select{
+      width:100%;padding:12px 12px;border-radius:12px;border:1px solid #24417b;background:#0b1530;color:#e7ecff;font-size:16px}
+    input:focus,select:focus,button:focus{outline:2px solid #8cc8ff; outline-offset:2px}
     .row{display:flex;gap:12px;flex-wrap:wrap}
-    .btn{display:inline-flex;gap:8px;align-items:center;padding:12px 14px;border-radius:12px;border:1px solid #2d4b8d;background:#103061;color:#fff;cursor:pointer}
-    .btn.brand{background:linear-gradient(180deg,#1653a8,#0f3c7b);border-color:#2f63b3}
+    .btn{display:inline-flex;gap:8px;align-items:center;padding:12px 14px;border-radius:999px;border:1px solid #2d4b8d;background:#0e2a57;color:#fff;cursor:pointer}
+    .btn.brand{background:linear-gradient(180deg,#1c57b0,#113d80);border-color:#2f63b3; box-shadow:0 6px 18px #204a9a66}
     .btn.ghost{background:#0c1c3e}
-    .chip{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--chip-bd);background:var(--chip);padding:6px 10px;border-radius:999px;color:#bdd0ff;font-size:12px}
-    .top-actions{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap}
-    .right{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-    .reading{margin-top:12px}
-    .card{background:linear-gradient(180deg,#0f1933,#0b1328);border:1px solid #1a2c5a;border-radius:14px;padding:16px}
-    details{border:1px solid #1a2c5a;border-radius:14px;margin:10px 0;background:#0b142b}
+    .chip{display:inline-flex;gap:6px;align-items:center;border:1px solid #203a6b;background:#0d203f; padding:6px 10px;border-radius:999px;color:#bdd0ff;font-size:12px}
+    .card{background:linear-gradient(180deg,#0f1933,#0b1328);border:1px solid var(--bd);border-radius:14px;padding:16px}
+    details{border:1px solid var(--bd);border-radius:14px;margin:10px 0;background:#0b142b}
     summary{cursor:pointer;padding:12px 14px;font-weight:700}
-    .why{margin:6px 14px 12px}
     .small{font-size:12px;color:#9fb2d9}
     .disclaimer{font-size:12px;color:#7e96c9;margin-top:16px;text-align:center}
+    .hero{display:flex;justify-content:center;align-items:center;padding:16px 0 8px}
+    .hero img{width:220px;height:220px;opacity:.9; filter:drop-shadow(0 6px 18px #000a)}
+    canvas#starfield{position:fixed; inset:0; z-index:0; pointer-events:none; background: radial-gradient(1000px 600px at 50% -20%, #0e1a35 0%, transparent 60%);}
+    nav{margin:6px 0 10px; display:flex; gap:16px; justify-content:center; font-size:14px}
+    nav a{color:#a9c4ff; text-decoration:none} nav a:hover{text-decoration:underline}
   </style>
 </head>
 <body>
-  <main style="max-width:980px;margin:18px auto 40px;padding:0 14px">
+  <canvas id="starfield" aria-hidden="true"></canvas>
+  <header>
+    <div class="brand">
+      <div class="sigil">☽</div>
+      <div>
+        <h1>horoskop.one</h1>
+        <div class="sub">Sternenkarte – achtsam, mystisch, erklärbar</div>
+      </div>
+    </div>
+    <nav>
+      <a href="methoden.html">Methoden</a>
+      <a href="impressum.html">Impressum</a>
+      <a href="datenschutz.html">Datenschutz</a>
+    </nav>
+  </header>
+
+  <main>
     <section class="panel section">
-      <div class="top-actions">
-        <div class="right">
-          <span class="chip"><span>♟</span><span id="chip-mode">Mystic Coach</span></span>
-          <span class="chip"><span>🕰</span><span id="chip-timeframe">Woche</span></span>
-        </div>
-        <div class="row">
-          <button id="btn-heute" class="btn ghost" title="Zeitraum auf Heute stellen und starten">🔮 Heute</button>
-          <button class="btn ghost" id="btn-offline">Sofort-Analyse (offline)</button>
-          <button class="btn brand" id="btn-gold">Gold-Reading (AI)</button>
-        </div>
+      <div class="hero">
+        <img src="assets/hero-wheel.svg" alt="Zodiak-Rad" />
       </div>
 
+      <h2 style="margin:0 0 8px;font-family:'EB Garamond',serif">Dein Moment unter den Sternen</h2>
+      <p class="small">Datum & Ort genügen. Falls keine exakte Zeit: „Morgens / Mittags / Abends / Nachts“.</p>
+
+      <label for="birthDate">Geburtsdatum</label>
+      <input type="date" id="birthDate" />
+
+      <label for="birthPlace">Geburtsort</label>
       <div class="row">
-        <div style="flex:1 1 220px">
-          <label for="birthDate">Geburtsdatum</label>
-          <input type="date" id="birthDate" />
-        </div>
-        <div style="flex:1 1 220px">
-          <label for="birthPlace">Geburtsort</label>
-          <input type="text" id="birthPlace" placeholder="z. B. Berlin" />
-        </div>
+        <input style="flex:1" type="text" id="birthPlace" placeholder="z. B. Berlin"/>
+        <button id="btn-timehelp" class="btn ghost" type="button">Geburtszeit finden?</button>
       </div>
 
       <div class="row">
@@ -81,14 +98,19 @@
             <option value="night">Nachts (22–05 Uhr)</option>
           </select>
         </div>
-        <div style="flex:1 1 220px">
-          <label for="timeFrame">Vorhersagezeitraum</label>
-          <select id="timeFrame">
-            <option value="day">Heute</option>
-            <option selected value="week">Woche</option>
-            <option value="month">Monat</option>
-          </select>
-        </div>
+      </div>
+
+      <label for="timeFrame">Vorhersagezeitraum</label>
+      <select id="timeFrame">
+        <option value="day">Heute</option>
+        <option selected value="week">Woche</option>
+        <option value="month">Monat</option>
+      </select>
+
+      <div class="row" style="margin-top:8px">
+        <button id="btn-heute" class="btn ghost">🔮 Heute</button>
+        <button id="btn-offline" class="btn ghost">Sofort-Analyse (offline)</button>
+        <button id="btn-gold" class="btn brand">Gold-Reading (AI)</button>
       </div>
 
       <div id="ephemeris" class="row" style="margin-top:8px"></div>
@@ -106,40 +128,79 @@
     </section>
   </main>
 
+  <dialog id="dlg-time">
+    <h3 style="margin:0 0 6px">Geburtszeit – wo finde ich sie?</h3>
+    <ul class="small" style="margin:0 0 8px 18px">
+      <li>Geburtsurkunde / Geburtsregisterauszug (Standesamt)</li>
+      <li>Familienunterlagen, Baby-Tagebuch</li>
+      <li>Ungefähr reicht: Morgen · Mittag · Abend · Nacht</li>
+    </ul>
+    <div class="row"><button class="btn brand" onclick="document.getElementById('dlg-time').close()">Okay</button></div>
+  </dialog>
+
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script type="text/babel" data-presets="react" src="components/horoskop.cdn.jsx"></script>
 
   <script>
-    const RAILWAY_BASE = "https://horoskopone-production.up.railway.app"; // ggf. anpassen
-    window.__mixerState = { mode:'mystic_coach', timeframe:'week', weights:{ astro:34, num:13, tarot:17, iching:14, cn:11, tree:11 } };
+    // ---- Starfield using assets/stars.json (from netzstruktur.svg, without lines)
+    (async function(){
+      const canvas = document.getElementById('starfield');
+      const ctx = canvas.getContext('2d');
+      const DPR = Math.min(2, window.devicePixelRatio || 1);
+      let W = canvas.width = innerWidth * DPR;
+      let H = canvas.height = innerHeight * DPR;
+      canvas.style.transform = `scale(${1/DPR})`;
+      canvas.style.transformOrigin = '0 0';
 
-    // Mixer mount + inbound chip update
-    const mountMixer = () => {
-      const rootEl = document.getElementById('mixer-root');
-      const node = ReactDOM.createRoot(rootEl);
-      node.render(React.createElement(window.KosmischerMixer));
-      window.addEventListener('horoskop:mixer', (e)=>{
-        window.__mixerState = e.detail;
-        document.getElementById('chip-mode').textContent = e.detail.mode==='mystic_coach'?'Mystic Coach': e.detail.mode==='mystic'?'Mystisch': e.detail.mode==='skeptic'?'Skeptisch':'Coach';
-        document.getElementById('chip-timeframe').textContent = e.detail.timeframe==='day'?'Heute':(e.detail.timeframe==='week'?'Woche':'Monat');
-        document.getElementById('timeFrame').value = e.detail.timeframe;
-      });
-    };
-    mountMixer();
+      const res = await fetch('assets/stars.json').then(r=>r.json()).catch(()=>null);
+      const stars = (res?.stars || Array.from({length:220},()=>({x:Math.random(),y:Math.random(),r:0.8+Math.random()*1.6,p:Math.random()*6.28,d:0.5+Math.random()})))
+        .map(s=>({x:s.x,y:s.y,r:s.r,p:s.p,d:s.d}));
 
-    // Heute Shortcut
-    document.getElementById('btn-heute').onclick = () => {
-      window.__mixerState.timeframe = 'day';
-      document.getElementById('chip-timeframe').textContent = 'Heute';
-      document.getElementById('timeFrame').value = 'day';
+      function draw(t){
+        ctx.clearRect(0,0,W,H);
+        ctx.globalCompositeOperation = 'lighter';
+        for(const s of stars){
+          const tw = (Math.sin(t*0.001 + s.p)*0.5+0.5)*0.6 + 0.2;
+          const driftX = Math.sin(t*0.00005 + s.p) * s.d * 8;
+          const driftY = Math.cos(t*0.00004 + s.p) * s.d * 6;
+          const x = s.x*W + driftX, y = s.y*H + driftY;
+          const rad = s.r * DPR * (0.7 + tw*0.6);
+          const grd = ctx.createRadialGradient(x,y,0,x,y,rad);
+          grd.addColorStop(0, 'rgba(220,230,255,0.95)');
+          grd.addColorStop(0.5, 'rgba(180,200,255,0.35)');
+          grd.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.fillStyle = grd; ctx.beginPath(); ctx.arc(x,y,rad,0,Math.PI*2); ctx.fill();
+        }
+        ctx.globalCompositeOperation = 'source-over';
+        requestAnimationFrame(draw);
+      }
+      requestAnimationFrame(draw);
+
+      addEventListener('resize', ()=>{
+        W = canvas.width = innerWidth * DPR;
+        H = canvas.height = innerHeight * DPR;
+        canvas.style.transform = `scale(${1/DPR})`;
+      }, {passive:true});
+    })();
+  </script>
+
+  <script>
+    const RAILWAY_BASE = "https://horoskopone-production.up.railway.app";
+    window.__mixerState = { mode:'mystic_deep', timeframe:'week', weights:{ astro:34, num:13, tarot:17, iching:14, cn:11, tree:11 } };
+
+    // Mixer mount
+    const rootEl = document.getElementById('mixer-root');
+    const node = ReactDOM.createRoot(rootEl);
+    node.render(React.createElement(window.KosmischerMixer));
+
+    document.getElementById('btn-timehelp').onclick = ()=> document.getElementById('dlg-time').showModal();
+    document.getElementById('btn-heute').onclick = ()=>{
+      window.__mixerState.timeframe='day'; document.getElementById('timeFrame').value='day'; callReading();
       window.dispatchEvent(new CustomEvent('horoskop:set', { detail: { timeframe:'day' } }));
-      document.getElementById('btn-gold').click();
     };
-
-    // Offline
-    document.getElementById('btn-offline').onclick = () => {
+    document.getElementById('btn-offline').onclick = ()=>{
       const d=document.getElementById('birthDate').value;
       const p=document.getElementById('birthPlace').value.trim();
       const t=document.getElementById('birthTime').value;
@@ -150,34 +211,19 @@
 
     function chipTip(text){
       const LEX = {
-        "Sternzeichen": "Westlicher Tierkreis aus Geburtsdatum – liefert Grundstimmung.",
-        "Lebenszahl": "Numerologie (Quersumme). Lernfelder & Ressourcen.",
-        "Zeitfenster": "Uhrzeit oder Zeit-Bucket – prägt Tagesenergie.",
-        "Ort": "Geburtsort → Zeitzone, Hemisphäre, Tageslicht.",
-        "Tag/Nacht": "Ermittelt aus lokalen Sunrise/Sunset.",
+        "Sternzeichen": "Tierkreis aus Geburtsdatum – Grundstimmung.",
+        "Lebenszahl": "Numerologie (Quersumme) – Lernfelder.",
+        "Zeitfenster": "Uhrzeit/Zeit-Bucket – prägt Tagesenergie.",
+        "Ort": "Geburtsort → Zeitzone, Hemisphäre, Licht.",
+        "Tag/Nacht": "Aus Sunrise/Sunset am Ort.",
         "Saison": "Meteorologische Jahreszeit der Hemisphäre.",
-        "Mondphase": "Mondzyklus am Datum (z. B. Vollmond).",
-        "Sunrise/Sunset": "Auf-/Untergangszeiten vor Ort am Datum.",
-        "Astrologie": "Transite und symbolische Deutung (Light).",
-        "Numerologie": "Ziffernlogik als Metapher – kein Determinismus.",
-        "Tarot": "Archetypen als Spiegel, keine Wahrsagerei.",
-        "I-Ging": "Muster/Weisheitstexte als Reflexionshilfe.",
-        "Chinesisch": "12-Tierkreis (Jahr), zyklische Zuschreibungen.",
-        "Baumkreis": "Keltische Symbolik, poetische Metaphern."
+        "Mondphase": "Mondzyklus am Datum.",
+        "Sunrise/Sunset": "Auf-/Untergangszeiten vor Ort."
       };
       for(const k in LEX){ if(text.includes(k)) return LEX[k]; }
-      return "Faktische oder symbolische Begründung";
+      return "Begründung";
     }
-
-    function fmtTime(s){
-      if(!s) return '';
-      try{
-        const t = s.includes('T') ? s.split('T')[1] : s;
-        const [hh,mm] = t.split(':');
-        return `${hh}:${mm}`;
-      }catch(e){ return ''; }
-    }
-
+    function fmtTime(s){ if(!s) return ''; try{const t=s.includes('T')?s.split('T')[1]:s; const [hh,mm]=t.split(':'); return `${hh}:${mm}`;}catch(e){return '';} }
     function setEphemeris(meta){
       const bar = document.getElementById('ephemeris'); bar.innerHTML='';
       const p = meta?.profile || {}; const e = meta?.ephemeris || {};
@@ -188,51 +234,33 @@
       if(e.season) chips.push(['🜄', e.season==='summer'?'Sommer': e.season==='spring'?'Frühling': e.season==='autumn'?'Herbst':'Winter', 'Saison']);
       if(e.moon_phase_name) chips.push(['☾', e.moon_phase_name, 'Mondphase']);
       if(e.sunrise || e.sunset) chips.push(['⟲', `SR ${fmtTime(e.sunrise)} · SS ${fmtTime(e.sunset)}`, 'Sunrise/Sunset']);
-      chips.forEach(([i,t,label])=>{
-        const el=document.createElement('span'); el.className='chip'; el.title=chipTip(label);
-        el.innerHTML=`<span>${i}</span><span>${t}</span>`; bar.appendChild(el);
-      });
+      chips.forEach(([i,t,label])=>{ const el=document.createElement('span'); el.className='chip'; el.title=chipTip(label); el.innerHTML=`<span>${i}</span><span>${t}</span>`; bar.appendChild(el); });
     }
 
     let __lastData = null;
-
     function renderReadingUI(data){
-      __lastData = data;
-      const box=document.getElementById('result'); box.innerHTML="";
-      setEphemeris(data.meta);
-
-      const head=document.createElement('div'); head.className='card';
-      head.innerHTML=`<div class="small">Modus: <b>${data?.meta?.mode||'-'}</b> · Zeitraum: <b>${data?.meta?.timeframe||'-'}</b> · Seed: <code>${data?.meta?.seed||'-'}</code></div>`;
-      box.appendChild(head);
-
+      __lastData = data; const box=document.getElementById('result'); box.innerHTML=""; setEphemeris(data.meta);
+      const head=document.createElement('div'); head.className='card'; head.innerHTML=`<div class="small">Modus: <b>${data?.meta?.mode||'-'}</b> · Zeitraum: <b>${data?.meta?.timeframe||'-'}</b> · Seed: <code>${data?.meta?.seed||'-'}</code></div>`; box.appendChild(head);
       if(Array.isArray(data.highlights) && data.highlights.length){
-        const wrap=document.createElement('div'); wrap.className='card';
-        wrap.innerHTML=`<h3 style="margin:0 0 8px 0">Deine 3 Highlights</h3>`;
+        const wrap=document.createElement('div'); wrap.className='card'; wrap.innerHTML=`<h3 style="margin:0 0 8px 0;font-family:'EB Garamond',serif">Deine 3 Sternzeichen</h3>`;
         data.highlights.slice(0,3).forEach(h=>{
           const row=document.createElement('div'); row.className='row'; row.style.margin='8px 0';
           row.innerHTML=`<div style="flex:1"><b>${h.title||'Highlight'}</b><div class="small">${h.action||''}</div></div>`;
           const why=document.createElement('div'); why.className='row';
           (h.why||[]).forEach(w=>{ const chip=document.createElement('span'); chip.className='chip'; chip.textContent=w; chip.title=chipTip(w); why.appendChild(chip) });
           wrap.appendChild(row); wrap.appendChild(why);
-        });
-        box.appendChild(wrap);
+        }); box.appendChild(wrap);
       }
-
       (data.sections||[]).forEach((s,i)=>{
         const area = s.area && s.area!=='undefined' ? s.area : (["Fokus","Beruf","Liebe","Energie","Soziales"][i%5]);
-        const det=document.createElement('details'); det.open=true;
-        const summary=document.createElement('summary'); summary.textContent=area; det.appendChild(summary);
+        const det=document.createElement('details'); det.open=true; const summary=document.createElement('summary'); summary.textContent=area; det.appendChild(summary);
         const inner=document.createElement('div'); inner.style.padding='0 14px 12px 14px';
         inner.innerHTML = `<div style="margin-bottom:6px">${s.text||''}</div>${s.action?`<div class='small'>Aktion: ${s.action}</div>`:''}`;
-        const sc=document.createElement('div'); sc.className='small'; sc.style.marginTop='6px'; sc.textContent='Selbstcheck: ' + (area==='Beruf'?'Welchen 5-Minuten-Schritt setzt du jetzt?': area==='Liebe'?'Welche kleine Geste fördert heute Nähe?': area==='Energie'?'Was gibt dir in 5 Minuten spürbar Kraft?': area==='Soziales'?'Wem könntest du kurz Danke sagen?':'Was ist heute die eine hilfreiche Sache?');
-        inner.appendChild(sc);
-        det.appendChild(inner);
-        const why=document.createElement('div'); why.className='why';
-        (s.why||[]).forEach(w=>{ const chip=document.createElement('span'); chip.className='chip'; chip.textContent=w; chip.title=chipTip(w); why.appendChild(chip) });
-        det.appendChild(why);
-        box.appendChild(det);
+        const sc=document.createElement('div'); sc.className='small'; sc.style.marginTop='6px'; sc.textContent='Selbstcheck: ' + (area==='Beruf'?'Welchen 5-Minuten-Schritt setzt du jetzt?': area==='Liebe'?'Welche kleine Geste öffnet heute das Herz?': area==='Energie'?'Was nährt dich in 5 Minuten spürbar?':'Was ist heute die helfende Geste?');
+        inner.appendChild(sc); det.appendChild(inner);
+        const why=document.createElement('div'); why.className='row'; (s.why||[]).forEach(w=>{ const chip=document.createElement('span'); chip.className='chip'; chip.textContent=w; chip.title=chipTip(w); why.appendChild(chip) });
+        det.appendChild(why); box.appendChild(det);
       });
-
       document.getElementById('shareRow').style.display='flex';
     }
 
@@ -242,80 +270,33 @@
       const t=document.getElementById('birthTime').value; const a=document.getElementById('timeApprox').value || null;
       const tf=document.getElementById('timeFrame').value;
       if(!d||!p){ document.getElementById('result').textContent='Bitte Datum und Ort angeben.'; return; }
-      const m=window.__mixerState || { mode:'mystic_coach', timeframe:tf, weights:{ astro:34, num:13, tarot:17, iching:14, cn:11, tree:11 } };
+      const m=window.__mixerState || { mode:'mystic_deep', timeframe:tf, weights:{ astro:34, num:13, tarot:17, iching:14, cn:11, tree:11 } };
       m.timeframe=tf;
-      const payload={ mode:m.mode, timeframe:m.timeframe, weights:m.weights,
-        inputs:{ date:d, time:t||null, timeApprox:a, place:p, goals:[], mood:'neutral', style:'mystic-coach' } };
+      const payload={ mode:m.mode, timeframe:m.timeframe, weights:m.weights, inputs:{ date:d, time:t||null, timeApprox:a, place:p, goals:[], mood:'still', style:'mystic-deep' } };
       const res=await fetch(RAILWAY_BASE.replace(/\/$/,'')+'/reading',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-      if(!res.ok) throw new Error('HTTP '+res.status);
-      const data=await res.json(); if(data.error) throw new Error(data.error);
-      renderReadingUI(data);
+      if(!res.ok) throw new Error('HTTP '+res.status); const data=await res.json(); if(data.error) throw new Error(data.error); renderReadingUI(data);
     }
+    document.getElementById('btn-gold').onclick = ()=>{ document.getElementById('result').innerHTML='Berechne …'; callReading().catch(e=>{ document.getElementById('result').textContent='Fehler: '+(e?.message||e); }); };
 
-    document.getElementById('btn-gold').onclick = async ()=>{
-      document.getElementById('result').innerHTML='Berechne …';
-      try{ await callReading(); }catch(e){ document.getElementById('result').textContent='Fehler: '+(e?.message||e); }
-    };
-
-    // Share-Card (OG 1200x630)
+    // Share-Card
     function drawWrappedText(ctx, text, x, y, maxWidth, lineHeight, maxLines){
-      const words = text.split(' '); let line=''; let lines=[];
+      const words = (text||'').split(' '); let line=''; let lines=[];
       for(let n=0;n<words.length;n++){ const test=line+words[n]+' '; const w=ctx.measureText(test).width;
         if(w>maxWidth && n>0){ lines.push(line.trim()); line=words[n]+' '; if(lines.length>=maxLines) break; } else { line=test; } }
-      if(lines.length<maxLines) lines.push(line.trim());
-      lines.forEach((ln,i)=> ctx.fillText(ln, x, y + i*lineHeight));
+      if(lines.length<maxLines) lines.push(line.trim()); lines.forEach((ln,i)=> ctx.fillText(ln, x, y + i*lineHeight));
     }
-
     async function makeShareCard(data){
-      const c=document.createElement('canvas'); c.width=1200; c.height=630;
-      const ctx=c.getContext('2d');
-
-      // Background
+      const c=document.createElement('canvas'); c.width=1200; c.height=630; const ctx=c.getContext('2d');
       const g=ctx.createLinearGradient(0,0,1200,630); g.addColorStop(0,'#0b1020'); g.addColorStop(1,'#0f1630'); ctx.fillStyle=g; ctx.fillRect(0,0,1200,630);
-      // subtle stars
-      ctx.fillStyle='rgba(255,255,255,.25)';
-      for(let i=0;i<180;i++){ const x=Math.random()*1200, y=Math.random()*630; ctx.fillRect(x,y,1,1); }
-
-      // Title
-      ctx.fillStyle='#e7ecff'; ctx.font='700 44px system-ui, Arial'; ctx.fillText('horoskop.one', 56, 86);
-      ctx.font='16px system-ui, Arial'; ctx.fillStyle='#9fb2d9'; ctx.fillText('Mystischer Kompass – achtsam, erklärbar', 56, 110);
-
-      // Ephemeris chips
-      const p=data?.meta?.profile||{}; const e=data?.meta?.ephemeris||{};
-      ctx.font='18px system-ui, Arial'; ctx.fillStyle='#a9c4ff';
-      const chip = (txt, ix)=>{ const x = 56 + ix*300; const y=140; ctx.fillText(txt, x, y); };
-      let ix=0;
-      if(p.place) chip('📍 '+p.place, ix++);
-      if(p.timezone) chip('🕒 '+p.timezone, ix++);
-      if(e.moon_phase_name) chip('☾ '+e.moon_phase_name, ix++);
-
-      // Highlights
-      const hl = (data.highlights||[]).slice(0,3);
-      ctx.fillStyle='#e7ecff'; ctx.font='600 26px system-ui, Arial'; ctx.fillText('Deine 3 Highlights', 56, 190);
-      ctx.font='20px system-ui, Arial';
-      let y=220;
-      hl.forEach((h,i)=>{
-        ctx.fillStyle='#a6b9e6'; ctx.fillText(String(i+1)+'.', 56, y);
-        ctx.fillStyle='#e7ecff'; drawWrappedText(ctx, (h.title||'').toString(), 90, y, 1000, 26, 2); y+=56;
-        ctx.fillStyle='#9fb2d9'; drawWrappedText(ctx, (h.action||'').toString(), 90, y-6, 1000, 24, 1); y+=34;
-      });
-
-      // Footer
-      ctx.fillStyle='#7e96c9'; ctx.font='14px system-ui, Arial';
-      ctx.fillText('Zeitraum: '+(data?.meta?.timeframe||'-')+'  ·  Modus: '+(data?.meta?.mode||'-'), 56, 600);
-
+      ctx.fillStyle='rgba(255,255,255,.25)'; for(let i=0;i<180;i++){ const x=Math.random()*1200, y=Math.random()*630; ctx.fillRect(x,y,1,1); }
+      ctx.fillStyle='#e7ecff'; ctx.font='700 44px system-ui, Arial'; ctx.fillText('horoskop.one', 56, 86); ctx.font='16px system-ui, Arial'; ctx.fillStyle='#9fb2d9'; ctx.fillText('Sternenkarte – achtsam, mystisch, erklärbar', 56, 110);
+      const p=data?.meta?.profile||{}; const e=data?.meta?.ephemeris||{}; ctx.font='18px system-ui, Arial'; ctx.fillStyle='#a9c4ff'; const chip=(txt,ix)=>{const x=56+ix*300; const y=140; ctx.fillText(txt,x,y);}; let ix=0; if(p.place) chip('📍 '+p.place,ix++); if(p.timezone) chip('🕒 '+p.timezone,ix++); if(e.moon_phase_name) chip('☾ '+e.moon_phase_name,ix++);
+      const hl=(data.highlights||[]).slice(0,3); ctx.fillStyle='#e7ecff'; ctx.font='600 26px system-ui, Arial'; ctx.fillText('Deine 3 Highlights', 56, 190); ctx.font='20px system-ui, Arial'; let y=220;
+      hl.forEach((h,i)=>{ ctx.fillStyle='#a6b9e6'; ctx.fillText(String(i+1)+'.', 56, y); ctx.fillStyle='#e7ecff'; drawWrappedText(ctx, (h.title||'').toString(), 90, y, 1000, 26, 2); y+=56; ctx.fillStyle='#9fb2d9'; drawWrappedText(ctx, (h.action||'').toString(), 90, y-6, 1000, 24, 1); y+=34; });
+      ctx.fillStyle='#7e96c9'; ctx.font='14px system-ui, Arial'; ctx.fillText('Zeitraum: '+(data?.meta?.timeframe||'-')+'  ·  Modus: '+(data?.meta?.mode||'-'), 56, 600);
       return c;
     }
-
-    document.getElementById('btn-share').onclick = async ()=>{
-      if(!__lastData){ alert('Bitte zuerst ein Gold-Reading erzeugen.'); return; }
-      const canvas = await makeShareCard(__lastData);
-      canvas.toBlob((blob)=>{
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href=url; a.download='horoskop-one-card.png'; a.click();
-        URL.revokeObjectURL(url);
-      });
-    };
+    document.getElementById('btn-share').onclick = async ()=>{ if(!__lastData){ alert('Bitte zuerst ein Gold-Reading erzeugen.'); return; } const canvas = await makeShareCard(__lastData); canvas.toBlob((b)=>{ const url=URL.createObjectURL(b); const a=document.createElement('a'); a.href=url; a.download='horoskop-one-card.png'; a.click(); URL.revokeObjectURL(url); }); };
   </script>
 </body>
 </html>

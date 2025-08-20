@@ -226,6 +226,7 @@ MODE_RULES = {
     "coach":   "Ton: sachlich-ermutigend, klare Mini-Schritte.",
     "mystic":  "Ton: leicht bildhaft, trotzdem konkret.",
     "mystic_coach": "Ton: ruhig-ermutigend mit leicht mystischem Flair; klare Mini-Schritte; seriös und knapp.",
+    "mystic_deep": "Ton: poetisch-ruhig, deutlich mystischer; sanfte Metaphern, zwei Sätze pro Abschnitt, klare Mini-Aktion; keine Heilsversprechen."
     "skeptic": "Ton: neutral, dämpfe Gewissheiten; ergänze 1 Selbstcheck-Frage."
 }
 
@@ -261,7 +262,7 @@ def health(): return {"ok": True}
 @app.post("/reading")
 async def reading(req: Request):
     body=await req.json()
-    mode=body.get("mode","mystic_coach")
+    mode=body.get("mode","mystic_deep")
     timeframe=body.get("timeframe","week")
     weights=body.get("weights",{"astro":34,"num":13,"tarot":17,"iching":14,"cn":11,"tree":11})
     inputs=body.get("inputs",{"date":"","time":None,"timeApprox":"","place":"","partnerDate":None})

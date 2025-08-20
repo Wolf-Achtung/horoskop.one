@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+  <style>
+    .net {
+      animation: rotateZoom 30s infinite linear;
+      transform-origin: center center;
+    }
+
+    @keyframes rotateZoom {
+      0% {
+        transform: scale(1) rotate(0deg);
+        opacity: 0.02;
+      }
+      50% {
+        transform: scale(1.03) rotate(180deg);
+        opacity: 0.04;
+      }
+      100% {
+        transform: scale(1) rotate(360deg);
+        opacity: 0.02;
+      }
+    }
+  </style>
+
+  <g class="net" stroke="#157ea8" stroke-width="2" fill="none">
+    <circle cx="100" cy="100" r="6" fill="#0c4a74"/>
+    <circle cx="300" cy="80" r="6" fill="#0c4a74"/>
+    <circle cx="500" cy="120" r="6" fill="#0c4a74"/>
+    <circle cx="700" cy="100" r="6" fill="#0c4a74"/>
+    <circle cx="200" cy="300" r="6" fill="#157ea8"/>
+    <circle cx="400" cy="320" r="6" fill="#157ea8"/>
+    <circle cx="600" cy="300" r="6" fill="#157ea8"/>
+    <circle cx="100" cy="500" r="6" fill="#0c4a74"/>
+    <circle cx="300" cy="480" r="6" fill="#0c4a74"/>
+    <circle cx="500" cy="500" r="6" fill="#0c4a74"/>
+    <circle cx="700" cy="480" r="6" fill="#0c4a74"/>
+
+    <line x1="100" y1="100" x2="300" y2="80"/>
+    <line x1="300" y1="80" x2="500" y2="120"/>
+    <line x1="500" y1="120" x2="700" y2="100"/>
+    <line x1="300" y1="80" x2="400" y2="320"/>
+    <line x1="100" y1="100" x2="200" y2="300"/>
+    <line x1="700" y1="100" x2="600" y2="300"/>
+    <line x1="200" y1="300" x2="400" y2="320"/>
+    <line x1="400" y1="320" x2="600" y2="300"/>
+    <line x1="200" y1="300" x2="300" y2="480"/>
+    <line x1="600" y1="300" x2="500" y2="500"/>
+    <line x1="100" y1="500" x2="300" y2="480"/>
+    <line x1="300" y1="480" x2="500" y2="500"/>
+    <line x1="500" y1="500" x2="700" y2="480"/>
+  </g>
+</svg>
