@@ -1,10 +1,8 @@
-import os, json
+import os, json, re
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from openai import OpenAI
 
-# ---------- CORS ----------
-# Setze in Railway optional CORS_ALLOW_ORIGINS="https://horoskop.one,https://<user>.github.io"
 CORS = os.getenv("CORS_ALLOW_ORIGINS", "*")
 allow_origins = [o.strip() for o in CORS.split(",")] if CORS != "*" else ["*"]
 
@@ -17,7 +15,6 @@ app.add_middleware(
     allow_credentials=False,
 )
 
-# ---------- Mini-Seed & Utils ----------
 def cyrb128(s: str) -> str:
     h1=1779033703; h2=3144134277; h3=1013904242; h4=2773480762
     for ch in s:
@@ -49,102 +46,42 @@ def build_events(seed: str) -> dict:
         ]
     }
 
-# ---------- JSON-Schema (Structured Outputs) ----------
-JSON_SCHEMA = {
-    "name": "Reading",
-    "strict": True,
-    "schema": {
-        "type": "object",
-        "additionalProperties": False,
-        "properties": {
-            "meta": {
-                "type": "object",
-                "additionalProperties": False,
-                "properties": {
-                    "seed": {"type":"string"},
-                    "mode": {"enum":["mystic","coach","skeptic"]},
-                    "timeframe": {"enum":["day","week","month"]},
-                    "locale": {"type":"string"},
-                    "weights": {
-                        "type":"object",
-                        "additionalProperties": False,
-                        "properties": {
-                            "astro":{"type":"number"}, "num":{"type":"number"},
-                            "tarot":{"type":"number"}, "iching":{"type":"number"},
-                            "cn":{"type":"number"},    "tree":{"type":"number"}
-                        },
-                        "required": ["astro","num","tarot","iching","cn","tree"]
-                    },
-                    "inputs": {
-                        "type":"object",
-                        "additionalProperties": True,
-                        "properties": {
-                            "date":{"type":"string"},
-                            "time":{"type":["string","null"]},
-                            "place":{"type":"string"},
-                            "goals":{"type":"array","items":{"type":"string"}},
-                            "mood":{"type":"string"},
-                            "style":{"type":"string"}
-                        },
-                        "required": ["date","place"]
-                    }
-                },
-                "required": ["seed","mode","timeframe","locale","weights","inputs"]
-            },
-            "highlights": {
-                "type":"array",
-                "items":{
-                    "type":"object","additionalProperties":False,
-                    "properties":{
-                        "title":{"type":"string"},
-                        "why":{"type":"array","items":{"type":"string"}},
-                        "action":{"type":"string"}
-                    },
-                    "required":["title","why","action"]
-                }
-            },
-            "sections": {
-                "type":"array","minItems":3,"maxItems":5,
-                "items":{
-                    "type":"object","additionalProperties":False,
-                    "properties":{
-                        "area":{"enum":["Beruf","Liebe","Energie","Fokus","Soziales"]},
-                        "text":{"type":"string"},
-                        "why":{"type":"array","items":{"type":"string"}},
-                        "action":{"type":"string"}
-                    },
-                    "required":["area","text","why"]
-                }
-            },
-            "ritual": {
-                "type":"object","additionalProperties":False,
-                "properties":{
-                    "title":{"type":"string"},
-                    "steps":{"type":"array","items":{"type":"string"}}
-                },
-                "required":["title","steps"]
-            },
-            "disclaimer": {"type":"string"}
-        },
-        "required": ["meta","highlights","sections","ritual","disclaimer"]
-    }
+BASE_RULES = (
+    "Du bist ein besonnener, achtsamer Horoskop-Autor.\n"
+    "- Max 2 Sätze je Abschnitt, alltagstauglich.\n"
+    "- Keine Heils-/Finanz-/Rechtsversprechen. Keine Diagnosen.\n"
+    "- Bei sensiblen Themen neutralisieren + 1 Reflexionsfrage.\n"
+    "- Jede Sektion wenn möglich mit 1 Mini-Aktion (≤5 Min).\n"
+    "- Nutze NUR die gelieferten Events/Why als Begründungen."
+)
+MODE_RULES = {
+    "coach":   "Ton: sachlich-ermutigend, lösungsfokussiert, konkrete Mini-Schritte.",
+    "mystic":  "Ton: bildhaft-mild, trotzdem konkret; keine Esoterik-Übertreibung.",
+    "skeptic": "Ton: neutral-konditional (kann/könnte), dämpfe Gewissheiten, ergänze 1 Selbstcheck-Frage."
 }
 
-INSTRUCTIONS = (
-    "Du bist ein besonnener, achtsamer Horoskop-Autor.\n"
-    "Regeln:\n"
-    "- Maximal 2 Sätze pro Abschnitt, konkret, alltagstauglich.\n"
-    "- Keine Heils-, Finanz- oder Rechtsversprechen. Keine Diagnosen.\n"
-    "- Bei sensiblen Themen: neutralisieren & Selbstreflexionsfrage anbieten.\n"
-    "- Jede Sektion nach Möglichkeit mit einer kleinen Action (≤5 Min).\n"
-    "- Nutze NUR die gelieferten Events/Why-Hinweise als Begründungen; keine neuen Ursachen erfinden.\n"
-    "- Sprache: de-DE. Ton: gemäß 'mode'."
-)
+STOP_HINTS = [
+    (r"Suizid|Selbstmord|Selbstverletz", "Bei Krisen: 112 (EU) / lokale Beratungsstellen."),
+    (r"Heilung|heilen|Heilmethode", "Keine Heilsversprechen. Sprich bei gesundheitlichen Fragen mit Ärzt:innen."),
+    (r"Diagnose|Medikament", "Keine Diagnosen. Nutze professionelle Hilfe."),
+    (r"Investment|Rendite|Gewinn garantiert", "Keine Finanzversprechen. Hole dir unabhängigen Rat.")
+]
+def sanitize(txt: str) -> str:
+    for pat, note in STOP_HINTS:
+        if __import__("re").search(pat, txt, flags=__import__("re").I):
+            txt = __import__("re").sub(r".*$", "Formuliere zurückhaltend, beobachtend.", txt)
+            txt += f" ({note})"
+    return txt
+
+from fastapi.responses import JSONResponse
+
+@app.get("/health")
+def health(): return {"ok": True}
 
 @app.post("/reading")
 async def reading(req: Request):
     body = await req.json()
-    mode = body.get("mode", "mystic")
+    mode = body.get("mode", "coach")
     timeframe = body.get("timeframe", "day")
     weights = body.get("weights", {"astro":34,"num":13,"tarot":17,"iching":14,"cn":11,"tree":11})
     inputs  = body.get("inputs", {"date":"","time":None,"place":"","goals":[],"mood":"neutral","style":"pragmatisch"})
@@ -154,32 +91,39 @@ async def reading(req: Request):
 
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
-        return {"error":"OPENAI_API_KEY fehlt"}
+        return JSONResponse({"error":"OPENAI_API_KEY fehlt"}, status_code=500)
 
     client = OpenAI(api_key=api_key)
 
-    # Responses API mit Structured Outputs (json_schema)
-    # Referenz: Structured Outputs & API Reference. :contentReference[oaicite:2]{index=2}
-    resp = client.responses.create(
+    instructions = BASE_RULES + "\n" + MODE_RULES.get(mode, "")
+    user_data = {"timeframe": timeframe, "mode": mode, "weights": weights, "inputs": inputs, "events": events}
+
+    resp = client.chat.completions.create(
         model="gpt-4o-mini",
-        instructions=INSTRUCTIONS,
-        input=[{
-            "role":"user",
-            "content": "Erzeuge ein JSON-Reading gemäß Schema. Daten:\n" +
-                       json.dumps({"timeframe":timeframe,"mode":mode,"weights":weights,"inputs":inputs,"events":events}, ensure_ascii=False)
-        }],
-        response_format={"type":"json_schema","json_schema":JSON_SCHEMA},
-        max_output_tokens=900,
-        temperature=0.7
+        messages=[
+            {"role":"system","content": instructions},
+            {"role":"user","content":
+                "Erzeuge ein JSON-Reading mit Feldern meta, highlights, sections, ritual, disclaimer. "
+                "meta: seed, mode, timeframe, locale, weights, inputs. "
+                "sections: 3-5 Einträge aus {Beruf, Liebe, Energie, Fokus, Soziales}, je 2 Sätze + ggf. Aktion. "
+                "Highlights: 3 Einträge (title, why[], action). Nutze diese Daten:\n" + json.dumps(user_data, ensure_ascii=False)}
+        ],
+        response_format={"type":"json_object"},
+        temperature=0.7,
+        max_tokens=900
     )
 
-    # Viele SDKs stellen .output_text bereit (Fallback unten). :contentReference[oaicite:3]{index=3}
-    try:
-        text = getattr(resp, "output_text", None)
-        payload = json.loads(text) if text else json.loads(resp.output[0].content[0].text)
-    except Exception as e:
-        return {"error": f"Parsing-Fehler: {e}"}
-
+    payload = json.loads(resp.choices[0].message.content)
+    payload.setdefault("meta", {})
     payload["meta"]["seed"] = seed
+    payload["meta"]["mode"] = mode
+    payload["meta"]["timeframe"] = timeframe
     payload["meta"]["locale"] = "de-DE"
+    payload["meta"]["weights"] = weights
+    payload["meta"]["inputs"] = inputs
+
+    for sec in payload.get("sections", []):
+        sec["text"] = sanitize(sec.get("text",""))
+    payload["disclaimer"] = "Unterhaltung & achtsame Selbstreflexion. Keine medizinische, rechtliche oder finanzielle Beratung."
+
     return payload
