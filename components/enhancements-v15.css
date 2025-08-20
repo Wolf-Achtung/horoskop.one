@@ -1,0 +1,3 @@
+.badge-row{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 4px}
+.badge{display:inline-flex;align-items:center;background:#0d203f;border:1px solid #2a3f79;border-radius:16px;padding:6px 10px;font-size:13px;color:#bdd0ff}
+.badge .desc{opacity:.85;margin-left:6px}
