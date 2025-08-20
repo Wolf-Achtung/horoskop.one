@@ -1,464 +1,381 @@
-import os, json, re
-from datetime import datetime
-from typing import Optional, Dict, Any
-from fastapi import FastAPI, Request
+# main.py — horoskop.one API (Option C: decoupled SWE) — v5.5
+# Python 3.12+  |  FastAPI + OpenAI | Railway/Nixpacks
+# SWE (Swiss Ephemeris) wird NICHT lokal installiert, sondern optional via SWE_URL aufgerufen.
 
-LONGFORM_INSTRUCTIONS = (
-    'Schreibe pro Bereich (Fokus, Beruf, Liebe, Energie, Soziales) einen Absatz mit 3–4 wohlklingenden Sätzen im Modus {mode}. '
-    'Schließe mit einem sanften Handlungshinweis als Teil des Fließtextes (realistisch in 1–5 Minuten). '
-    'Achtsam, poetisch, seriös; keine Heilsversprechen; klare Bilder; Begründungen nur andeuten.'
-)
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from openai import OpenAI
+import os
+import re
+import json
+import datetime as dt
+from typing import Optional, Dict, Any, List
+
 import httpx
+from fastapi import FastAPI, Body, Response
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
+from timezonefinder import TimezoneFinder
+from zoneinfo import ZoneInfo
 
-CORS = os.getenv("CORS_ALLOW_ORIGINS", "*")
-allow_origins = [o.strip() for o in CORS.split(",")] if CORS != "*" else ["*"]
+# --- OpenAI Client (modernes SDK) ---
+from openai import OpenAI
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 
-app = FastAPI(title="horoskop.one API")
+app = FastAPI(title="horoskop.one API", version="v5.5 (Option C)")
+
+# ---------- CORS ----------
+raw_origins = os.getenv("CORS_ALLOW_ORIGINS", "")
+origins = [o.strip() for o in raw_origins.split(",") if o.strip()]
+if not origins:
+    origins = ["*"]  # Im Prod lieber Domains setzen
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allow_origins,
+    allow_origins=origins,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    allow_credentials=False,
 )
 
-AREAS = ["Fokus","Beruf","Liebe","Energie","Soziales"]
+@app.get("/favicon.ico")
+def favicon():
+    return Response(status_code=204)
 
-# ------------------------- Utilities -------------------------
+# ---------- Utils ----------
+tf = TimezoneFinder()
+SWE_URL = os.getenv("SWE_URL")  # z. B. https://swe-worker-production.up.railway.app/swe
 
-def cyrb128(s: str) -> str:
-    h1=1779033703; h2=3144134277; h3=1013904242; h4=2773480762
-    for ch in s:
-        k=ord(ch)
-        h1 = h2 ^ ((h1 ^ k) * 597399067 & 0xFFFFFFFF)
-        h2 = h3 ^ ((h2 ^ k) * 2869860233 & 0xFFFFFFFF)
-        h3 = h4 ^ ((h3 ^ k) * 951274213  & 0xFFFFFFFF)
-        h4 = h1 ^ ((h4 ^ k) * 2716044179 & 0xFFFFFFFF)
-    h1 = ( (h3 ^ (h1>>18)) * 597399067 ) & 0xFFFFFFFF
-    h2 = ( (h4 ^ (h2>>22)) * 2869860233 ) & 0xFFFFFFFF
-    h3 = ( (h1 ^ (h3>>17)) * 951274213 ) & 0xFFFFFFFF
-    h4 = ( (h2 ^ (h4>>19)) * 2716044179 ) & 0xFFFFFFFF
-    return hex((h1 ^ h2 ^ h3 ^ h4) & 0xFFFFFFFF)[2:]
+def parse_birth_date(date_str: str) -> Optional[dt.date]:
+    m = re.match(r"(\d{1,2})\.(\d{1,2})\.(\d{4})", (date_str or "").strip())
+    if not m:
+        return None
+    d, mth, y = int(m.group(1)), int(m.group(2)), int(m.group(3))
+    return dt.date(y, mth, d)
 
-def sign_western(month:int, day:int)->str:
-    zones=[("Steinbock",(12,22),(1,19)),("Wassermann",(1,20),(2,18)),("Fische",(2,19),(3,20)),
-           ("Widder",(3,21),(4,19)),("Stier",(4,20),(5,20)),("Zwillinge",(5,21),(6,20)),
-           ("Krebs",(6,21),(7,22)),("Löwe",(7,23),(8,22)),("Jungfrau",(8,23),(9,22)),
-           ("Waage",(9,23),(10,22)),("Skorpion",(10,23),(11,21)),("Schütze",(11,22),(12,21))]
-    md=lambda m,d: f"{m:02d}-{d:02d}"
-    cur=md(month,day)
-    for name,(sm,sd),(em,ed) in zones:
-        s=md(sm,sd); e=md(em,ed)
-        if s<=e and s<=cur<=e: return name
-        if s>e and (cur>=s or cur<=e): return name
-    return "Unbekannt"
+def parse_birth_time(time_str: Optional[str]) -> Optional[dt.time]:
+    if not time_str:
+        return None
+    m = re.match(r"(\d{1,2}):(\d{2})", time_str.strip())
+    if not m:
+        return None
+    h, mi = int(m.group(1)), int(m.group(2))
+    return dt.time(max(0, min(23, h)), max(0, min(59, mi)))
 
-def sign_chinese(year:int)->str:
-    animals=["Ratte","Büffel","Tiger","Hase","Drache","Schlange","Pferd","Ziege","Affe","Hahn","Hund","Schwein"]
-    base=2008; idx=(year-base)%12
+def daypart_from_time(t: Optional[dt.time]) -> str:
+    if not t:
+        return "unbekannt"
+    h = t.hour
+    if 5 <= h < 11:   return "morgens"
+    if 11 <= h < 15:  return "mittags"
+    if 15 <= h < 20:  return "abends"
+    return "nachts"
+
+def zodiac_from_date(d: dt.date) -> str:
+    edges = [
+        ("Steinbock", 1, 19), ("Wassermann", 2, 18), ("Fische", 3, 20),
+        ("Widder", 4, 19), ("Stier", 5, 20), ("Zwillinge", 6, 20),
+        ("Krebs", 7, 22), ("Löwe", 8, 22), ("Jungfrau", 9, 22),
+        ("Waage", 10, 22), ("Skorpion", 11, 21), ("Schütze", 12, 21),
+        ("Steinbock", 12, 31),
+    ]
+    m, dd = d.month, d.day
+    for name, mm, lim in edges:
+        if (m < mm) or (m == mm and dd <= lim):
+            return name
+    return "Steinbock"
+
+def chinese_animal(year: int) -> str:
+    animals = ["Ratte","Büffel","Tiger","Hase","Drache","Schlange","Pferd",
+               "Ziege","Affe","Hahn","Hund","Schwein"]
+    idx = ((year - 1900) % 12 + 12) % 12
     return animals[idx]
 
-def life_path(y:int,m:int,d:int)->int:
-    s=sum(int(c) for c in f"{y:04d}{m:02d}{d:02d}")
-    while s>9: s=sum(int(c) for c in str(s))
-    return s
+def life_path_number(d: dt.date) -> int:
+    s = f"{d.year:04d}{d.month:02d}{d.day:02d}"
+    n = sum(int(c) for c in s)
+    while n > 9 and n not in (11, 22, 33):
+        n = sum(int(c) for c in str(n))
+    return n
 
-CELTIC=[("Birke",(12,24),(1,20)),("Eberesche",(1,21),(2,17)),("Esche",(2,18),(3,17)),("Erle",(3,18),(4,14)),
-        ("Weide",(4,15),(5,12)),("Eiche",(6,10),(7,7)),("Stechpalme",(7,8),(8,4)),("Hasel",(8,5),(9,1)),
-        ("Weinrebe",(9,2),(9,29)),("Efeu",(9,30),(10,27)),("Schilfrohr",(10,28),(11,24)),("Holunder",(11,25),(12,23))]
+def moon_phase_fraction(day: dt.date) -> float:
+    # einfache Approximation (0 neu, 0.5 voll)
+    ref = dt.datetime(2000, 1, 6, 18, 14, tzinfo=dt.timezone.utc)
+    current = dt.datetime(day.year, day.month, day.day, tzinfo=dt.timezone.utc)
+    synodic = 29.53058867
+    days = (current - ref).total_seconds() / 86400.0
+    return ((days % synodic) / synodic)
 
-def tree_sign(m:int,d:int)->str:
-    md=lambda a,b: f"{a:02d}-{b:02d}"
-    cur=md(m,d)
-    for name,(sm,sd),(em,ed) in CELTIC:
-        s=md(sm,sd); e=md(em,ed)
-        if s<=e and s<=cur<=e: return name
-        if s>e and (cur>=s or cur<=e): return name
-    return ""
+def moon_phase_name(frac: float) -> str:
+    if frac < 0.03 or frac > 0.97: return "Neumond"
+    if 0.03 <= frac < 0.25: return "zunehmende Sichel"
+    if 0.25 <= frac < 0.27: return "erstes Viertel"
+    if 0.27 <= frac < 0.47: return "zunehmender Mond"
+    if 0.47 <= frac < 0.53: return "Vollmond"
+    if 0.53 <= frac < 0.73: return "abnehmender Mond"
+    if 0.73 <= frac < 0.75: return "letztes Viertel"
+    return "abnehmende Sichel"
 
-def time_bucket_local(time_str: Optional[str], approx: Optional[str]) -> str:
-    if time_str:
+def season_from_date_hemisphere(d: dt.date, lat: Optional[float]) -> str:
+    north = (lat is None) or (lat >= 0)
+    m = d.month
+    if north:
+        return ["Winter","Winter","Frühling","Frühling","Frühling",
+                "Sommer","Sommer","Sommer","Herbst","Herbst","Herbst","Winter"][m-1]
+    else:
+        return ["Sommer","Sommer","Herbst","Herbst","Herbst",
+                "Winter","Winter","Winter","Frühling","Frühling","Frühling","Sommer"][m-1]
+
+async def geocode(place: str) -> Optional[Dict[str, float]]:
+    if not place:
+        return None
+    url = "https://nominatim.openstreetmap.org/search"
+    params = {"format":"json","limit":"1","q": place}
+    headers = {"User-Agent":"horoskop.one/1.0 (contact: support@horoskop.one)"}
+    async with httpx.AsyncClient(timeout=10) as cli:
+        r = await cli.get(url, params=params, headers=headers)
+        if r.status_code != 200:
+            return None
+        data = r.json() or []
+        if not data:
+            return None
         try:
-            h=int(time_str.split(":")[0])
+            return {"lat": float(data[0]["lat"]), "lon": float(data[0]["lon"])}
         except Exception:
-            h=None
-        if h is not None:
-            if 5<=h<11: return "morning"
-            if 11<=h<15: return "noon"
-            if 15<=h<22: return "evening"
-            return "night"
-    return approx or ""
+            return None
 
-def bucket_midpoint_h(approx: Optional[str]) -> int:
-    mapping={"morning":8,"noon":13,"evening":19,"night":1}
-    return mapping.get(approx or "", 12)
-
-def hemisphere(lat: Optional[float]) -> str:
-    if lat is None: return ""
-    return "north" if lat >= 0 else "south"
-
-def season_of(date_str: str, hemi: str) -> str:
-    dt=datetime.strptime(date_str, "%Y-%m-%d")
-    m=dt.month
-    north = {12:"winter",1:"winter",2:"winter",3:"spring",4:"spring",5:"spring",6:"summer",7:"summer",8:"summer",9:"autumn",10:"autumn",11:"autumn"}
-    south = {12:"summer",1:"summer",2:"summer",3:"autumn",4:"autumn",5:"autumn",6:"winter",7:"winter",8:"winter",9:"spring",10:"spring",11:"spring"}
-    return (north if hemi=="north" else south).get(m,"")
-
-# ------------------------- External data -------------------------
-
-async def geocode_place(place: str) -> Dict[str, Any]:
-    if not place: return {}
-    headers={"user-agent":"horoskop.one/1.0 (contact@horoskop.one)"}
-    async with httpx.AsyncClient(timeout=10.0, headers=headers) as client:
-        # Try Open-Meteo geocoding first
-        try:
-            r=await client.get("https://geocoding-api.open-meteo.com/v1/search",
-                               params={"name":place,"count":1,"language":"de","format":"json"})
-            if r.status_code==200:
-                j=r.json()
-                if j.get("results"):
-                    res=j["results"][0]
-                    lat=float(res["latitude"]); lon=float(res["longitude"])
-                    tz=res.get("timezone")
-                    if not tz:
-                        tz=await fetch_timezone(client, lat, lon)
-                    return {"lat":lat,"lon":lon,"name":res.get("name"),"country":res.get("country_code"),"timezone":tz}
-        except Exception:
-            pass
-        # Fallback Nominatim
-        try:
-            r=await client.get("https://nominatim.openstreetmap.org/search",
-                               params={"q":place,"format":"jsonv2","limit":1})
-            if r.status_code==200:
-                arr=r.json()
-                if arr:
-                    lat=float(arr[0]["lat"]); lon=float(arr[0]["lon"])
-                    tz=await fetch_timezone(client, lat, lon)
-                    return {"lat":lat,"lon":lon,"name":arr[0].get("display_name",""),"country":"", "timezone":tz}
-        except Exception:
-            pass
-    return {}
-
-async def fetch_timezone(client: httpx.AsyncClient, lat: float, lon: float) -> Optional[str]:
+def find_timezone(lat: Optional[float], lon: Optional[float]) -> str:
+    if lat is None or lon is None:
+        return "Europe/Berlin"
     try:
-        r=await client.get("https://api.open-meteo.com/v1/forecast",
-                           params={"latitude":lat,"longitude":lon,"hourly":"temperature_2m","timezone":"auto"})
-        if r.status_code==200:
-            j=r.json()
-            return j.get("timezone")
+        tz = tf.timezone_at(lat=lat, lng=lon)
+        return tz or "Europe/Berlin"
     except Exception:
-        pass
+        return "Europe/Berlin"
+
+# ---------- SWE Remote ----------
+async def swe_compute_remote(bdate: dt.date, btime: Optional[dt.time], lat: Optional[float], lon: Optional[float], tzname: str) -> Optional[Dict[str, Any]]:
+    if not (SWE_URL and btime and lat is not None and lon is not None and tzname):
+        return None
+    payload = {
+        "birthDate": bdate.isoformat(),
+        "birthTime": btime.strftime("%H:%M"),
+        "lat": lat,
+        "lon": lon,
+        "tzname": tzname,
+        "houseSystem": os.getenv("HOUSE_SYSTEM", "P")
+    }
+    try:
+        async with httpx.AsyncClient(timeout=8) as cli:
+            r = await cli.post(SWE_URL, json=payload)
+            if r.status_code == 200:
+                return r.json()
+    except Exception:
+        return None
     return None
 
-async def sunrise_sunset(client: httpx.AsyncClient, lat: float, lon: float, date_str: str, tz: Optional[str]) -> Dict[str, Optional[str]]:
+# ---------- OpenAI helper & JSON parser ----------
+def oa_text(prompt: str, seed: Optional[int] = None, temperature: float = 0.8) -> str:
+    kwargs = dict(
+        model=MODEL,
+        temperature=temperature,
+        messages=[
+            {"role":"system","content":"Du bist ein präziser, poetischer, freundlicher Schreibassistent."},
+            {"role":"user","content":prompt},
+        ],
+    )
+    if seed is not None:
+        kwargs["seed"] = seed
+    cr = client.chat.completions.create(**kwargs)
+    return cr.choices[0].message.content
+
+def try_load_json(maybe: str) -> Any:
+    m = re.search(r"```json([\s\S]*?)```", maybe)
+    if m:
+        try:
+            return json.loads(m.group(1))
+        except Exception:
+            pass
+    m = re.search(r"\{[\s\S]*\}$", maybe.strip())
+    if m:
+        try:
+            return json.loads(m.group(0))
+        except Exception:
+            pass
     try:
-        r=await client.get("https://api.open-meteo.com/v1/forecast",
-                           params={"latitude":lat,"longitude":lon,"daily":"sunrise,sunset,moon_phase",
-                                   "timezone":tz or "auto","start_date":date_str,"end_date":date_str})
-        if r.status_code==200:
-            j=r.json()
-            sr=(j.get("daily",{}).get("sunrise") or [None])[0]
-            ss=(j.get("daily",{}).get("sunset")  or [None])[0]
-            mp=(j.get("daily",{}).get("moon_phase") or [None])[0]
-            return {"sunrise": sr, "sunset": ss, "moon_phase": mp}
+        return json.loads(maybe)
     except Exception:
-        pass
-    return {"sunrise": None, "sunset": None, "moon_phase": None}
+        return {"raw": maybe}
 
-def moon_phase_name(val: Optional[float]) -> str:
-    if val is None: return ""
-    # Open-Meteo uses 0.0=new, 0.25=first quarter, 0.5=full, 0.75=last quarter
-    v=float(val)%1.0
-    if v<0.03 or v>0.97: return "Neumond"
-    if 0.22<=v<=0.28: return "Erstes Viertel"
-    if 0.47<=v<=0.53: return "Vollmond"
-    if 0.72<=v<=0.78: return "Letztes Viertel"
-    if 0.03<=v<0.22: return "zunehmend (Sichel)"
-    if 0.28<v<0.47:  return "zunehmend (bauchig)"
-    if 0.53<v<0.72:  return "abnehmend (bauchig)"
-    return "abnehmend (Sichel)"
+# ---------- Schemas ----------
+class ReadingRequest(BaseModel):
+    birthDate: str
+    birthPlace: str
+    birthTime: Optional[str] = None
+    approxDaypart: Optional[str] = None        # morgens/mittags/abends/nachts/unbekannt
+    period: str = Field("day", description="day|week|month")
+    tone: str = "mystic_deep"
+    seed: Optional[int] = None
+    mixer: Optional[Dict[str,int]] = None
 
-# ------------------------- Profile & Events -------------------------
+class Section(BaseModel):
+    title: str
+    text: str
+    chips: List[str] = Field(default_factory=list)
 
-def build_base_profile(date_str:str, place:str, time_exact: Optional[str], approx: Optional[str]):
-    dt=datetime.strptime(date_str,"%Y-%m-%d")
-    y,m,d=dt.year,dt.month,dt.day
-    return {
-        "date": date_str, "place": place, "year": y, "month": m, "day": d,
-        "weekday": dt.strftime("%A"),
-        "western": sign_western(m,d),
-        "chinese": sign_chinese(y),
-        "life_path": life_path(y,m,d),
-        "tree": tree_sign(m,d),
-        "time_exact": bool(time_exact),
-        "time": time_exact,
-        "time_bucket": time_bucket_local(time_exact, approx),
-    }
+class ReadingResponse(BaseModel):
+    meta: Dict[str, Any]
+    sections: List[Section]
+    chips: List[str] = Field(default_factory=list)
+    disclaimer: str
 
-def build_events(seed: str, profile: dict) -> dict:
-    tarot  = ["Der Magier","Die Mäßigkeit","Die Kraft","Der Stern","Das Rad des Schicksals"]
-    iching = ["Hex. 24 – Wiederkehr","Hex. 46 – Empordringen","Hex. 61 – Innere Wahrheit","Hex. 42 – Mehrung","Hex. 5 – Warten"]
-    astro  = ["Saturn△MC","Mars□Merkur","Jupiter△Sonne","Venus↔Mond","Sonne☌Sonne"]
-    def pick(items, salt):
-        h=int(cyrb128(seed+salt),16); return items[h%len(items)]
-    why = [f"Sternzeichen {profile.get('western')}",
-           f"Lebenszahl {profile.get('life_path')}",
-           f"Zeitfenster {profile.get('time_bucket') or 'unbekannt'}",
-           f"Ort {profile.get('place')}",
-           f"Tag/Nacht: {'Tag' if profile.get('birth_is_day') else 'Nacht'}",
-           f"Saison: {profile.get('season')} ({'Nord' if profile.get('hemisphere')=='north' else 'Süd'}-Halbkugel)",
-           f"Mondphase: {profile.get('moon_phase_name') or ''}"]
-    return {"events":[
-        {"key": pick(astro,"a"), "area":"Fokus",  "weight":0.7, "why":[why[0], why[3], why[5]]},
-        {"key": "Lebenszahl",    "area":"Beruf",  "weight":0.5, "why":[why[1]]},
-        {"key": pick(tarot,"t"), "area":"Liebe",  "weight":0.6, "why":[why[6] or why[2]]},
-        {"key": pick(iching,"i"),"area":"Energie","weight":0.4, "why":[why[4]]},
-    ]}
-
-# ------------------------- Guardrails -------------------------
-
-BASE_RULES = (
-    "Du bist ein achtsamer, besonnener Horoskop-Autor.\n"
-    "- 2 Sätze je Abschnitt, alltagstauglich.\n"
-    "- Keine Heils-/Finanz-/Rechtsversprechen, keine Diagnosen.\n"
-    "- Verwende konditionale Sprache (kann/könnte), biete 1 Mini-Aktion (<=5 Min).\n"
-    "- Begründe Aussagen mit den gelieferten Profil-Daten/Ereignissen (Why-Chips: z. B. Sternzeichen, Lebenszahl, Zeitfenster, Ort/Zeitzone, Tag/Nacht, Saison/Hemisphäre, Mondphase).\n"
-    "- Keine AC/Häuser-Deutung ohne exakte Geburtszeit."
-)
-MODE_RULES = {
-    "coach":        "Ton: sachlich-ermutigend, klare Mini-Schritte.",
-    "mystic":       "Ton: leicht bildhaft, trotzdem konkret.",
-    "mystic_coach": "Ton: ruhig-ermutigend mit leicht mystischem Flair; klare Mini-Schritte; seriös und knapp.",
-    "mystic_deep":  "Ton: poetisch-ruhig, deutlich mystischer; sanfte Metaphern, zwei Sätze pro Abschnitt, klare Mini-Aktion; keine Heilsversprechen.",
-    "skeptic":      "Ton: neutral, dämpfe Gewissheiten; ergänze 1 Selbstcheck-Frage."
-}
-
-def sanitize(txt: str) -> str:
-    STOP=[(r"Suizid|Selbstmord|Selbstverletz","Bei Krisen: 112 (EU) / lokale Beratungsstellen."),
-          (r"Heilung|heilen|Heilmethode","Keine Heilsversprechen. Ärztlichen Rat einholen."),
-          (r"Diagnose|Medikament","Keine Diagnosen. Professionelle Hilfe nutzen."),
-          (r"Investment|Rendite|Gewinn garantiert","Keine Finanzversprechen. Unabhängig beraten lassen.")]
-    for pat,note in STOP:
-        if re.search(pat,txt,re.I):
-            txt=re.sub(r".*$","Formuliere zurückhaltend, beobachtend.",txt)
-            txt+=f" ({note})"
-    return txt
-
-def normalize_payload(payload:dict)->dict:
-    payload.setdefault("highlights",[])
-    payload.setdefault("sections",[])
-    for i,sec in enumerate(payload["sections"]):
-        area=sec.get("area") or AREAS[i%len(AREAS)]
-        if area=="undefined": area=AREAS[i%len(AREAS)]
-        sec["area"]=area
-        sec["text"]=sanitize(sec.get("text",""))
-        sec.setdefault("why",[])
-    payload["highlights"]=payload["highlights"][:3]
-    payload["sections"]=payload["sections"][:5]
-    return payload
-
-# ------------------------- API -------------------------
-
+# ---------- Routes ----------
 @app.get("/health")
-def health(): return {"ok": True}
+def health():
+    return {"ok": True, "model": MODEL, "swe_url": bool(SWE_URL)}
 
-@app.post("/reading")
-async def reading(req: Request):
-    body=await req.json()
-    mode=body.get("mode","mystic_deep")
-    timeframe=body.get("timeframe","week")
-    weights=body.get("weights",{"astro":34,"num":13,"tarot":17,"iching":14,"cn":11,"tree":11})
-    inputs=body.get("inputs",{"date":"","time":None,"timeApprox":"","place":"","partnerDate":None})
+@app.post("/reading", response_model=ReadingResponse)
+async def reading(req: ReadingRequest = Body(...)):
+    # --- Basic parsing ---
+    bdate = parse_birth_date(req.birthDate) or dt.date.today()
+    btime = parse_birth_time(req.birthTime)
+    dpart = (req.approxDaypart or daypart_from_time(btime)).lower()
 
-    date_str=inputs.get("date","")
-    place=inputs.get("place","")
-    if not date_str or not place:
-        return JSONResponse({"error":"date/place fehlt"}, status_code=400)
+    # --- Geocoding / Timezone ---
+    geo = await geocode(req.birthPlace)
+    lat = geo["lat"] if geo else None
+    lon = geo["lon"] if geo else None
+    tzname = find_timezone(lat, lon)
 
-    # Base profile
-    profile = build_base_profile(date_str, place, inputs.get("time"), inputs.get("timeApprox"))
+    # --- Facts ---
+    hemisphere = "Nord" if (lat is None or lat >= 0) else "Süd"
+    season = season_from_date_hemisphere(bdate, lat)
+    sun_sign = zodiac_from_date(bdate)
+    cn_animal = chinese_animal(bdate.year)
+    lifepath = life_path_number(bdate)
+    mf = moon_phase_fraction(bdate)
+    moon = moon_phase_name(mf)
 
-    # Geo + timezone + sunrise/sunset + moon phase
-    headers={"user-agent":"horoskop.one/1.0 (contact@horoskop.one)"}
-    async with httpx.AsyncClient(timeout=12.0, headers=headers) as client:
-        geo = await geocode_place(place)
-        if geo:
-            profile.update({"lat": geo.get("lat"), "lon": geo.get("lon"), "timezone": geo.get("timezone")})
-            ss = await sunrise_sunset(client, geo["latitude"] if "latitude" in geo else geo["lat"],
-                                      geo["longitude"] if "longitude" in geo else geo["lon"],
-                                      date_str, geo.get("timezone"))
-            profile.update(ss)
-            # Day/Night + Season
-            hemi = hemisphere(profile.get("lat"))
-            profile["hemisphere"] = hemi
-            profile["season"] = season_of(date_str, hemi)
-            # Determine day/night at birth time (local)
-            time_str = profile.get("time")
-            if not time_str and profile.get("time_bucket"):
-                hour = bucket_midpoint_h(profile.get("time_bucket"))
-                time_str = f"{hour:02d}:00"
-            def to_minutes(s):
-                try:
-                    t=s.split("T")[1] if "T" in s else s
-                    hh,mm=t.split(":")[:2]
-                    return int(hh)*60+int(mm)
-                except Exception:
-                    return None
-            if time_str and profile.get("sunrise") and profile.get("sunset"):
-                tm = to_minutes(time_str)
-                sr = to_minutes(profile["sunrise"])
-                ss2 = to_minutes(profile["sunset"])
-                if tm is not None and sr is not None and ss2 is not None:
-                    profile["birth_is_day"] = bool(sr <= tm < ss2)
-            # Moon phase name
-            profile["moon_phase_name"] = moon_phase_name(profile.get("moon_phase"))
-        else:
-            # still provide hemisphere/season if place unparsable: guess via None
-            profile["hemisphere"] = ""
-            profile["season"] = ""
+    # --- SWE Remote (optional) ---
+    swe_data = await swe_compute_remote(bdate, btime, lat, lon, tzname)
 
-    # Seed and events
-    seed=cyrb128(json.dumps({"mode":mode,"timeframe":timeframe,"weights":weights,"profile":profile}, ensure_ascii=False))
-    events=build_events(seed, profile)
+    mixer = req.mixer or {}
+    mixer_list = [f"{k}:{v}%" for k, v in mixer.items()]
+    why_chips = [
+        f"Sternzeichen {sun_sign}",
+        f"Ort {req.birthPlace or 'unbekannt'}",
+        f"Saison: {season} ({hemisphere}-Halbkugel)",
+        f"Mondphase: {moon}",
+    ]
+    if swe_data:
+        why_chips.append(f"Aszendent {swe_data['ascendant']['sign']}")
+        if swe_data.get("sunHouse"):
+            why_chips.append(f"Sonnenhaus {swe_data['sunHouse']}")
+        if swe_data.get("moonHouse"):
+            why_chips.append(f"Mondhaus {swe_data['moonHouse']}")
 
-    api_key=os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        return JSONResponse({"error":"OPENAI_API_KEY fehlt"}, status_code=500)
+    # --- Double-Pass 1: Outline ---
+    outline_prompt = f"""
+    Du bist ein achtsam-mystischer Coach. Erstelle eine OUTLINE als JSON (keinen Fließtext).
+    Struktur:
+    {{
+     "fokus": {{"kern":"...", "punkte":["...","...","..."]}},
+     "beruf": {{"kern":"...", "punkte":["...","...","..."]}},
+     "liebe": {{"kern":"...", "punkte":["...","...","..."]}},
+     "energie": {{"kern":"...", "punkte":["...","...","..."]}}
+    }}
 
-    client_oa=OpenAI(api_key=api_key)
+    Rahmendaten:
+    - Zeitraum: {req.period}
+    - Ort: {req.birthPlace} → lat={lat}, lon={lon}, Zeitzone={tzname}
+    - Datum: {bdate.strftime('%d.%m.%Y')} · Tagesabschnitt: {dpart}
+    - Saison/Hemisphäre: {season} / {hemisphere}
+    - Mini-Fakten: Sonne≈{sun_sign}, Mondphase={moon}, Lebenszahl={lifepath}, Chinesisch={cn_animal}
+    - Mixer: {', '.join(mixer_list) if mixer_list else 'Standard'}
+    - Swiss-Ephemeris: {'aktiv' if swe_data else 'aus'}
 
-    # -------- Pass 1: Outline --------
-    outline_instructions = (
-        BASE_RULES + "\n" + MODE_RULES.get(mode,"") + "\n"
-        "Erzeuge zunächst eine **Outline** als JSON-Objekt mit:\n"
-        "{ outline: { highlights: [{title, why:string[]}], sections:[{area, intention, reasons:string[], action_hint}], ritual:{idea} } }\n"
-        "- Nutze **nur** Gründe aus den gelieferten Daten (profile/events/weights/mini-ephemeriden).\n"
-        "- Bereiche nur aus: 'Fokus','Beruf','Liebe','Energie','Soziales'.\n"
-        "- Keine Häuser/Aszendent ohne exakte Zeit.\n"
-        "- Keine Heils-/Finanz-/Rechtsversprechen.\n"
-        "Formatiere **nur JSON**."
-    )
-    data_blob={"timeframe":timeframe,"mode":mode,"weights":weights,"profile":profile,"events":events}
-    outline_resp = client_oa.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role":"system","content":outline_instructions},
-            {"role":"user","content": json.dumps(data_blob, ensure_ascii=False)}
-        ],
-        response_format={"type":"json_object"},
-        temperature=0.5, max_tokens=800
-    )
+    Regeln:
+    - Pro Bereich 3–4 Stichpunkte, abgeleitet aus dem Kontext.
+    - Letzter Stichpunkt = Mini-Aktion (imperativ, 1 Satz).
+    - Keine heiklen medizinisch/juristisch/finanziellen Ratschläge.
+    """.strip()
+
     try:
-        outline_json = json.loads(outline_resp.choices[0].message.content)
-        outline = outline_json.get("outline", outline_json)
+        outline_raw = oa_text(outline_prompt, seed=req.seed, temperature=0.4)
+        outline = try_load_json(outline_raw)
     except Exception as e:
-        outline = {"highlights":[],"sections":[],"ritual":{"idea":""}}
+        outline = {"fokus":{"kern":"","punkte":[]}, "error": str(e)}
 
-    # -------- Pass 2: Final text --------
-    final_instructions = (
-        BASE_RULES + "\n" + MODE_RULES.get(mode,"") + "\n"
-        "Du bekommst eine Outline. Schreibe daraus die **endgültige Ausgabe** als JSON-Objekt mit:\n"
-        "{ meta, highlights, sections, ritual, disclaimer }\n"
-        "meta: { seed, mode, timeframe, locale:'de-DE', weights, profile, ephemeris: { moon_phase, moon_phase_name, sunrise, sunset, season, hemisphere, birth_is_day } }\n"
-        "highlights: exakt 3 Einträge mit { title, action, why:string[] } (kurz, konkret).\n"
-        "sections: 3–5 Einträge mit { area, text (genau 2 Sätze), action, why:string[] }.\n"
-        "ritual: { title, steps:string[] } (2–4 Mini-Schritte, <=5 Min).\n"
-        "Nutze **nur** Gründe aus Outline und gelieferten Fakten.\n"
-        "Formatiere **nur JSON**."
-    )
-    ephem = {
-        "moon_phase": profile.get("moon_phase"),
-        "moon_phase_name": profile.get("moon_phase_name"),
-        "sunrise": profile.get("sunrise"),
-        "sunset": profile.get("sunset"),
-        "season": profile.get("season"),
-        "hemisphere": profile.get("hemisphere"),
-        "birth_is_day": profile.get("birth_is_day", None),
-    }
-    final_data = {
-        "seed": seed, "mode": mode, "timeframe": timeframe, "weights": weights, "profile": profile,
-        "ephemeris": ephem, "outline": outline
-    }
-    final_resp = client_oa.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role":"system","content": final_instructions},
-            {"role":"user","content": json.dumps(final_data, ensure_ascii=False)}
-        ],
-        response_format={"type":"json_object"},
-        temperature=0.6, max_tokens=1100
-    )
+    # --- Double-Pass 2: Longform ---
+    swe_line = (
+        f"Aszendent {swe_data['ascendant']['sign']}, MC {swe_data['mc']['sign']}, "
+        f"Sonnenhaus {swe_data.get('sunHouse')}, Mondhaus {swe_data.get('moonHouse')}"
+    ) if swe_data else "keine genaue Zeit/Ort ⇒ Aszendent & Häuser unbekannt"
+
+    writing_prompt = f"""
+    Formuliere aus der OUTLINE ein Horoskop mit 3–4 Sätzen je Sektion im Ton „mystischer Coach“
+    (poetisch, warm, aber klar). Integriere die Mini-Aktion organisch in den Absatz. Keine Bullet-Listen.
+
+    Kontext (nur nutzen, nicht erneut aufzählen):
+    - Zeitraum: {req.period} · Ort: {req.birthPlace} (Zeitzone {tzname})
+    - Saison/Hemisphäre: {season} / {hemisphere}
+    - Sonne≈{sun_sign}, Mondphase {moon}, Lebenszahl {lifepath}, Tagesabschnitt {dpart}.
+    - Swiss-Ephemeris: {swe_line}.
+
+    OUTLINE:
+    ```json
+    {json.dumps(outline, ensure_ascii=False, indent=2)}
+    ```
+
+    Gebe das Ergebnis als JSON zurück:
+    {{
+      "fokus": "Absatz",
+      "beruf": "Absatz",
+      "liebe": "Absatz",
+      "energie": "Absatz"
+    }}
+    """.strip()
 
     try:
-        payload=json.loads(final_resp.choices[0].message.content)
+        longform_raw = oa_text(writing_prompt, seed=req.seed, temperature=0.8)
+        data = try_load_json(longform_raw)
     except Exception as e:
-        return JSONResponse({"error":"LLM-Parsing fehlgeschlagen (final)","details":str(e)}, status_code=500)
+        data = {"fokus": "", "beruf": "", "liebe": "", "energie": "", "error": str(e)}
 
-    # Patch meta + disclaimer + normalization
-    payload.setdefault("meta",{})
-    payload["meta"].update({"seed":seed,"mode":mode,"timeframe":timeframe,"locale":"de-DE","weights":weights,
-                            "profile":profile, "ephemeris": ephem})
-    payload["disclaimer"]="Unterhaltung & achtsame Selbstreflexion. Keine medizinische, rechtliche oder finanzielle Beratung."
-    payload=normalize_payload(payload)
-    return payload
+    # --------- Ergebnis ---------
+    sections = [
+        Section(title="Fokus",  text=(data.get("fokus") or "").strip(),
+                chips=[f"Sternzeichen {sun_sign}", f"Ort {req.birthPlace or 'unbekannt'}", f"Saison: {season}"]),
+        Section(title="Beruf",  text=(data.get("beruf") or "").strip(),
+                chips=[f"Lebenszahl {lifepath}"]),
+        Section(title="Liebe",  text=(data.get("liebe") or "").strip(),
+                chips=[f"Mondphase: {moon}"]),
+        Section(title="Energie", text=(data.get("energie") or "").strip(),
+                chips=[f"Tag/Nacht: {dpart}"]),
+    ]
 
+    disclaimer = (
+        "Hinweis: Dieses Angebot dient ausschließlich der Unterhaltung "
+        "und achtsamen Selbstreflexion und ersetzt keine professionelle Beratung. "
+        "Bei Krisen oder akuter Gefahr: 112 (EU) / lokale Beratungsstellen."
+    )
 
-from io import BytesIO
-from PIL import Image, ImageDraw, ImageFont
+    meta = {
+        "period": req.period,
+        "tone": req.tone,
+        "birthDate": req.birthDate,
+        "birthPlace": req.birthPlace,
+        "birthTime": req.birthTime,
+        "approxDaypart": dpart,
+        "geo": {"lat": lat, "lon": lon, "tz": tzname},
+        "season": season,
+        "hemisphere": hemisphere,
+        "mini": {
+            "sunSignApprox": sun_sign,
+            "moonPhase": moon,
+            "moonFrac": round(mf, 3),
+            "lifePath": lifepath,
+            "chinese": cn_animal
+        },
+        "swiss": swe_data,
+    }
 
-@app.get("/og")
-def og_image(title: str = "horoskop.one", subtitle: str = "Mystischer Kompass", place: str = "", tf: str = "", moon: str = "", seed: int = 0):
-    random.seed(seed or 12345)
-    W,H = 1200,630
-    img = Image.new("RGB",(W,H),(11,16,32))
-    drw = ImageDraw.Draw(img)
-
-    # gradient
-    for y in range(H):
-        t = y/H
-        col = (int(11+(t*30)), int(16+(t*40)), int(32+(t*60)))
-        drw.line([(0,y),(W,y)], fill=col)
-
-    # subtle stars
-    for _ in range(220):
-        x = random.randint(0,W-1); y = random.randint(0,H-1)
-        drw.point((x,y), fill=(230,235,255))
-
-    # title/sub
-    try:
-        f_title = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf", 52)
-        f_sub   = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 22)
-        f_chip  = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 18)
-    except:
-        f_title = f_sub = f_chip = ImageFont.load_default()
-
-    drw.text((56,76), title, font=f_title, fill=(231,236,255))
-    drw.text((56,112), subtitle, font=f_sub, fill=(159,178,217))
-
-    # Chips row
-    x=56; y=150
-    def chip(txt):
-        nonlocal x
-        pad=10
-        tw,th = drw.textsize(txt,font=f_chip)
-        w = tw + pad*2; h = 28
-        drw.rounded_rectangle((x,y,w+x,h+y), radius=14, outline=(42,63,121), fill=(13,32,63))
-        drw.text((x+pad,y+6), txt, font=f_chip, fill=(187,208,255))
-        x += w + 10
-    if place: chip("📍 "+place)
-    if tf:    chip("🕰 "+tf)
-    if moon:  chip("☾ "+moon)
-
-    # Footer
-    drw.text((56,600),"horoskop.one • mystischer Kompass", font=f_sub, fill=(126,150,201))
-
-    b=BytesIO(); img.save(b, format="PNG"); b.seek(0)
-    from fastapi.responses import Response
-    return Response(content=b.read(), media_type="image/png")
-
-@app.get("/version")
-def version():
-    return {"version":"5.4-longform","default_mode":"mystic_deep","notes":"3-4 Saetze pro Sektion, integrierter Hinweis"}
+    return ReadingResponse(meta=meta, sections=sections, chips=why_chips, disclaimer=disclaimer)
