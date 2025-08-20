@@ -6,66 +6,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="color-scheme" content="light only" />
   <style>
-    :root {
-      --bg: #f5f3fa;
-      --bg-card: #ffffff;
-      --ink: #2c2541;
-      --ink-soft: #6b6280;
-      --pri: #5b3e9e;
-      --pri-2: #37205d;
-      --card-bd: #ece3ff;
-      --chip-bd: #e6d8ff;
-    }
-    * { box-sizing: border-box; }
-    body {
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
-      margin: 0; padding: 0;
-      background: linear-gradient(180deg, var(--bg) 0%, #e7e2f2 100%);
-      color: var(--ink);
-    }
-    header {
-      background: linear-gradient(135deg, var(--pri), var(--pri-2));
-      color: #fff; padding: 24px 14px; text-align: center;
-    }
-    header .topnav { display:flex; gap:12px; justify-content:center; margin-top:8px; }
-    header .topnav a { color:#e7defc; font-size:14px; text-decoration:none; }
-    header .topnav a:hover { text-decoration:underline; }
-    main {
-      max-width: 950px; margin: 20px auto; padding: 16px;
-      background: var(--bg-card); border-radius: 14px;
-      box-shadow: 0 8px 20px rgba(0,0,0,.12);
-    }
-    h2 { margin: 0 0 8px 0; }
-    label { display:block; margin: 10px 0 6px; font-weight: 700; }
-    input[type="text"], input[type="date"], select {
-      width: 100%; padding: 10px 12px; border-radius: 10px;
-      border: 1px solid #cfc7e6; background:#fbfaff; color:var(--ink); font-size: 16px;
-    }
-    .btn { display:inline-block; padding: 10px 14px; border-radius: 10px; border: none;
-      background: var(--pri); color:#fff; font-size: 16px; cursor: pointer; }
-    .btn.secondary { background:#efe8ff; color:#2c2541; border: 1px solid #ded5ff; }
-    .btn:hover { opacity: 0.95; }
-    .btnrow { display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
-
-    .result { margin-top:12px; }
-    .reading-card{background:#faf7ff;border-radius:12px;padding:16px;margin:12px 0;border:1px solid var(--card-bd)}
+    :root { --bg:#f5f3fa; --bg-card:#ffffff; --ink:#2c2541; --pri:#5b3e9e; --pri-2:#37205d; --card-bd:#ece3ff; --chip-bd:#e6d8ff; }
+    *{box-sizing:border-box} body{font-family:Inter,system-ui,Arial,sans-serif;margin:0;background:linear-gradient(180deg,var(--bg),#e7e2f2);color:var(--ink)}
+    header{background:linear-gradient(135deg,var(--pri),var(--pri-2));color:#fff;padding:24px 14px;text-align:center}
+    header .topnav{display:flex;gap:12px;justify-content:center;margin-top:8px}
+    header .topnav a{color:#e7defc;font-size:14px;text-decoration:none} header .topnav a:hover{text-decoration:underline}
+    main{max-width:950px;margin:20px auto;padding:16px;background:#fff;border-radius:14px;box-shadow:0 8px 20px rgba(0,0,0,.12)}
+    h2{margin:0 0 8px} label{display:block;margin:10px 0 6px;font-weight:700}
+    input[type="text"],input[type="date"],input[type="time"],select{width:100%;padding:10px 12px;border-radius:10px;border:1px solid #cfc7e6;background:#fbfaff;font-size:16px}
+    .btn{display:inline-block;padding:10px 14px;border-radius:10px;border:none;background:var(--pri);color:#fff;font-size:16px;cursor:pointer}
+    .btn.secondary{background:#efe8ff;color:#2c2541;border:1px solid #ded5ff} .btn:hover{opacity:.95} .btnrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
     .badge{display:inline-block;padding:4px 8px;border:1px solid var(--chip-bd);border-radius:999px;font-size:12px;margin:2px 6px 2px 0;background:#f8f4ff}
-    .hl{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #efe8ff;border-radius:12px;margin:6px 0}
-    .hl b{font-size:14px}
+    .result{margin-top:12px} .reading-card{background:#faf7ff;border-radius:12px;padding:16px;margin:12px 0;border:1px solid var(--card-bd)}
+    .hl{display:flex;gap:10px;padding:10px 12px;border:1px solid #efe8ff;border-radius:12px;margin:6px 0}
+    .why{margin-top:6px} .why .badge{background:#fff;border-color:#e9e9f2;color:#555}
     details.reading{border:1px solid #efe8ff;border-radius:12px;margin:10px 0;background:#fdfbff}
     details.reading summary{cursor:pointer;padding:10px 12px;font-weight:700;list-style:none}
     details.reading summary::-webkit-details-marker{display:none}
-    .why{margin-top:8px}
-    .why .badge{background:#fff;border-color:#e9e9f2;color:#555}
-    .meta{font-size:12px;color:#6b6280;margin-top:6px}
-    .status{margin-top:6px; color:#555; font-size: 14px;}
-
-    .disclaimer { font-size: 13px; color: #666; margin-top: 16px; text-align: center; }
+    .meta{font-size:12px;color:#6b6280;margin-top:6px} .status{margin-top:6px;color:#555;font-size:14px}
+    .disclaimer{font-size:13px;color:#666;margin-top:16px;text-align:center}
   </style>
-
-  <script>tailwind = {}; tailwind.config = { corePlugins: { preflight: false } };</script>
+  <script>tailwind={};tailwind.config={corePlugins:{preflight:false}};</script>
   <script src="https://cdn.tailwindcss.com"></script>
-
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -79,26 +41,38 @@
       <a href="datenschutz.html">Datenschutz</a>
     </div>
   </header>
-
   <main>
-    <button id="toggle-mixer" class="badge" style="border:none;background:#fff;margin-bottom:8px">
-      Erweiterte Einstellungen ▾
-    </button>
-
-    <section id="mixerSection" class="rounded-2xl" style="margin: 0 0 1rem 0; display:none;">
-      <h2>Kosmischer Mixer</h2>
-      <div id="mixer-root"></div>
+    <button id="toggle-mixer" class="badge" style="border:none;background:#fff;margin-bottom:8px">Erweiterte Einstellungen ▾</button>
+    <section id="mixerSection" class="rounded-2xl" style="margin:0 0 1rem 0;display:none">
+      <h2>Kosmischer Mixer</h2><div id="mixer-root"></div>
     </section>
 
     <section id="birthInfo">
       <h2>Deine Geburtsdaten</h2>
-      <p class="meta">Gib Datum & Ort ein. Wir zeigen dir zuerst 3 Highlights mit kurzen Aktionen.</p>
+      <p class="meta">Datum & Ort genügen. Falls keine exakte Uhrzeit: „Morgens / Mittags / Abends / Nachts“ wählen.</p>
 
       <label for="birthDate">Geburtsdatum</label>
       <input type="date" id="birthDate" />
 
       <label for="birthPlace">Geburtsort</label>
       <input type="text" id="birthPlace" placeholder="z. B. Berlin" />
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <label for="birthTime">Geburtszeit (optional)</label>
+          <input type="time" id="birthTime" placeholder="--:--" />
+        </div>
+        <div>
+          <label for="timeApprox">…oder ungefähr</label>
+          <select id="timeApprox">
+            <option value="">Unbekannt</option>
+            <option value="morning">Morgens (05–11 Uhr)</option>
+            <option value="noon">Mittags (11–15 Uhr)</option>
+            <option value="evening">Abends (15–22 Uhr)</option>
+            <option value="night">Nachts (22–05 Uhr)</option>
+          </select>
+        </div>
+      </div>
 
       <label for="partnerDate">Zweites Geburtsdatum (optional)</label>
       <input type="date" id="partnerDate" />
@@ -117,162 +91,47 @@
         <button class="btn" onclick="generateAiReading()">Gold-Reading (AI)</button>
       </div>
 
-      <div class="meta">
-        Mit Klick stimmst du der Verarbeitung deiner Eingaben zur Generierung zu. Erklärbar (Why-Chips) · Reproduzierbar (Seed) · DSGVO-first.
-      </div>
-
+      <div class="meta">Erklärbar (Why-Chips) · Reproduzierbar (Seed) · DSGVO-first.</div>
       <div id="status" class="status"></div>
       <div id="result" class="result"></div>
     </section>
 
-    <p class="disclaimer">
-      Hinweis: Unterhaltung & achtsame Selbstreflexion. Keine medizinische, rechtliche oder finanzielle Beratung.
-      Bei Krisen oder akuter Gefahr: 112 (EU) / lokale Beratungsstellen.
-    </p>
+    <p class="disclaimer">Unterhaltung & achtsame Selbstreflexion. Keine medizinische, rechtliche oder finanzielle Beratung.
+    Bei Krisen oder akuter Gefahr: 112 (EU) / lokale Beratungsstellen.</p>
   </main>
 
   <script type="text/babel" data-presets="react" src="components/horoskop.cdn.jsx"></script>
-
   <script type="text/babel">
     const mixerRoot = ReactDOM.createRoot(document.getElementById('mixer-root'));
     mixerRoot.render(<KosmischerMixer />);
-    window.__mixerState = { mode: 'coach', timeframe: 'day', weights: { astro: 34, num: 13, tarot: 17, iching: 14, cn: 11, tree: 11 } };
-    window.addEventListener('horoskop:mixer', (e) => { window.__mixerState = e.detail; });
+    window.__mixerState = { mode: 'coach', timeframe: 'week', weights: { astro: 34, num: 13, tarot: 17, iching: 14, cn: 11, tree: 11 } };
+    window.addEventListener('horoskop:mixer', (e)=>{ window.__mixerState = e.detail; });
 
-    const mixer = document.getElementById('mixerSection');
-    const tbtn  = document.getElementById('toggle-mixer');
-    tbtn.onclick = () => {
-      mixer.style.display = mixer.style.display === 'none' ? 'block' : 'none';
-      tbtn.textContent = mixer.style.display === 'none'
-        ? 'Erweiterte Einstellungen ▾' : 'Erweiterte Einstellungen ▴';
-    };
+    const mixer = document.getElementById('mixerSection'); const tbtn = document.getElementById('toggle-mixer');
+    tbtn.onclick = ()=>{ mixer.style.display = mixer.style.display === 'none' ? 'block':'none'; tbtn.textContent = mixer.style.display==='none'?'Erweiterte Einstellungen ▾':'Erweiterte Einstellungen ▴'; };
   </script>
 
   <script>
-    const horoscopes = {
-      Widder: "Tatkraft & Startenergie.",
-      Stier: "Beständigkeit & Werte.",
-      Zwillinge: "Gespräch & Neugier.",
-      Krebs: "Zuwendung & Intuition.",
-      Löwe: "Strahlkraft & Selbstvertrauen.",
-      Jungfrau: "Ordnung & Struktur.",
-      Waage: "Balance & Miteinander.",
-      Skorpion: "Tiefe & Erkenntnis.",
-      Schütze: "Weite & Sinn.",
-      Steinbock: "Zielklarheit & Ausdauer.",
-      Wassermann: "Ideen & Unabhängigkeit.",
-      Fische: "Empathie & Stille."
-    };
-    const chineseHoroscopes = {
-      Ratte:"Kreativ & flink.", Büffel:"Beharrlich & verlässlich.", Tiger:"Mutig & direkt.",
-      Hase:"Feinsinnig & diplomatisch.", Drache:"Ausstrahlung & Führung.", Schlange:"Intuitiv & weise.",
-      Pferd:"Freiheitsliebend & lebhaft.", Ziege:"Kreativ & sensibel.", Affe:"Spontan & witzig.",
-      Hahn:"Strukturiert & klar.", Hund:"Loyal & ehrlich.", Schwein:"Genuss & Großzügigkeit."
-    };
-    const ichingMessages = [
-      { name: "24 – Wiederkehr", message: "Neubeginn in kleinen Schritten." },
-      { name: "46 – Empordringen", message: "Beharrlich wachsen." },
-      { name: "61 – Innere Wahrheit", message: "Ruhe klärt Entscheidungen." }
-    ];
-    const tarotCards = [
-      { name: "Der Narr", message:"Leicht anfangen." },
-      { name: "Der Magier", message:"Mittel bündeln." },
-      { name: "Die Mäßigkeit", message:"Ausgleichen." },
-      { name: "Die Kraft", message:"Sanft stark sein." },
-      { name: "Der Stern", message:"Hoffnung ordnet." }
-    ];
-    const celticTrees = [
-      { name: "Birke", start:"12-24", end:"01-20", message:"Neubeginn & Klarheit." },
-      { name: "Eberesche", start:"01-21", end:"02-17", message:"Schutz & Inspiration." },
-      { name: "Esche", start:"02-18", end:"03-17", message:"Wachstum & Verbindung." },
-      { name: "Erle", start:"03-18", end:"04-14", message:"Entschlossen & klar." },
-      { name: "Weide", start:"04-15", end:"05-12", message:"Intuitiv & feinfühlig." },
-      { name: "Eiche", start:"06-10", end:"07-07", message:"Stabil & stark." },
-      { name: "Stechpalme", start:"07-08", end:"08-04", message:"Mut & Edelmut." },
-      { name: "Hasel", start:"08-05", end:"09-01", message:"Weisheit & Kreativität." },
-      { name: "Weinrebe", start:"09-02", end:"09-29", message:"Fülle & Genuss." },
-      { name: "Efeu", start:"09-30", end:"10-27", message:"Beständig & treu." },
-      { name: "Schilfrohr", start:"10-28", end:"11-24", message:"Flexibel & lösungsorientiert." },
-      { name: "Holunder", start:"11-25", end:"12-23", message:"Wandlung & Erneuerung." }
-    ];
-    const westernZodiacs = [
-      { sign:"Widder",start:"03-21",end:"04-19" },{ sign:"Stier",start:"04-20",end:"05-20" },
-      { sign:"Zwillinge",start:"05-21",end:"06-20" },{ sign:"Krebs",start:"06-21",end:"07-22" },
-      { sign:"Löwe",start:"07-23",end:"08-22" },{ sign:"Jungfrau",start:"08-23",end:"09-22" },
-      { sign:"Waage",start:"09-23",end:"10-22" },{ sign:"Skorpion",start:"10-23",end:"11-21" },
-      { sign:"Schütze",start:"11-22",end:"12-21" },{ sign:"Steinbock",start:"12-22",end:"01-19" },
-      { sign:"Wassermann",start:"01-20",end:"02-18" },{ sign:"Fische",start:"02-19",end:"03-20" }
-    ];
-    const categoryHints = {
-      Beruf:["Neue Chance – sachlich prüfen."],
-      Liebe:["Wärme & ehrliche Gespräche."],
-      Glück:["Kleine Freuden bewusst wahrnehmen."],
-      Beziehung:["Zuhören stärkt Verbindung."],
-      Chancen:["Eine Idee verdient einen Test."],
-      Gefahr:["Nicht überstürzen – 10-Minuten-Check."],
-      Gesundheit:["Bewegung & Trinkwasser heute."],
-      Finanzen:["Umsichtig planen, kleine Schritte."],
-      Spirituell:["5 Minuten Atemfokus."],
-      Kreativität:["Skizze statt Perfektion."],
-      Abenteuer:["Kurzer Umweg – Horizont erweitern."]
-    };
-
-    function getWesternZodiac(date) {
-      const m = date.getUTCMonth()+1, d = date.getUTCDate();
-      const md = (x,y)=>`${String(x).padStart(2,'0')}-${String(y).padStart(2,'0')}`;
-      const cur = md(m,d);
-      for (const z of westernZodiacs) {
-        if (z.start <= z.end) { if (cur>=z.start && cur<=z.end) return z.sign; }
-        else { if (cur>=z.start || cur<=z.end) return z.sign; }
-      } return "Unbekannt";
-    }
-    function getChineseZodiac(year){
-      const animals = ["Ratte","Büffel","Tiger","Hase","Drache","Schlange","Pferd","Ziege","Affe","Hahn","Hund","Schwein"];
-      const base = 2008; let idx = (year-base)%12; if(idx<0) idx+=12; return animals[idx];
-    }
-
+    // Minimaler Offline-Kurzkompass, damit der Button nicht ins Leere läuft
     function generateAnalysis(){
-      const dateStr = document.getElementById('birthDate').value;
-      const place = document.getElementById('birthPlace').value.trim();
-      const frame = document.getElementById('timeFrame').value;
-      const out = document.getElementById('result');
-      if(!dateStr){ out.textContent="Bitte gib dein Geburtsdatum an."; return; }
-      const date = new Date(dateStr); if(isNaN(date)){ out.textContent="Ungültiges Datum."; return; }
-      const y=date.getUTCFullYear(), m=date.getUTCMonth()+1, d=date.getUTCDate();
-      const sign = getWesternZodiac(date); const cSign = getChineseZodiac(y);
-
-      let sum=0; `${y}${String(m).padStart(2,'0')}${String(d).padStart(2,'0')}`.split('').forEach(n=>sum+=+n);
-      while(sum>9) sum = sum.toString().split('').reduce((a,b)=>a+ +b,0);
-
-      let tree = null;
-      for (const t of celticTrees) {
-        const [sM,sD]=t.start.split('-').map(Number), [eM,eD]=t.end.split('-').map(Number);
-        const after=(m>sM)||(m===sM&&d>=sD), before=(m<eM)||(m===eM&&d<=eD);
-        if ((sM<=eM && after && before) || (sM>eM && (after||before))) { tree=t; break; }
-      }
-
-      const introMap={morgen:"Morgen",woche:"Woche",monat:"Monat",restjahr:"Rest des Jahres",jahr:"nächste 12 Monate"};
-      let txt = `Dein ${introMap[frame]||"Zeitraum"} – Kurzkompass\n\n`;
-      txt += `Sternzeichen ${sign}: ${horoscopes[sign]}\n`;
-      txt += `Chinesisch ${cSign}: ${chineseHoroscopes[cSign]}\n`;
-      txt += `Lebenszahl ${sum}: Fokus setzen.\n`;
-      if(tree) txt += `Baum ${tree.name}: ${tree.message}\n`;
-      const hex = ichingMessages[Math.floor(Math.random()*ichingMessages.length)];
-      const tar = tarotCards[Math.floor(Math.random()*tarotCards.length)];
-      txt += `I-Ging ${hex.name}: ${hex.message}\n`;
-      txt += `Tarot ${tar.name}: ${tar.message}\n`;
-      if(place) txt += `Ort ${place}: färbt dein Erleben.\n\n`;
-      for(const k in categoryHints){ txt += `# ${k}: ${categoryHints[k][0]}\n`; }
-      document.getElementById('result').textContent = txt + "\n—\nDiese Inhalte dienen der Unterhaltung.";
+      const birthDate=document.getElementById('birthDate').value;
+      const birthPlace=document.getElementById('birthPlace').value.trim();
+      const birthTime=document.getElementById('birthTime').value;
+      const approx=document.getElementById('timeApprox').value||'unbekannt';
+      const out=document.getElementById('result');
+      if(!birthDate||!birthPlace){ out.textContent='Bitte Datum und Ort eingeben.'; return; }
+      const timeInfo=birthTime?`Uhrzeit ${birthTime}`:`Zeit ungefähr: ${approx}`;
+      out.innerHTML = `<div class="reading-card"><b>Kurzkompass (offline)</b><br>Datum: ${birthDate} · Ort: ${birthPlace} · ${timeInfo}.<br>Für die volle Analyse bitte „Gold-Reading (AI)“ nutzen.</div>`;
     }
+  </script>
 
-    const RAILWAY_BASE = "https://horoskopone-production.up.railway.app";
+  <script>
+    const RAILWAY_BASE = "https://horoskopone-production.up.railway.app"; // ggf. anpassen
 
     function renderReadingUI(data){
       const box=document.getElementById('result'); box.innerHTML="";
-      const head=document.createElement('div');
-      head.className='reading-card';
-      head.innerHTML=`<div class="meta">Modus: <b>${data.meta.mode}</b> · Zeitraum: <b>${data.meta.timeframe}</b> · Seed: <code>${data.meta.seed}</code></div>`;
+      const head=document.createElement('div'); head.className='reading-card';
+      head.innerHTML=`<div class="meta">Modus: <b>${data?.meta?.mode||'-'}</b> · Zeitraum: <b>${data?.meta?.timeframe||'-'}</b> · Seed: <code>${data?.meta?.seed||'-'}</code> · Ort: <b>${data?.meta?.profile?.place||''}</b> · TZ: <code>${data?.meta?.profile?.timezone||''}</code></div>`;
       box.appendChild(head);
 
       if(Array.isArray(data.highlights) && data.highlights.length){
@@ -280,20 +139,20 @@
         wrap.innerHTML=`<h3 style="margin:0 0 8px 0">Deine 3 Highlights</h3>`;
         data.highlights.slice(0,3).forEach(h=>{
           const row=document.createElement('div'); row.className='hl';
-          const verb = h.title.replace(/^\s*(Ich|Du)\s*/i,''); 
-          row.innerHTML=`<b>${verb}</b><span>${h.action||''}</span>`;
+          row.innerHTML=`<b>${h.title||'Highlight'}</b><span>${h.action||''}</span>`;
           const why=document.createElement('div'); why.className='why';
-          (h.why||[]).forEach(w=>{ const chip=document.createElement('span'); chip.className='badge'; chip.textContent=w; why.appendChild(chip); });
+          (h.why||[]).forEach(w=>{ const chip=document.createElement('span'); chip.className='badge'; chip.textContent=w; why.appendChild(chip) });
           row.appendChild(why); wrap.appendChild(row);
         });
         box.appendChild(wrap);
       }
 
-      (data.sections||[]).forEach(s=>{
+      (data.sections||[]).forEach((s,i)=>{
+        const area = s.area && s.area!=='undefined' ? s.area : (["Fokus","Beruf","Liebe","Energie","Soziales"][i%5]);
         const det=document.createElement('details'); det.className='reading'; det.open=true;
-        det.innerHTML=`<summary>${s.area}</summary><div style="padding:0 12px 12px 12px">${s.text}${s.action?`<div class='meta'>Aktion: ${s.action}</div>`:''}</div>`;
+        det.innerHTML=`<summary>${area}</summary><div style="padding:0 12px 12px 12px">${s.text||''}${s.action?`<div class='meta'>Aktion: ${s.action}</div>`:''}</div>`;
         const why=document.createElement('div'); why.className='why';
-        (s.why||[]).forEach(w=>{ const chip=document.createElement('span'); chip.className='badge'; chip.textContent=w; why.appendChild(chip); });
+        (s.why||[]).forEach(w=>{ const chip=document.createElement('span'); chip.className='badge'; chip.textContent=w; why.appendChild(chip) });
         det.appendChild(why); box.appendChild(det);
       });
 
@@ -309,40 +168,26 @@
     }
 
     async function generateAiReading(){
-      const statusEl = document.getElementById('status');
-      const resultEl = document.getElementById('result');
-      const birthDate = document.getElementById('birthDate').value;
-      const birthPlace = document.getElementById('birthPlace').value.trim();
-      if(!birthDate || !birthPlace){
-        resultEl.textContent = 'Bitte Datum und Ort angeben.'; return;
-      }
-      const mixer = window.__mixerState || { mode:'coach', timeframe:'day',
-        weights:{ astro:34, num:13, tarot:17, iching:14, cn:11, tree:11 } };
+      const statusEl=document.getElementById('status'); const resultEl=document.getElementById('result');
+      const birthDate=document.getElementById('birthDate').value;
+      const birthPlace=document.getElementById('birthPlace').value.trim();
+      const birthTime=document.getElementById('birthTime').value; const timeApprox=document.getElementById('timeApprox').value || null;
+      const partnerDate=document.getElementById('partnerDate').value||null;
+      if(!birthDate || !birthPlace){ resultEl.textContent='Bitte Datum und Ort angeben.'; return; }
+      const mixer=window.__mixerState || { mode:'coach', timeframe:'week', weights:{ astro:34,num:13,tarot:17,iching:14,cn:11,tree:11 } };
 
-      const payload = {
-        mode: mixer.mode,
-        timeframe: mixer.timeframe,
-        weights: mixer.weights,
-        inputs: { date: birthDate, time: null, place: birthPlace, goals: [], mood: "neutral", style: "pragmatisch" }
+      const payload={
+        mode:mixer.mode, timeframe:mixer.timeframe, weights:mixer.weights,
+        inputs:{ date:birthDate, time:birthTime||null, timeApprox, place:birthPlace, partnerDate, goals:[], mood:"neutral", style:"pragmatisch" }
       };
 
-      statusEl.textContent = 'Berechne Gold-Reading …';
-      resultEl.innerHTML = '';
-
+      statusEl.textContent='Berechne Gold-Reading …'; resultEl.innerHTML='';
       try{
-        const res = await fetch(RAILWAY_BASE.replace(/\/$/,'') + "/reading", {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
+        const res=await fetch(RAILWAY_BASE.replace(/\/$/,'')+'/reading',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
         if(!res.ok) throw new Error('HTTP '+res.status);
-        const data = await res.json();
-        if(data.error) throw new Error(data.error);
-        renderReadingUI(data);
-        statusEl.textContent = 'Fertig ✓';
-      } catch(e){
-        statusEl.textContent = '';
-        resultEl.textContent = 'Fehler: ' + (e?.message || e);
-      }
+        const data=await res.json(); if(data.error) throw new Error(data.error);
+        renderReadingUI(data); statusEl.textContent='Fertig ✓';
+      }catch(e){ statusEl.textContent=''; resultEl.textContent='Fehler: '+(e?.message||e); }
     }
   </script>
 </body>

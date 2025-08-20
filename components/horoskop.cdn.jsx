@@ -206,9 +206,7 @@ function KosmischerMixer(){
           </div>
         )}
       </div>
-      <p className="mt-4 text-xs" style={{color:"#94a3b8"}}>
-        Tipp: „Rational“ → sachlicher; „Mystisch“ → erzählerischer. Ton & Zeitraum fließen später in die LLM-Pipeline ein.
-      </p>
+      <p className="mt-4 text-xs" style={{color:"#94a3b8"}}>Tipp: „Rational“ → sachlicher; „Mystisch“ → erzählerischer.</p>
     </div>
   );
 }
