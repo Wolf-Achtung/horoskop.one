@@ -21,6 +21,8 @@ app.add_middleware(
 
 AREAS = ["Fokus","Beruf","Liebe","Energie","Soziales"]
 
+# ------------------------- Utilities -------------------------
+
 def cyrb128(s: str) -> str:
     h1=1779033703; h2=3144134277; h3=1013904242; h4=2773480762
     for ch in s:
@@ -84,6 +86,23 @@ def time_bucket_local(time_str: Optional[str], approx: Optional[str]) -> str:
             return "night"
     return approx or ""
 
+def bucket_midpoint_h(approx: Optional[str]) -> int:
+    mapping={"morning":8,"noon":13,"evening":19,"night":1}
+    return mapping.get(approx or "", 12)
+
+def hemisphere(lat: Optional[float]) -> str:
+    if lat is None: return ""
+    return "north" if lat >= 0 else "south"
+
+def season_of(date_str: str, hemi: str) -> str:
+    dt=datetime.strptime(date_str, "%Y-%m-%d")
+    m=dt.month
+    north = {12:"winter",1:"winter",2:"winter",3:"spring",4:"spring",5:"spring",6:"summer",7:"summer",8:"summer",9:"autumn",10:"autumn",11:"autumn"}
+    south = {12:"summer",1:"summer",2:"summer",3:"autumn",4:"autumn",5:"autumn",6:"winter",7:"winter",8:"winter",9:"spring",10:"spring",11:"spring"}
+    return (north if hemi=="north" else south).get(m,"")
+
+# ------------------------- External data -------------------------
+
 async def geocode_place(place: str) -> Dict[str, Any]:
     if not place: return {}
     headers={"user-agent":"horoskop.one/1.0 (contact@horoskop.one)"}
@@ -128,6 +147,36 @@ async def fetch_timezone(client: httpx.AsyncClient, lat: float, lon: float) -> O
         pass
     return None
 
+async def sunrise_sunset(client: httpx.AsyncClient, lat: float, lon: float, date_str: str, tz: Optional[str]) -> Dict[str, Optional[str]]:
+    try:
+        r=await client.get("https://api.open-meteo.com/v1/forecast",
+                           params={"latitude":lat,"longitude":lon,"daily":"sunrise,sunset,moon_phase",
+                                   "timezone":tz or "auto","start_date":date_str,"end_date":date_str})
+        if r.status_code==200:
+            j=r.json()
+            sr=(j.get("daily",{}).get("sunrise") or [None])[0]
+            ss=(j.get("daily",{}).get("sunset")  or [None])[0]
+            mp=(j.get("daily",{}).get("moon_phase") or [None])[0]
+            return {"sunrise": sr, "sunset": ss, "moon_phase": mp}
+    except Exception:
+        pass
+    return {"sunrise": None, "sunset": None, "moon_phase": None}
+
+def moon_phase_name(val: Optional[float]) -> str:
+    if val is None: return ""
+    # Open-Meteo uses 0.0=new, 0.25=first quarter, 0.5=full, 0.75=last quarter
+    v=float(val)%1.0
+    if v<0.03 or v>0.97: return "Neumond"
+    if 0.22<=v<=0.28: return "Erstes Viertel"
+    if 0.47<=v<=0.53: return "Vollmond"
+    if 0.72<=v<=0.78: return "Letztes Viertel"
+    if 0.03<=v<0.22: return "zunehmend (Sichel)"
+    if 0.28<v<0.47:  return "zunehmend (bauchig)"
+    if 0.53<v<0.72:  return "abnehmend (bauchig)"
+    return "abnehmend (Sichel)"
+
+# ------------------------- Profile & Events -------------------------
+
 def build_base_profile(date_str:str, place:str, time_exact: Optional[str], approx: Optional[str]):
     dt=datetime.strptime(date_str,"%Y-%m-%d")
     y,m,d=dt.year,dt.month,dt.day
@@ -152,20 +201,25 @@ def build_events(seed: str, profile: dict) -> dict:
     why = [f"Sternzeichen {profile.get('western')}",
            f"Lebenszahl {profile.get('life_path')}",
            f"Zeitfenster {profile.get('time_bucket') or 'unbekannt'}",
-           f"Ort {profile.get('place')}"]
+           f"Ort {profile.get('place')}",
+           f"Tag/Nacht: {'Tag' if profile.get('birth_is_day') else 'Nacht'}",
+           f"Saison: {profile.get('season')} ({'Nord' if profile.get('hemisphere')=='north' else 'Süd'}-Halbkugel)",
+           f"Mondphase: {profile.get('moon_phase_name') or ''}"]
     return {"events":[
-        {"key": pick(astro,"a"), "area":"Fokus",  "weight":0.7, "why":[why[0], why[3]]},
+        {"key": pick(astro,"a"), "area":"Fokus",  "weight":0.7, "why":[why[0], why[3], why[5]]},
         {"key": "Lebenszahl",    "area":"Beruf",  "weight":0.5, "why":[why[1]]},
-        {"key": pick(tarot,"t"), "area":"Liebe",  "weight":0.6, "why":[pick(iching,'i')]},
-        {"key": pick(iching,"i"),"area":"Energie","weight":0.4, "why":[why[2]]},
+        {"key": pick(tarot,"t"), "area":"Liebe",  "weight":0.6, "why":[why[6] or why[2]]},
+        {"key": pick(iching,"i"),"area":"Energie","weight":0.4, "why":[why[4]]},
     ]}
+
+# ------------------------- Guardrails -------------------------
 
 BASE_RULES = (
     "Du bist ein achtsamer, besonnener Horoskop-Autor.\n"
     "- 2 Sätze je Abschnitt, alltagstauglich.\n"
     "- Keine Heils-/Finanz-/Rechtsversprechen, keine Diagnosen.\n"
     "- Verwende konditionale Sprache (kann/könnte), biete 1 Mini-Aktion (<=5 Min).\n"
-    "- Begründe Aussagen mit den gelieferten Profil-Daten/Ereignissen (Why-Chips: z. B. Sternzeichen, Lebenszahl, Zeitfenster, Ort/Zeitzone).\n"
+    "- Begründe Aussagen mit den gelieferten Profil-Daten/Ereignissen (Why-Chips: z. B. Sternzeichen, Lebenszahl, Zeitfenster, Ort/Zeitzone, Tag/Nacht, Saison/Hemisphäre, Mondphase).\n"
     "- Keine AC/Häuser-Deutung ohne exakte Geburtszeit."
 )
 MODE_RULES = {
@@ -198,6 +252,8 @@ def normalize_payload(payload:dict)->dict:
     payload["sections"]=payload["sections"][:5]
     return payload
 
+# ------------------------- API -------------------------
+
 @app.get("/health")
 def health(): return {"ok": True}
 
@@ -214,10 +270,49 @@ async def reading(req: Request):
     if not date_str or not place:
         return JSONResponse({"error":"date/place fehlt"}, status_code=400)
 
-    base_profile=build_base_profile(date_str, place, inputs.get("time"), inputs.get("timeApprox"))
-    geo = await geocode_place(place)
-    profile={**base_profile, **({"lat": geo.get("lat"), "lon": geo.get("lon"), "timezone": geo.get("timezone")} if geo else {})}
+    # Base profile
+    profile = build_base_profile(date_str, place, inputs.get("time"), inputs.get("timeApprox"))
 
+    # Geo + timezone + sunrise/sunset + moon phase
+    headers={"user-agent":"horoskop.one/1.0 (contact@horoskop.one)"}
+    async with httpx.AsyncClient(timeout=12.0, headers=headers) as client:
+        geo = await geocode_place(place)
+        if geo:
+            profile.update({"lat": geo.get("lat"), "lon": geo.get("lon"), "timezone": geo.get("timezone")})
+            ss = await sunrise_sunset(client, geo["latitude"] if "latitude" in geo else geo["lat"],
+                                      geo["longitude"] if "longitude" in geo else geo["lon"],
+                                      date_str, geo.get("timezone"))
+            profile.update(ss)
+            # Day/Night + Season
+            hemi = hemisphere(profile.get("lat"))
+            profile["hemisphere"] = hemi
+            profile["season"] = season_of(date_str, hemi)
+            # Determine day/night at birth time (local)
+            time_str = profile.get("time")
+            if not time_str and profile.get("time_bucket"):
+                hour = bucket_midpoint_h(profile.get("time_bucket"))
+                time_str = f"{hour:02d}:00"
+            def to_minutes(s):
+                try:
+                    t=s.split("T")[1] if "T" in s else s
+                    hh,mm=t.split(":")[:2]
+                    return int(hh)*60+int(mm)
+                except Exception:
+                    return None
+            if time_str and profile.get("sunrise") and profile.get("sunset"):
+                tm = to_minutes(time_str)
+                sr = to_minutes(profile["sunrise"])
+                ss2 = to_minutes(profile["sunset"])
+                if tm is not None and sr is not None and ss2 is not None:
+                    profile["birth_is_day"] = bool(sr <= tm < ss2)
+            # Moon phase name
+            profile["moon_phase_name"] = moon_phase_name(profile.get("moon_phase"))
+        else:
+            # still provide hemisphere/season if place unparsable: guess via None
+            profile["hemisphere"] = ""
+            profile["season"] = ""
+
+    # Seed and events
     seed=cyrb128(json.dumps({"mode":mode,"timeframe":timeframe,"weights":weights,"profile":profile}, ensure_ascii=False))
     events=build_events(seed, profile)
 
@@ -225,36 +320,79 @@ async def reading(req: Request):
     if not api_key:
         return JSONResponse({"error":"OPENAI_API_KEY fehlt"}, status_code=500)
 
-    client=OpenAI(api_key=api_key)
-    instructions=BASE_RULES+"\n"+MODE_RULES.get(mode,"")
-    schema_hint=(
-        "Antworte als ein einziges JSON-Objekt mit { meta, highlights, sections, ritual, disclaimer }.\n"
-        "meta: { seed, mode, timeframe, locale:'de-DE', weights, profile }.\n"
-        "highlights: exakt 3 Einträge mit { title, action, why: string[] }.\n"
-        "sections: 3–5 Einträge mit { area: 'Fokus'|'Beruf'|'Liebe'|'Energie'|'Soziales', text, action, why:string[] }.\n"
-        "ritual: { title, steps: string[] } optional.\n"
-        "Formatiere nur JSON (keine Erklärtexte)."
-    )
-    user_data={"timeframe":timeframe,"mode":mode,"weights":weights,"profile":profile,"events":events}
+    client_oa=OpenAI(api_key=api_key)
 
-    resp=client.chat.completions.create(
+    # -------- Pass 1: Outline --------
+    outline_instructions = (
+        BASE_RULES + "\n" + MODE_RULES.get(mode,"") + "\n"
+        "Erzeuge zunächst eine **Outline** als JSON-Objekt mit:\n"
+        "{ outline: { highlights: [{title, why:string[]}], sections:[{area, intention, reasons:string[], action_hint}], ritual:{idea} } }\n"
+        "- Nutze **nur** Gründe aus den gelieferten Daten (profile/events/weights/mini-ephemeriden).\n"
+        "- Bereiche nur aus: 'Fokus','Beruf','Liebe','Energie','Soziales'.\n"
+        "- Keine Häuser/Aszendent ohne exakte Zeit.\n"
+        "- Keine Heils-/Finanz-/Rechtsversprechen.\n"
+        "Formatiere **nur JSON**."
+    )
+    data_blob={"timeframe":timeframe,"mode":mode,"weights":weights,"profile":profile,"events":events}
+    outline_resp = client_oa.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
-            {"role":"system","content":instructions},
-            {"role":"user","content": schema_hint + "\nDaten:\n" + json.dumps(user_data, ensure_ascii=False)}
+            {"role":"system","content":outline_instructions},
+            {"role":"user","content": json.dumps(data_blob, ensure_ascii=False)}
         ],
         response_format={"type":"json_object"},
-        temperature=0.6, max_tokens=950
+        temperature=0.5, max_tokens=800
+    )
+    try:
+        outline_json = json.loads(outline_resp.choices[0].message.content)
+        outline = outline_json.get("outline", outline_json)
+    except Exception as e:
+        outline = {"highlights":[],"sections":[],"ritual":{"idea":""}}
+
+    # -------- Pass 2: Final text --------
+    final_instructions = (
+        BASE_RULES + "\n" + MODE_RULES.get(mode,"") + "\n"
+        "Du bekommst eine Outline. Schreibe daraus die **endgültige Ausgabe** als JSON-Objekt mit:\n"
+        "{ meta, highlights, sections, ritual, disclaimer }\n"
+        "meta: { seed, mode, timeframe, locale:'de-DE', weights, profile, ephemeris: { moon_phase, moon_phase_name, sunrise, sunset, season, hemisphere, birth_is_day } }\n"
+        "highlights: exakt 3 Einträge mit { title, action, why:string[] } (kurz, konkret).\n"
+        "sections: 3–5 Einträge mit { area, text (genau 2 Sätze), action, why:string[] }.\n"
+        "ritual: { title, steps:string[] } (2–4 Mini-Schritte, <=5 Min).\n"
+        "Nutze **nur** Gründe aus Outline und gelieferten Fakten.\n"
+        "Formatiere **nur JSON**."
+    )
+    ephem = {
+        "moon_phase": profile.get("moon_phase"),
+        "moon_phase_name": profile.get("moon_phase_name"),
+        "sunrise": profile.get("sunrise"),
+        "sunset": profile.get("sunset"),
+        "season": profile.get("season"),
+        "hemisphere": profile.get("hemisphere"),
+        "birth_is_day": profile.get("birth_is_day", None),
+    }
+    final_data = {
+        "seed": seed, "mode": mode, "timeframe": timeframe, "weights": weights, "profile": profile,
+        "ephemeris": ephem, "outline": outline
+    }
+    final_resp = client_oa.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role":"system","content": final_instructions},
+            {"role":"user","content": json.dumps(final_data, ensure_ascii=False)}
+        ],
+        response_format={"type":"json_object"},
+        temperature=0.6, max_tokens=1100
     )
 
     try:
-        payload=json.loads(resp.choices[0].message.content)
+        payload=json.loads(final_resp.choices[0].message.content)
     except Exception as e:
-        return JSONResponse({"error":"LLM-Parsing fehlgeschlagen","details":str(e)}, status_code=500)
+        return JSONResponse({"error":"LLM-Parsing fehlgeschlagen (final)","details":str(e)}, status_code=500)
 
+    # Patch meta + disclaimer + normalization
     payload.setdefault("meta",{})
-    payload["meta"].update({"seed":seed,"mode":mode,"timeframe":timeframe,"locale":"de-DE","weights":weights,"profile":profile})
+    payload["meta"].update({"seed":seed,"mode":mode,"timeframe":timeframe,"locale":"de-DE","weights":weights,
+                            "profile":profile, "ephemeris": ephem})
     payload["disclaimer"]="Unterhaltung & achtsame Selbstreflexion. Keine medizinische, rechtliche oder finanzielle Beratung."
-
     payload=normalize_payload(payload)
     return payload
