@@ -1,7 +1,6 @@
 /* global React, ReactDOM */
 const { useState, useMemo, useEffect } = React;
 
-// ——— Daten ———
 const METHODS = [
   { key: "astro",  label: "Astrologie / Transite", color: "#d4af37" },
   { key: "num",    label: "Numerologie",           color: "#6366f1" },
@@ -29,7 +28,6 @@ const TIMEFRAMES = [
   { key: "month", label: "Monat" },
 ];
 
-// ——— Utils ———
 const clamp = (n, min=0, max=100) => Math.max(min, Math.min(max, n));
 const round2 = (n) => Math.round(n*100)/100;
 const sumValues = (obj) => Object.values(obj).reduce((a,b)=>a+b,0);
@@ -65,7 +63,6 @@ function toGradient(weights){
   return `conic-gradient(${stops.join(", ")})`;
 }
 
-// ——— Segmented Control ———
 function Segmented({ label, value, onChange, options }){
   return (
     <div>
@@ -89,10 +86,9 @@ function Segmented({ label, value, onChange, options }){
   );
 }
 
-// ——— Hauptkomponente ———
 function KosmischerMixer(){
-  const [mode, setMode] = useState("mystic");
-  const [timeframe, setTimeframe] = useState("day");
+  const [mode, setMode] = useState("coach");
+  const [timeframe, setTimeframe] = useState("week");
   const [copied, setCopied] = useState(false);
   const [weights, setWeights] = useState({ ...PRESETS.Balance });
 
@@ -121,7 +117,6 @@ function KosmischerMixer(){
     } catch {}
   };
 
-  // Mixer-Status nach außen funken (Seite hört auf "horoskop:mixer")
   useEffect(()=>{
     const detail = { mode, timeframe,
       weights: Object.fromEntries(METHODS.map(m=>[m.key, round2(weights[m.key])])) };
@@ -217,6 +212,4 @@ function KosmischerMixer(){
     </div>
   );
 }
-
-// global verfügbar machen
 window.KosmischerMixer = KosmischerMixer;

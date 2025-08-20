@@ -1,116 +1,109 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
-  <title>Gold-Standard-Horoskop-Seite</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <title>horoskop.one – Dein achtsamer Horoskop-Kompass</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="light only" />
   <style>
+    :root {
+      --bg: #f5f3fa;
+      --bg-card: #ffffff;
+      --ink: #2c2541;
+      --ink-soft: #6b6280;
+      --pri: #5b3e9e;
+      --pri-2: #37205d;
+      --card-bd: #ece3ff;
+      --chip-bd: #e6d8ff;
+    }
+    * { box-sizing: border-box; }
     body {
-      font-family: Arial, Helvetica, sans-serif;
-      margin: 0;
-      padding: 0;
-      background: linear-gradient(180deg, #f5f3fa 0%, #e7e2f2 100%);
-      color: #2c2541;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
+      margin: 0; padding: 0;
+      background: linear-gradient(180deg, var(--bg) 0%, #e7e2f2 100%);
+      color: var(--ink);
     }
     header {
-      background: linear-gradient(135deg, #5b3e9e, #37205d);
-      color: #fff;
-      padding: 2rem 1rem;
-      text-align: center;
+      background: linear-gradient(135deg, var(--pri), var(--pri-2));
+      color: #fff; padding: 24px 14px; text-align: center;
     }
+    header .topnav { display:flex; gap:12px; justify-content:center; margin-top:8px; }
+    header .topnav a { color:#e7defc; font-size:14px; text-decoration:none; }
+    header .topnav a:hover { text-decoration:underline; }
     main {
-      max-width: 900px;
-      margin: 2rem auto;
-      padding: 1.5rem;
-      background: #fff;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-      border-radius: 14px;
+      max-width: 950px; margin: 20px auto; padding: 16px;
+      background: var(--bg-card); border-radius: 14px;
+      box-shadow: 0 8px 20px rgba(0,0,0,.12);
     }
-    label {
-      display: block;
-      margin-bottom: 0.5rem;
-      font-weight: bold;
+    h2 { margin: 0 0 8px 0; }
+    label { display:block; margin: 10px 0 6px; font-weight: 700; }
+    input[type="text"], input[type="date"], select {
+      width: 100%; padding: 10px 12px; border-radius: 10px;
+      border: 1px solid #cfc7e6; background:#fbfaff; color:var(--ink); font-size: 16px;
     }
-    select, button, input[type="text"], input[type="date"] {
-      padding: 0.6rem 0.9rem;
-      font-size: 1rem;
-      margin-top: 0.5rem;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      background: #fbfaff;
-      color: #2c2541;
-    }
-    button {
-      cursor: pointer;
-      background-color: #5b3e9e;
-      color: white;
-      border: none;
-      transition: background-color 0.2s;
-    }
-    button:hover { background-color: #4a2f7d; }
-    .btn-row { display:flex; gap:.5rem; flex-wrap:wrap; }
-    .result {
-      margin-top: 1rem;
-      padding: 1rem;
-      background: #faf7ff;
-      border-radius: 8px;
-      line-height: 1.5;
-      white-space: pre-wrap;
-      min-height: 4rem;
-    }
-    .status {
-      margin-top:.5rem;
-      font-size:.9rem;
-      color:#555;
-    }
-    .disclaimer {
-      font-size: 0.85rem;
-      color: #666;
-      margin-top: 2rem;
-      text-align: center;
-    }
+    .btn { display:inline-block; padding: 10px 14px; border-radius: 10px; border: none;
+      background: var(--pri); color:#fff; font-size: 16px; cursor: pointer; }
+    .btn.secondary { background:#efe8ff; color:#2c2541; border: 1px solid #ded5ff; }
+    .btn:hover { opacity: 0.95; }
+    .btnrow { display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
+
+    .result { margin-top:12px; }
+    .reading-card{background:#faf7ff;border-radius:12px;padding:16px;margin:12px 0;border:1px solid var(--card-bd)}
+    .badge{display:inline-block;padding:4px 8px;border:1px solid var(--chip-bd);border-radius:999px;font-size:12px;margin:2px 6px 2px 0;background:#f8f4ff}
+    .hl{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #efe8ff;border-radius:12px;margin:6px 0}
+    .hl b{font-size:14px}
+    details.reading{border:1px solid #efe8ff;border-radius:12px;margin:10px 0;background:#fdfbff}
+    details.reading summary{cursor:pointer;padding:10px 12px;font-weight:700;list-style:none}
+    details.reading summary::-webkit-details-marker{display:none}
+    .why{margin-top:8px}
+    .why .badge{background:#fff;border-color:#e9e9f2;color:#555}
+    .meta{font-size:12px;color:#6b6280;margin-top:6px}
+    .status{margin-top:6px; color:#555; font-size: 14px;}
+
+    .disclaimer { font-size: 13px; color: #666; margin-top: 16px; text-align: center; }
   </style>
 
-  <!-- Tailwind CDN (Preflight off to preserve existing CSS) -->
-  <script>
-    tailwind = {};
-    tailwind.config = { corePlugins: { preflight: false } };
-  </script>
+  <script>tailwind = {}; tailwind.config = { corePlugins: { preflight: false } };</script>
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- React + ReactDOM + Babel (for JSX in browser) -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
 </head>
 <body>
   <header>
-    <h1>Gold-Standard-Horoskop-Seite</h1>
-    <p>Dein persönliches Horoskop – individuell, mystisch, unterhaltsam.</p>
+    <div><strong>horoskop.one</strong> – achtsam & erklärbar</div>
+    <div class="topnav">
+      <a href="methoden.html">Methoden</a>
+      <a href="impressum.html">Impressum</a>
+      <a href="datenschutz.html">Datenschutz</a>
+    </div>
   </header>
-  <main>
 
-    <!-- Kosmischer Mixer – React renders here -->
-    <section id="mixerSection" class="rounded-2xl" style="margin: 0 0 1rem 0;">
-      <h2 style="margin:0 0 .5rem 0;">Kosmischer Mixer</h2>
+  <main>
+    <button id="toggle-mixer" class="badge" style="border:none;background:#fff;margin-bottom:8px">
+      Erweiterte Einstellungen ▾
+    </button>
+
+    <section id="mixerSection" class="rounded-2xl" style="margin: 0 0 1rem 0; display:none;">
+      <h2>Kosmischer Mixer</h2>
       <div id="mixer-root"></div>
     </section>
 
     <section id="birthInfo">
       <h2>Deine Geburtsdaten</h2>
-      <p>Bitte gib dein Geburtsdatum und den Geburtsort ein, um deine persönliche Analyse zu erhalten.</p>
+      <p class="meta">Gib Datum & Ort ein. Wir zeigen dir zuerst 3 Highlights mit kurzen Aktionen.</p>
 
-      <label for="birthDate">Geburtsdatum:</label>
-      <input type="date" id="birthDate">
+      <label for="birthDate">Geburtsdatum</label>
+      <input type="date" id="birthDate" />
 
-      <label for="birthPlace">Geburtsort:</label>
-      <input type="text" id="birthPlace" placeholder="z. B. Berlin">
+      <label for="birthPlace">Geburtsort</label>
+      <input type="text" id="birthPlace" placeholder="z. B. Berlin" />
 
-      <label for="partnerDate">Zweites Geburtsdatum (optional):</label>
-      <input type="date" id="partnerDate">
+      <label for="partnerDate">Zweites Geburtsdatum (optional)</label>
+      <input type="date" id="partnerDate" />
 
-      <label for="timeFrame">Vorhersagezeitraum:</label>
+      <label for="timeFrame">Vorhersagezeitraum</label>
       <select id="timeFrame">
         <option value="morgen">Morgen</option>
         <option value="woche">Nächste Woche</option>
@@ -119,317 +112,238 @@
         <option value="jahr">Nächstes Jahr</option>
       </select>
 
-      <div class="btn-row">
-        <button onclick="generateAnalysis()">Analyse anzeigen</button>
-        <button onclick="generateAiReading()">Gold-Reading (AI)</button>
+      <div class="btnrow">
+        <button class="btn secondary" onclick="generateAnalysis()">Sofort-Analyse (offline)</button>
+        <button class="btn" onclick="generateAiReading()">Gold-Reading (AI)</button>
       </div>
+
+      <div class="meta">
+        Mit Klick stimmst du der Verarbeitung deiner Eingaben zur Generierung zu. Erklärbar (Why-Chips) · Reproduzierbar (Seed) · DSGVO-first.
+      </div>
+
       <div id="status" class="status"></div>
       <div id="result" class="result"></div>
     </section>
 
     <p class="disclaimer">
-      Hinweis: Dieses Angebot dient ausschließlich der Unterhaltung / achtsamen Selbstreflexion und ersetzt keine professionelle Beratung.
+      Hinweis: Unterhaltung & achtsame Selbstreflexion. Keine medizinische, rechtliche oder finanzielle Beratung.
       Bei Krisen oder akuter Gefahr: 112 (EU) / lokale Beratungsstellen.
     </p>
   </main>
 
-  <!-- Mixer code -->
   <script type="text/babel" data-presets="react" src="components/horoskop.cdn.jsx"></script>
 
-  <!-- Mount Mixer and expose global state -->
   <script type="text/babel">
-    const root = ReactDOM.createRoot(document.getElementById('mixer-root'));
-    root.render(<KosmischerMixer />);
-
-    // Globaler Mixer-Status (wird vom Mixer via CustomEvent live aktualisiert)
-    window.__mixerState = {
-      mode: 'mystic',
-      timeframe: 'day',
-      weights: { astro: 34, num: 13, tarot: 17, iching: 14, cn: 11, tree: 11 }
-    };
+    const mixerRoot = ReactDOM.createRoot(document.getElementById('mixer-root'));
+    mixerRoot.render(<KosmischerMixer />);
+    window.__mixerState = { mode: 'coach', timeframe: 'day', weights: { astro: 34, num: 13, tarot: 17, iching: 14, cn: 11, tree: 11 } };
     window.addEventListener('horoskop:mixer', (e) => { window.__mixerState = e.detail; });
+
+    const mixer = document.getElementById('mixerSection');
+    const tbtn  = document.getElementById('toggle-mixer');
+    tbtn.onclick = () => {
+      mixer.style.display = mixer.style.display === 'none' ? 'block' : 'none';
+      tbtn.textContent = mixer.style.display === 'none'
+        ? 'Erweiterte Einstellungen ▾' : 'Erweiterte Einstellungen ▴';
+    };
   </script>
 
   <script>
-    // ======= SIMPLE CONTENT (bestehende statische Logik) =======
-
-    // Deutsche Horoskoptexte nach Sternzeichen
     const horoscopes = {
-      Widder: "Heute könnte dein Tatendrang dich zu neuen Projekten inspirieren. Nutze deine Energie, um etwas Kreatives zu beginnen.",
-      Stier: "Geduld zahlt sich aus. Gönn dir eine Auszeit und genieße die kleinen Freuden des Lebens.",
-      Zwillinge: "Kommunikation steht im Mittelpunkt. Ein Gespräch kann überraschende Einsichten bringen.",
-      Krebs: "Vertraue auf deine Intuition. Zeit mit nahestehenden Personen wird dir neue Kraft geben.",
-      Löwe: "Selbstbewusstsein bringt dich voran. Zeige deine Ideen der Welt – dein Charisma wirkt anziehend.",
-      Jungfrau: "Struktur und Ordnung helfen dir heute, Aufgaben erfolgreich abzuschließen. Lass dich nicht von Kleinigkeiten ablenken.",
-      Waage: "Ausgewogenheit ist der Schlüssel. Suche nach Harmonie in Beziehungen und entscheide nicht vorschnell.",
-      Skorpion: "Tiefe Gespräche können einen Wendepunkt bringen. Gib dich nicht mit oberflächlichen Antworten zufrieden.",
-      Schütze: "Entdeckergeist erfüllt dich. Plane einen kleinen Ausflug oder lerne etwas Neues, das deinen Horizont erweitert.",
-      Steinbock: "Durchhaltevermögen wird belohnt. Setze deine Ziele konsequent um und plane langfristig.",
-      Wassermann: "Kreative Ideen fließen mühelos. Sei offen für ungewöhnliche Lösungswege und teile deine Visionen.",
-      Fische: "Empathie begleitet dich. Suche Momente der Ruhe – Musik oder Kunst können dich besonders inspirieren."
+      Widder: "Tatkraft & Startenergie.",
+      Stier: "Beständigkeit & Werte.",
+      Zwillinge: "Gespräch & Neugier.",
+      Krebs: "Zuwendung & Intuition.",
+      Löwe: "Strahlkraft & Selbstvertrauen.",
+      Jungfrau: "Ordnung & Struktur.",
+      Waage: "Balance & Miteinander.",
+      Skorpion: "Tiefe & Erkenntnis.",
+      Schütze: "Weite & Sinn.",
+      Steinbock: "Zielklarheit & Ausdauer.",
+      Wassermann: "Ideen & Unabhängigkeit.",
+      Fische: "Empathie & Stille."
     };
-
-    // Chinesische Tierkreiszeichen
     const chineseHoroscopes = {
-      Ratte: "Die Ratte zeichnet sich durch Kreativität und Anpassungsfähigkeit aus. Heute ist ein guter Tag für neue Ideen.",
-      Büffel: "Beharrlichkeit bringt dich weiter. Nimm dir Zeit, um deine Pläne zu festigen.",
-      Tiger: "Mut und Tatkraft bestimmen deinen Tag. Wage einen Schritt ins Unbekannte.",
-      Hase: "Sanftmut und Diplomatie führen zum Erfolg. Ein harmonischer Austausch belebt deine Beziehungen.",
-      Drache: "Deine natürliche Autorität strahlt. Zeige Selbstvertrauen und inspiriere andere.",
-      Schlange: "Intuition und Weisheit begleiten dich. Vertraue auf deine inneren Eingebungen.",
-      Pferd: "Freiheitsdrang motiviert dich. Eine spontane Unternehmung bringt Freude.",
-      Ziege: "Kreativität und Sensibilität stehen im Mittelpunkt. Widme dich Kunst oder Natur.",
-      Affe: "Deine Spontaneität sorgt für Überraschungen. Humor bringt dir Sympathie ein.",
-      Hahn: "Strukturiertes Vorgehen zahlt sich aus. Organisiere deine Vorhaben sorgfältig.",
-      Hund: "Loyalität und Freundschaft werden belohnt. Verbringe Zeit mit Menschen, die dir wichtig sind.",
-      Schwein: "Genuss und Großzügigkeit prägen den Tag. Teile deine Freude mit anderen."
+      Ratte:"Kreativ & flink.", Büffel:"Beharrlich & verlässlich.", Tiger:"Mutig & direkt.",
+      Hase:"Feinsinnig & diplomatisch.", Drache:"Ausstrahlung & Führung.", Schlange:"Intuitiv & weise.",
+      Pferd:"Freiheitsliebend & lebhaft.", Ziege:"Kreativ & sensibel.", Affe:"Spontan & witzig.",
+      Hahn:"Strukturiert & klar.", Hund:"Loyal & ehrlich.", Schwein:"Genuss & Großzügigkeit."
     };
-
-    // Numerologie Bedeutungen
-    const numerologyMeanings = {
-      1: "Die 1 steht für Neuanfang, Initiative und Selbstvertrauen. Deine Energie hilft dir, deine Ziele zu verwirklichen.",
-      2: "Die 2 symbolisiert Harmonie und Kooperation. Teamwork und Balance sind heute wichtig.",
-      3: "Die 3 bringt Kreativität und Kommunikation. Nutze deine Ausdruckskraft, um dich mitzuteilen.",
-      4: "Die 4 steht für Stabilität und Struktur. Konzentriere dich auf Planung und Bodenständigkeit.",
-      5: "Die 5 verkörpert Veränderung und Freiheit. Sei offen für neue Erfahrungen.",
-      6: "Die 6 betont Verantwortung und Fürsorge. Familie und Gemeinschaft haben Priorität.",
-      7: "Die 7 symbolisiert Spiritualität und Intuition. Reflektiere und suche nach innerer Weisheit.",
-      8: "Die 8 steht für Erfolg und materielle Fülle. Fokussiere dich auf deine Karriere oder Finanzen.",
-      9: "Die 9 spiegelt Mitgefühl und Vollendung wider. Schließe alte Kapitel ab und teile deine Erfahrungen."
-    };
-
-    // I-Ging Hexagramme (deutsch)
     const ichingMessages = [
-      { name: "Qian – Das Schöpferische", message: "Kraft und Schöpfergeist sind heute auf deiner Seite. Deine Kreativität trägt Früchte." },
-      { name: "Kun – Das Empfangende", message: "Empfange Unterstützung und lass dich tragen. Offenheit bringt dir Erkenntnisse." },
-      { name: "Zhun – Die Anfangsschwierigkeit", message: "Jeder Anfang ist schwer, doch mit Geduld überwindest du erste Hindernisse." },
-      { name: "Meng – Die Jugendtorheit", message: "Lernen und Reifung stehen im Mittelpunkt. Bleibe neugierig und offen für Rat." },
-      { name: "Xu – Das Warten", message: "Geduld wird belohnt. Die richtige Gelegenheit ist bald da, handle nicht übereilt." }
+      { name: "24 – Wiederkehr", message: "Neubeginn in kleinen Schritten." },
+      { name: "46 – Empordringen", message: "Beharrlich wachsen." },
+      { name: "61 – Innere Wahrheit", message: "Ruhe klärt Entscheidungen." }
     ];
-
-    // Tarotkarten (große Arkana)
     const tarotCards = [
-      { name: "Der Narr", message: "Neubeginn und Leichtigkeit. Wage einen Schritt ohne Angst und sei offen für Abenteuer." },
-      { name: "Der Magier", message: "Du hast die Mittel, deine Visionen zu verwirklichen. Fokussiere deine Energie." },
-      { name: "Die Hohepriesterin", message: "Vertraue deiner Intuition und inneren Weisheit. Manches bleibt verborgen, bis die Zeit reif ist." },
-      { name: "Der Herrscher", message: "Stabilität und Führung. Übernimm Verantwortung und schaffe Ordnung." },
-      { name: "Die Liebenden", message: "Entscheidungen im Herzen. Harmonie und Partnerschaft stehen im Vordergrund." }
+      { name: "Der Narr", message:"Leicht anfangen." },
+      { name: "Der Magier", message:"Mittel bündeln." },
+      { name: "Die Mäßigkeit", message:"Ausgleichen." },
+      { name: "Die Kraft", message:"Sanft stark sein." },
+      { name: "Der Stern", message:"Hoffnung ordnet." }
     ];
-
-    // Keltischer Baumkreis
     const celticTrees = [
-      { name: "Birke", start: "12-24", end: "01-20", message: "Birke steht für Neubeginn und Reinheit. Nutze diese Energie für klare Ziele." },
-      { name: "Eberesche", start: "01-21", end: "02-17", message: "Eberesche bringt Schutz und Inspiration. Deine Ideen werden unterstützt." },
-      { name: "Esche", start: "02-18", end: "03-17", message: "Esche symbolisiert Wachstum und Verbindung. Bleibe offen für neue Kontakte." },
-      { name: "Erle", start: "03-18", end: "04-14", message: "Erle steht für Kraft und Entschlossenheit. Du kannst große Fortschritte machen." },
-      { name: "Weide", start: "04-15", end: "05-12", message: "Weide verkörpert Sensibilität und Intuition. Vertraue deinen Gefühlen." },
-      { name: "Eiche", start: "06-10", end: "07-07", message: "Eiche steht für Stärke und Stabilität. Deine Standhaftigkeit wird belohnt." },
-      { name: "Stechpalme", start: "07-08", end: "08-04", message: "Stechpalme zeigt Mut und Edelmut. Unterstütze andere und du wirst Anerkennung finden." },
-      { name: "Hasel", start: "08-05", end: "09-01", message: "Hasel bringt Weisheit und Kreativität. Nutze deinen Verstand und deine Fantasie." },
-      { name: "Weinrebe", start: "09-02", end: "09-29", message: "Weinrebe steht für Fülle und Genuss. Gönne dir etwas Schönes." },
-      { name: "Efeu", start: "09-30", end: "10-27", message: "Efeu symbolisiert Beständigkeit und Loyalität. Pflege deine Beziehungen." },
-      { name: "Schilfrohr", start: "10-28", end: "11-24", message: "Schilfrohr bedeutet Anpassungsfähigkeit. Sei flexibel und du findest Lösungen." },
-      { name: "Holunder", start: "11-25", end: "12-23", message: "Holunder steht für Transformation und Erneuerung. Alte Muster dürfen gehen." }
+      { name: "Birke", start:"12-24", end:"01-20", message:"Neubeginn & Klarheit." },
+      { name: "Eberesche", start:"01-21", end:"02-17", message:"Schutz & Inspiration." },
+      { name: "Esche", start:"02-18", end:"03-17", message:"Wachstum & Verbindung." },
+      { name: "Erle", start:"03-18", end:"04-14", message:"Entschlossen & klar." },
+      { name: "Weide", start:"04-15", end:"05-12", message:"Intuitiv & feinfühlig." },
+      { name: "Eiche", start:"06-10", end:"07-07", message:"Stabil & stark." },
+      { name: "Stechpalme", start:"07-08", end:"08-04", message:"Mut & Edelmut." },
+      { name: "Hasel", start:"08-05", end:"09-01", message:"Weisheit & Kreativität." },
+      { name: "Weinrebe", start:"09-02", end:"09-29", message:"Fülle & Genuss." },
+      { name: "Efeu", start:"09-30", end:"10-27", message:"Beständig & treu." },
+      { name: "Schilfrohr", start:"10-28", end:"11-24", message:"Flexibel & lösungsorientiert." },
+      { name: "Holunder", start:"11-25", end:"12-23", message:"Wandlung & Erneuerung." }
     ];
-
-    // Western zodiac date ranges
     const westernZodiacs = [
-      { sign: "Widder", start: "03-21", end: "04-19" },
-      { sign: "Stier", start: "04-20", end: "05-20" },
-      { sign: "Zwillinge", start: "05-21", end: "06-20" },
-      { sign: "Krebs", start: "06-21", end: "07-22" },
-      { sign: "Löwe", start: "07-23", end: "08-22" },
-      { sign: "Jungfrau", start: "08-23", end: "09-22" },
-      { sign: "Waage", start: "09-23", end: "10-22" },
-      { sign: "Skorpion", start: "10-23", end: "11-21" },
-      { sign: "Schütze", start: "11-22", end: "12-21" },
-      { sign: "Steinbock", start: "12-22", end: "01-19" },
-      { sign: "Wassermann", start: "01-20", end: "02-18" },
-      { sign: "Fische", start: "02-19", end: "03-20" }
+      { sign:"Widder",start:"03-21",end:"04-19" },{ sign:"Stier",start:"04-20",end:"05-20" },
+      { sign:"Zwillinge",start:"05-21",end:"06-20" },{ sign:"Krebs",start:"06-21",end:"07-22" },
+      { sign:"Löwe",start:"07-23",end:"08-22" },{ sign:"Jungfrau",start:"08-23",end:"09-22" },
+      { sign:"Waage",start:"09-23",end:"10-22" },{ sign:"Skorpion",start:"10-23",end:"11-21" },
+      { sign:"Schütze",start:"11-22",end:"12-21" },{ sign:"Steinbock",start:"12-22",end:"01-19" },
+      { sign:"Wassermann",start:"01-20",end:"02-18" },{ sign:"Fische",start:"02-19",end:"03-20" }
     ];
-
-    // Kategoriehinweise
     const categoryHints = {
-      Beruf: ["Im Berufsleben eröffnen sich dir neue Möglichkeiten. Nutze dein Potenzial und vertraue deiner Intuition."],
-      Liebe: ["In der Liebe wartet Wärme und Harmonie. Öffne dein Herz für tiefe Gespräche."],
-      Glück: ["Das Glück ist auf deiner Seite – erkenne die kleinen Freuden, die dich umgeben."],
-      Beziehung: ["Familie und Freundschaft geben dir Halt. Ein offenes Ohr stärkt eure Verbindung."],
-      Chancen: ["Neue Chancen warten darauf, ergriffen zu werden – vertraue deinem Bauchgefühl bei Entscheidungen."],
-      Gefahr: ["Achte auf Zeichen, die dich vor Überstürzungen warnen. Eine ruhige Analyse schützt dich."],
-      Gesundheit: ["Kümmere dich um dein Wohlbefinden. Ausgewogene Ernährung und Bewegung stärken dich."],
-      Finanzen: ["Deine Finanzen lassen sich mit Sorgfalt stabilisieren. Plane umsichtig und investiere in dich."],
-      Spirituell: ["Dein innerer Kompass führt dich zu tieferen Einsichten. Meditation und Achtsamkeit erweitern dein Bewusstsein."],
-      Kreativität: ["Kreative Ideen sprudeln in dir. Lass deiner Fantasie freien Lauf und probiere Neues aus."],
-      Abenteuer: ["Das Leben lädt dich zu einem Abenteuer ein. Nutze die Chance, deinen Horizont zu erweitern." ]
+      Beruf:["Neue Chance – sachlich prüfen."],
+      Liebe:["Wärme & ehrliche Gespräche."],
+      Glück:["Kleine Freuden bewusst wahrnehmen."],
+      Beziehung:["Zuhören stärkt Verbindung."],
+      Chancen:["Eine Idee verdient einen Test."],
+      Gefahr:["Nicht überstürzen – 10-Minuten-Check."],
+      Gesundheit:["Bewegung & Trinkwasser heute."],
+      Finanzen:["Umsichtig planen, kleine Schritte."],
+      Spirituell:["5 Minuten Atemfokus."],
+      Kreativität:["Skizze statt Perfektion."],
+      Abenteuer:["Kurzer Umweg – Horizont erweitern."]
     };
 
-    function generateAnalysis() {
-      const mixer = window.__mixerState || { mode: 'mystic', timeframe: 'day', weights: { astro:34, num:13, tarot:17, iching:14, cn:11, tree:11 } };
-      const dateStr = document.getElementById('birthDate').value;
-      const place = document.getElementById('birthPlace').value.trim();
-      const partner = document.getElementById('partnerDate').value;
-      const timeFrame = document.getElementById('timeFrame').value;
-      const output = document.getElementById('result');
-      if (!dateStr) { output.textContent = 'Bitte gib dein Geburtsdatum an.'; return; }
-      const date = new Date(dateStr);
-      if (isNaN(date)) { output.textContent = 'Ungültiges Datum.'; return; }
-
-      const day = String(date.getUTCDate()).padStart(2, '0');
-      const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-      const year = date.getUTCFullYear();
-
-      // Bestimme westliches Sternzeichen
-      let westernSign = '';
+    function getWesternZodiac(date) {
+      const m = date.getUTCMonth()+1, d = date.getUTCDate();
+      const md = (x,y)=>`${String(x).padStart(2,'0')}-${String(y).padStart(2,'0')}`;
+      const cur = md(m,d);
       for (const z of westernZodiacs) {
-        const [sM, sD] = z.start.split('-').map(Number);
-        const [eM, eD] = z.end.split('-').map(Number);
-        const afterStart = (parseInt(month) > sM) || (parseInt(month) === sM && parseInt(day) >= sD);
-        const beforeEnd  = (parseInt(month) < eM) || (parseInt(month) === eM && parseInt(day) <= eD);
-        if ((sM <= eM && afterStart && beforeEnd) || (sM > eM && (afterStart || beforeEnd))) { westernSign = z.sign; break; }
-      }
-      const westernMessage = horoscopes[westernSign];
-
-      // Chinesischer Tierkreis
-      const animals = ['Affe','Hahn','Hund','Schwein','Ratte','Büffel','Tiger','Hase','Drache','Schlange','Pferd','Ziege'];
-      const animalIndex = (year - 1900) % 12;
-      const chineseSign = animals[(animalIndex + 12) % 12];
-      const chineseMessage = chineseHoroscopes[chineseSign];
-
-      // Numerologie
-      let sum = 0; `${day}${month}${year}`.split('').forEach(ch => { sum += parseInt(ch, 10); });
-      while (sum > 9) sum = sum.toString().split('').reduce((acc, val) => acc + parseInt(val, 10), 0);
-      const numerologyMsg = numerologyMeanings[sum];
-
-      // Celtic tree
-      let treeName = ''; let treeMsg = '';
-      for (const t of celticTrees) {
-        const [sM, sD] = t.start.split('-').map(Number);
-        const [eM, eD] = t.end.split('-').map(Number);
-        const after = (parseInt(month) > sM) || (parseInt(month) === sM && parseInt(day) >= sD);
-        const before = (parseInt(month) < eM) || (parseInt(month) === eM && parseInt(day) <= eD);
-        if ((sM <= eM && after && before) || (sM > eM && (after || before))) { treeName = t.name; treeMsg = t.message; break; }
-      }
-
-      // I-Ging & Tarot
-      const hex = ichingMessages[Math.floor(Math.random() * ichingMessages.length)];
-      const tarot = tarotCards[Math.floor(Math.random() * tarotCards.length)];
-
-      // Zeitraum Intro
-      const frameIntros = { morgen: 'Im kommenden Tag', woche: 'In der nächsten Woche', monat: 'Im nächsten Monat', restjahr: 'Im restlichen Jahr', jahr: 'Im nächsten Jahr' };
-      const intro = frameIntros[timeFrame] || '';
-
-      // Compose result
-      let res = '';
-      if (intro) res += `${intro} zeigt sich dir eine vielschichtige energetische Komposition.\n\n`;
-      res += `Als ${westernSign} begleitet dich folgende Botschaft: ${westernMessage}\n\n`;
-      res += `In der chinesischen Astrologie erscheint der ${chineseSign}, der dir zuruft: ${chineseMessage}\n\n`;
-      res += `Deine Lebenszahl ${sum} erinnert dich daran: ${numerologyMsg}\n\n`;
-      if (treeName) res += `Der keltische Baum ${treeName} flüstert: ${treeMsg}\n\n`;
-      res += `Das I-Ging zeigt dir das Hexagramm ${hex.name}, das dir zuflüstert: ${hex.message}\n\n`;
-      res += `Die Tarotkarte “${tarot.name}” sagt: ${tarot.message}\n\n`;
-      if (place) res += `Der Geburtsort ${place} trägt zu deinem einzigartigen energetischen Gefüge bei und färbt deine Erlebnisse mit seiner Geschichte.\n\n`;
-
-      // Partneranalyse (vereinfachte Version)
-      if (partner) {
-        const pDate = new Date(partner);
-        if (!isNaN(pDate)) {
-          let pSum = 0;
-          const pDay = String(pDate.getUTCDate()).padStart(2, '0');
-          const pMonth = String(pDate.getUTCMonth() + 1).padStart(2, '0');
-          const pYear = pDate.getUTCFullYear();
-          `${pDay}${pMonth}${pYear}`.split('').forEach(ch => { pSum += parseInt(ch, 10); });
-          while (pSum > 9) pSum = pSum.toString().split('').reduce((acc,val) => acc + parseInt(val, 10), 0);
-          res += `Partner-Hinweis: Unterschiedliche Lebenszahlen bringen Vielfalt in die Verbindung.\n\n`;
-        }
-      }
-
-      // Lebensbereiche (automatisch)
-      for (const cat in categoryHints) {
-        const hints = categoryHints[cat];
-        if (hints && hints.length) { const msg = hints[Math.floor(Math.random() * hints.length)]; res += `Im Bereich ${cat}: ${msg}\n\n`; }
-      }
-
-      // Fußnote mit Mixer-Infos
-      try {
-        const labelMap = { astro: 'Astro', num: 'Numerologie', tarot: 'Tarot', iching: 'I-Ging', cn: 'Chinesisch', tree: 'Baumkreis' };
-        const weightsLine = Object.entries(mixer.weights).map(([k,v]) => (labelMap[k]||k) + ': ' + v + '%').join(' · ');
-        res += `\n—\nTon: ${mixer.mode} · Zeitraum (Mixer): ${mixer.timeframe}\nGewichte: ${weightsLine}`;
-      } catch(e) {}
-
-      res += '\nDiese Inhalte dienen der Unterhaltung.';
-      document.getElementById('result').textContent = res;
+        if (z.start <= z.end) { if (cur>=z.start && cur<=z.end) return z.sign; }
+        else { if (cur>=z.start || cur<=z.end) return z.sign; }
+      } return "Unbekannt";
+    }
+    function getChineseZodiac(year){
+      const animals = ["Ratte","Büffel","Tiger","Hase","Drache","Schlange","Pferd","Ziege","Affe","Hahn","Hund","Schwein"];
+      const base = 2008; let idx = (year-base)%12; if(idx<0) idx+=12; return animals[idx];
     }
 
-    // ======= AI READING (Railway API) =======
-    // Setze hier deine Railway-URL (Root ohne /reading). Beispiel: https://deinprojekt.up.railway.app
-    const RAILWAY_BASE = "https://horoskopone-production.up.railway.app";
+    function generateAnalysis(){
+      const dateStr = document.getElementById('birthDate').value;
+      const place = document.getElementById('birthPlace').value.trim();
+      const frame = document.getElementById('timeFrame').value;
+      const out = document.getElementById('result');
+      if(!dateStr){ out.textContent="Bitte gib dein Geburtsdatum an."; return; }
+      const date = new Date(dateStr); if(isNaN(date)){ out.textContent="Ungültiges Datum."; return; }
+      const y=date.getUTCFullYear(), m=date.getUTCMonth()+1, d=date.getUTCDate();
+      const sign = getWesternZodiac(date); const cSign = getChineseZodiac(y);
 
-    async function generateAiReading() {
+      let sum=0; `${y}${String(m).padStart(2,'0')}${String(d).padStart(2,'0')}`.split('').forEach(n=>sum+=+n);
+      while(sum>9) sum = sum.toString().split('').reduce((a,b)=>a+ +b,0);
+
+      let tree = null;
+      for (const t of celticTrees) {
+        const [sM,sD]=t.start.split('-').map(Number), [eM,eD]=t.end.split('-').map(Number);
+        const after=(m>sM)||(m===sM&&d>=sD), before=(m<eM)||(m===eM&&d<=eD);
+        if ((sM<=eM && after && before) || (sM>eM && (after||before))) { tree=t; break; }
+      }
+
+      const introMap={morgen:"Morgen",woche:"Woche",monat:"Monat",restjahr:"Rest des Jahres",jahr:"nächste 12 Monate"};
+      let txt = `Dein ${introMap[frame]||"Zeitraum"} – Kurzkompass\n\n`;
+      txt += `Sternzeichen ${sign}: ${horoscopes[sign]}\n`;
+      txt += `Chinesisch ${cSign}: ${chineseHoroscopes[cSign]}\n`;
+      txt += `Lebenszahl ${sum}: Fokus setzen.\n`;
+      if(tree) txt += `Baum ${tree.name}: ${tree.message}\n`;
+      const hex = ichingMessages[Math.floor(Math.random()*ichingMessages.length)];
+      const tar = tarotCards[Math.floor(Math.random()*tarotCards.length)];
+      txt += `I-Ging ${hex.name}: ${hex.message}\n`;
+      txt += `Tarot ${tar.name}: ${tar.message}\n`;
+      if(place) txt += `Ort ${place}: färbt dein Erleben.\n\n`;
+      for(const k in categoryHints){ txt += `# ${k}: ${categoryHints[k][0]}\n`; }
+      document.getElementById('result').textContent = txt + "\n—\nDiese Inhalte dienen der Unterhaltung.";
+    }
+
+    const RAILWAY_BASE = "https://YOUR-RAILWAY-SUBDOMAIN.up.railway.app";
+
+    function renderReadingUI(data){
+      const box=document.getElementById('result'); box.innerHTML="";
+      const head=document.createElement('div');
+      head.className='reading-card';
+      head.innerHTML=`<div class="meta">Modus: <b>${data.meta.mode}</b> · Zeitraum: <b>${data.meta.timeframe}</b> · Seed: <code>${data.meta.seed}</code></div>`;
+      box.appendChild(head);
+
+      if(Array.isArray(data.highlights) && data.highlights.length){
+        const wrap=document.createElement('div'); wrap.className='reading-card';
+        wrap.innerHTML=`<h3 style="margin:0 0 8px 0">Deine 3 Highlights</h3>`;
+        data.highlights.slice(0,3).forEach(h=>{
+          const row=document.createElement('div'); row.className='hl';
+          const verb = h.title.replace(/^\s*(Ich|Du)\s*/i,''); 
+          row.innerHTML=`<b>${verb}</b><span>${h.action||''}</span>`;
+          const why=document.createElement('div'); why.className='why';
+          (h.why||[]).forEach(w=>{ const chip=document.createElement('span'); chip.className='badge'; chip.textContent=w; why.appendChild(chip); });
+          row.appendChild(why); wrap.appendChild(row);
+        });
+        box.appendChild(wrap);
+      }
+
+      (data.sections||[]).forEach(s=>{
+        const det=document.createElement('details'); det.className='reading'; det.open=true;
+        det.innerHTML=`<summary>${s.area}</summary><div style="padding:0 12px 12px 12px">${s.text}${s.action?`<div class='meta'>Aktion: ${s.action}</div>`:''}</div>`;
+        const why=document.createElement('div'); why.className='why';
+        (s.why||[]).forEach(w=>{ const chip=document.createElement('span'); chip.className='badge'; chip.textContent=w; why.appendChild(chip); });
+        det.appendChild(why); box.appendChild(det);
+      });
+
+      if(data.ritual?.title){
+        const r=document.createElement('div'); r.className='reading-card';
+        r.innerHTML = `<h3 style="margin:0 0 8px 0">${data.ritual.title}</h3>
+                       <ol style="margin:0 0 0 18px">${(data.ritual.steps||[]).map(x=>`<li>${x}</li>`).join("")}</ol>`;
+        box.appendChild(r);
+      }
+      const foot=document.createElement('div'); foot.className='meta';
+      foot.textContent=data.disclaimer||'Unterhaltung & achtsame Selbstreflexion. Keine Beratung.';
+      box.appendChild(foot);
+    }
+
+    async function generateAiReading(){
       const statusEl = document.getElementById('status');
       const resultEl = document.getElementById('result');
       const birthDate = document.getElementById('birthDate').value;
       const birthPlace = document.getElementById('birthPlace').value.trim();
-
-      if (!birthDate || !birthPlace) {
+      if(!birthDate || !birthPlace){
         resultEl.textContent = 'Bitte Datum und Ort angeben.'; return;
       }
-
-      const mixer = window.__mixerState || { mode:'mystic', timeframe:'day',
+      const mixer = window.__mixerState || { mode:'coach', timeframe:'day',
         weights:{ astro:34, num:13, tarot:17, iching:14, cn:11, tree:11 } };
 
       const payload = {
         mode: mixer.mode,
-        timeframe: mixer.timeframe, // Mixer-Zeitraum (day|week|month)
+        timeframe: mixer.timeframe,
         weights: mixer.weights,
-        inputs: {
-          date: birthDate,
-          time: null,
-          place: birthPlace,
-          goals: [],
-          mood: "neutral",
-          style: "pragmatisch"
-        }
+        inputs: { date: birthDate, time: null, place: birthPlace, goals: [], mood: "neutral", style: "pragmatisch" }
       };
 
       statusEl.textContent = 'Berechne Gold-Reading …';
-      resultEl.textContent = '';
+      resultEl.innerHTML = '';
 
-      try {
+      try{
         const res = await fetch(RAILWAY_BASE.replace(/\/$/,'') + "/reading", {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload)
         });
-        if (!res.ok) throw new Error('HTTP ' + res.status);
+        if(!res.ok) throw new Error('HTTP '+res.status);
         const data = await res.json();
-        if (data.error) throw new Error(data.error);
-
-        let out = `Modus: ${data.meta.mode} · Zeitraum: ${data.meta.timeframe} · Seed: ${data.meta.seed}\n\n`;
-        if (Array.isArray(data.highlights) && data.highlights.length) {
-          out += 'Highlights:\n';
-          data.highlights.forEach(h => { out += `• ${h.title}: ${h.action} (Warum: ${h.why.join(', ')})\n`; });
-          out += '\n';
-        }
-        (data.sections || []).forEach(s => {
-          out += `# ${s.area}\n${s.text}\n`;
-          if (s.action) out += `Aktion: ${s.action}\n`;
-          if (s.why?.length) out += `Warum: ${s.why.join(', ')}\n`;
-          out += '\n';
-        });
-        if (data.ritual?.title) {
-          out += `Ritual – ${data.ritual.title}\n`;
-          if (Array.isArray(data.ritual.steps)) out += data.ritual.steps.map((x,i)=>`${i+1}. ${x}`).join('\n') + '\n\n';
-        }
-        out += (data.disclaimer || 'Unterhaltung & achtsame Selbstreflexion. Keine Beratung.');
-        resultEl.textContent = out;
+        if(data.error) throw new Error(data.error);
+        renderReadingUI(data);
         statusEl.textContent = 'Fertig ✓';
-      } catch (e) {
-        console.error(e);
+      } catch(e){
         statusEl.textContent = '';
         resultEl.textContent = 'Fehler: ' + (e?.message || e);
       }
     }
   </script>
-
 </body>
 </html>
