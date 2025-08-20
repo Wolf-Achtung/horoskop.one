@@ -234,7 +234,7 @@
     // Mixer mount
     const rootEl = document.getElementById('mixer-root');
     const node = ReactDOM.createRoot(rootEl);
-    node.render(React.createElement(window.KosmischerMixer));
+    function __mountMixer(){ if(window.KosmischerMixer){ node.render(React.createElement(window.KosmischerMixer)); } else { setTimeout(__mountMixer, 60); } } __mountMixer();
 
     document.getElementById('btn-timehelp').onclick = ()=> document.getElementById('dlg-time').showModal();
     document.getElementById('btn-heute').onclick = ()=>{
@@ -309,17 +309,52 @@
     }
 
     async function callReading(){
-      const d=document.getElementById('birthDate').value;
-      const p=document.getElementById('birthPlace').value.trim();
-      const t=document.getElementById('birthTime').value; const a=document.getElementById('timeApprox').value || null;
-      const tf=document.getElementById('timeFrame').value;
-      if(!d||!p){ document.getElementById('result').textContent='Bitte Datum und Ort angeben.'; return; }
-      const m=window.__mixerState || { mode:'mystic_deep', timeframe:tf, weights:{ astro:34, num:13, tarot:17, iching:14, cn:11, tree:11 } };
-      m.timeframe=tf;
-      const payload={ mode:m.mode, timeframe:m.timeframe, weights:m.weights, inputs:{ date:d, time:t||null, timeApprox:a, place:p, goals:[], mood:'still', style:'mystic-deep', length:'long' } };
-      const res=await fetch(RAILWAY_BASE.replace(/\/$/,'')+'/reading',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-      if(!res.ok) throw new Error('HTTP '+res.status); const data=await res.json(); if(data.error) throw new Error(data.error); renderReadingUI(data);
+  const d = document.getElementById('birthDate').value;          // "YYYY-MM-DD" from <input type="date">
+  const p = document.getElementById('birthPlace').value.trim();  // place
+  const t = document.getElementById('birthTime').value;          // "HH:MM" or ""
+  const a = document.getElementById('timeApprox').value || "";   // "morning"|"noon"|"evening"|"night"|""
+  const tf = document.getElementById('timeFrame').value;         // "day"|"week"|"month"
+  if(!d || !p){
+    document.getElementById('result').textContent = 'Bitte Datum und Ort angeben.';
+    return;
+  }
+  const mapDaypart = { "morning":"morgens", "noon":"mittags", "evening":"abends", "night":"nachts", "":"unbekannt" };
+  const approx = mapDaypart[a] ?? "unbekannt";
+
+  // Mixer (optional)
+  const m = window.__mixerState || {};
+  const mixer = m.weights || null;
+
+  const payload = {
+    birthDate: d,                 // Backend akzeptiert ISO (YYYY-MM-DD) und DD.MM.YYYY
+    birthPlace: p,
+    period: tf,                   // "day" | "week" | "month"
+    approxDaypart: approx,        // deutsch-normalisiert
+    ...(t && /^\d{1,2}:\d{2}$/.test(t) ? { birthTime: t } : {}),
+    ...(mixer ? { mixer } : {}),
+    ...(m && m.mode ? { tone: m.mode } : {}),
+    ...(m && typeof m.seed !== 'undefined' ? { seed: m.seed } : {})
+  };
+
+  (async () => {
+    document.getElementById('result').textContent = '⏳ Berechnung läuft …';
+    const res = await fetch(RAILWAY_BASE.replace(/\/$/,'') + '/reading', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) {
+      let errText = 'HTTP ' + res.status;
+      try { const ej = await res.json(); if (Array.isArray(ej?.detail)) errText += ' – ' + ej.detail.map(d=> (d.loc||[]).join('.')+': '+d.msg).join(' | '); } catch {}
+      throw new Error(errText);
     }
+    const data = await res.json();
+    if (data?.error) throw new Error(String(data.error));
+    renderReadingUI(data);
+  })().catch(e=>{
+    document.getElementById('result').textContent = 'Fehler: ' + (e?.message || e);
+  });
+}
     document.getElementById('btn-gold').onclick = ()=>{ document.getElementById('result').innerHTML='Berechne …'; callReading().catch(e=>{ document.getElementById('result').textContent='Fehler: '+(e?.message||e); }); };
 
     

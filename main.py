@@ -44,12 +44,19 @@ def favicon():
 tf = TimezoneFinder()
 SWE_URL = os.getenv("SWE_URL")  # z. B. https://swe-worker-production.up.railway.app/swe
 
+
 def parse_birth_date(date_str: str) -> Optional[dt.date]:
-    m = re.match(r"(\d{1,2})\.(\d{1,2})\.(\d{4})", (date_str or "").strip())
-    if not m:
-        return None
-    d, mth, y = int(m.group(1)), int(m.group(2)), int(m.group(3))
-    return dt.date(y, mth, d)
+    s = (date_str or "").strip()
+    # Accept "DD.MM.YYYY" and "YYYY-MM-DD"
+    m = re.match(r"(\d{1,2})\.(\d{1,2})\.(\d{4})", s)
+    if m:
+        d, mth, y = int(m.group(1)), int(m.group(2)), int(m.group(3))
+        return dt.date(y, mth, d)
+    m2 = re.match(r"(\d{4})-(\d{2})-(\d{2})", s)
+    if m2:
+        y, mth, d = int(m2.group(1)), int(m2.group(2)), int(m2.group(3))
+        return dt.date(y, mth, d)
+    return None
 
 def parse_birth_time(time_str: Optional[str]) -> Optional[dt.time]:
     if not time_str:
@@ -59,6 +66,23 @@ def parse_birth_time(time_str: Optional[str]) -> Optional[dt.time]:
         return None
     h, mi = int(m.group(1)), int(m.group(2))
     return dt.time(max(0, min(23, h)), max(0, min(59, mi)))
+
+
+
+def normalize_daypart(val: Optional[str]) -> Optional[str]:
+    """Map UI tokens to expected German tokens."""
+    if not val:
+        return None
+    t = (val or "").strip().lower()
+    # English UI tokens
+    if t in ("morning",): return "morgens"
+    if t in ("noon","midday","mid-day","mid day"): return "mittags"
+    if t in ("evening",): return "abends"
+    if t in ("night","late"): return "nachts"
+    # German already
+    if t in ("morgens","mittags","abends","nachts","unbekannt"): return t
+    # Fallback
+    return None
 
 def daypart_from_time(t: Optional[dt.time]) -> str:
     if not t:
@@ -237,7 +261,7 @@ async def reading(req: ReadingRequest = Body(...)):
     # --- Basic parsing ---
     bdate = parse_birth_date(req.birthDate) or dt.date.today()
     btime = parse_birth_time(req.birthTime)
-    dpart = (req.approxDaypart or daypart_from_time(btime)).lower()
+    dpart = (normalize_daypart(req.approxDaypart) or daypart_from_time(btime)).lower()
 
     # --- Geocoding / Timezone ---
     geo = await geocode(req.birthPlace)
