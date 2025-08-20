@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><defs><style>path{stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}</style>
+<symbol id="cn-ratte" viewBox="0 0 24 24"><path d="M3 13c3-6 12-8 17-5M6 17c3 2 7 2 11 0"/></symbol>
+<symbol id="cn-bueffel" viewBox="0 0 24 24"><path d="M3 10c5-5 13-5 18 0M6 14c1 3 4 5 6 5 3 0 5-3 6-5"/></symbol>
+<symbol id="cn-tiger" viewBox="0 0 24 24"><path d="M4 7l8 10M12 7l8 10M5 12h14"/></symbol>
+<symbol id="cn-hase" viewBox="0 0 24 24"><path d="M6 9c0-3 4-5 6-2 2-3 6-1 6 2M8 15c2 1 6 1 8 0"/></symbol>
+<symbol id="cn-drache" viewBox="0 0 24 24"><path d="M4 12c3-8 13-8 16 0M6 16c4 2 8 2 12 0"/></symbol>
+<symbol id="cn-schlange" viewBox="0 0 24 24"><path d="M5 7c6-4 10 0 6 4s0 8 6 6"/></symbol>
+<symbol id="cn-pferd" viewBox="0 0 24 24"><path d="M4 12c4-4 8-4 12 0M6 16l6-4 6 4"/></symbol>
+<symbol id="cn-ziege" viewBox="0 0 24 24"><path d="M5 9c3-3 6-3 9 0M8 17c2 1 6 1 8-1"/></symbol>
+<symbol id="cn-affe" viewBox="0 0 24 24"><path d="M6 8c4-4 10 2 8 6s-8 2-9-2"/></symbol>
+<symbol id="cn-hahn" viewBox="0 0 24 24"><path d="M6 7c4 0 8 2 12 6M6 17c3-1 7-1 10 0"/></symbol>
+<symbol id="cn-hund" viewBox="0 0 24 24"><path d="M6 10c3-3 9-3 12 0M5 16c2 1 10 1 14 0"/></symbol>
+<symbol id="cn-schwein" viewBox="0 0 24 24"><path d="M4 12c4-5 12-5 16 0M6 16c3 2 9 2 12 0"/></symbol>
+</defs></svg>
