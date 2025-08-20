@@ -223,11 +223,11 @@ BASE_RULES = (
     "- Keine AC/Häuser-Deutung ohne exakte Geburtszeit."
 )
 MODE_RULES = {
-    "coach":   "Ton: sachlich-ermutigend, klare Mini-Schritte.",
-    "mystic":  "Ton: leicht bildhaft, trotzdem konkret.",
+    "coach":        "Ton: sachlich-ermutigend, klare Mini-Schritte.",
+    "mystic":       "Ton: leicht bildhaft, trotzdem konkret.",
     "mystic_coach": "Ton: ruhig-ermutigend mit leicht mystischem Flair; klare Mini-Schritte; seriös und knapp.",
-    "mystic_deep": "Ton: poetisch-ruhig, deutlich mystischer; sanfte Metaphern, zwei Sätze pro Abschnitt, klare Mini-Aktion; keine Heilsversprechen."
-    "skeptic": "Ton: neutral, dämpfe Gewissheiten; ergänze 1 Selbstcheck-Frage."
+    "mystic_deep":  "Ton: poetisch-ruhig, deutlich mystischer; sanfte Metaphern, zwei Sätze pro Abschnitt, klare Mini-Aktion; keine Heilsversprechen.",
+    "skeptic":      "Ton: neutral, dämpfe Gewissheiten; ergänze 1 Selbstcheck-Frage."
 }
 
 def sanitize(txt: str) -> str:
@@ -398,3 +398,57 @@ async def reading(req: Request):
     payload["disclaimer"]="Unterhaltung & achtsame Selbstreflexion. Keine medizinische, rechtliche oder finanzielle Beratung."
     payload=normalize_payload(payload)
     return payload
+
+
+from io import BytesIO
+from PIL import Image, ImageDraw, ImageFont
+
+@app.get("/og")
+def og_image(title: str = "horoskop.one", subtitle: str = "Mystischer Kompass", place: str = "", tf: str = "", moon: str = "", seed: int = 0):
+    random.seed(seed or 12345)
+    W,H = 1200,630
+    img = Image.new("RGB",(W,H),(11,16,32))
+    drw = ImageDraw.Draw(img)
+
+    # gradient
+    for y in range(H):
+        t = y/H
+        col = (int(11+(t*30)), int(16+(t*40)), int(32+(t*60)))
+        drw.line([(0,y),(W,y)], fill=col)
+
+    # subtle stars
+    for _ in range(220):
+        x = random.randint(0,W-1); y = random.randint(0,H-1)
+        drw.point((x,y), fill=(230,235,255))
+
+    # title/sub
+    try:
+        f_title = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf", 52)
+        f_sub   = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 22)
+        f_chip  = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 18)
+    except:
+        f_title = f_sub = f_chip = ImageFont.load_default()
+
+    drw.text((56,76), title, font=f_title, fill=(231,236,255))
+    drw.text((56,112), subtitle, font=f_sub, fill=(159,178,217))
+
+    # Chips row
+    x=56; y=150
+    def chip(txt):
+        nonlocal x
+        pad=10
+        tw,th = drw.textsize(txt,font=f_chip)
+        w = tw + pad*2; h = 28
+        drw.rounded_rectangle((x,y,w+x,h+y), radius=14, outline=(42,63,121), fill=(13,32,63))
+        drw.text((x+pad,y+6), txt, font=f_chip, fill=(187,208,255))
+        x += w + 10
+    if place: chip("📍 "+place)
+    if tf:    chip("🕰 "+tf)
+    if moon:  chip("☾ "+moon)
+
+    # Footer
+    drw.text((56,600),"horoskop.one • mystischer Kompass", font=f_sub, fill=(126,150,201))
+
+    b=BytesIO(); img.save(b, format="PNG"); b.seek(0)
+    from fastapi.responses import Response
+    return Response(content=b.read(), media_type="image/png")
