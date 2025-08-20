@@ -2,12 +2,12 @@
 const { useState, useMemo, useEffect } = React;
 
 const METHODS = [
-  { key: "astro",  label: "Astrologie / Transite", color: "#d4af37" },
-  { key: "num",    label: "Numerologie",           color: "#6366f1" },
-  { key: "tarot",  label: "Tarot",                 color: "#ef4444" },
-  { key: "iching", label: "I-Ging",                color: "#10b981" },
-  { key: "cn",     label: "Chinesisch",            color: "#f59e0b" },
-  { key: "tree",   label: "Baumkreis",             color: "#14b8a6" },
+  { key: "astro",  label: "Astrologie / Transite", color: "#9bb4ff" },
+  { key: "num",    label: "Numerologie",           color: "#61dafb" },
+  { key: "tarot",  label: "Tarot",                 color: "#ffd48a" },
+  { key: "iching", label: "I-Ging",                color: "#8ef3ff" },
+  { key: "cn",     label: "Chinesisch",            color: "#a5f59b" },
+  { key: "tree",   label: "Baumkreis",             color: "#b3e1ff" },
 ];
 
 const PRESETS = {
@@ -66,17 +66,16 @@ function toGradient(weights){
 function Segmented({ label, value, onChange, options }){
   return (
     <div>
-      <div className="mb-1 text-sm" style={{color:"#cbd5e1"}}>{label}</div>
-      <div className="inline-flex overflow-hidden rounded-xl" style={{border:"1px solid rgba(255,255,255,.1)"}}>
+      <div className="mb-1 text-sm" style={{color:"#9fb2d9"}}>{label}</div>
+      <div className="inline-flex overflow-hidden rounded-xl" style={{border:"1px solid #1a2c5a"}}>
         {options.map((opt,i)=>{
           const active = opt.value===value;
           return (
             <button key={opt.value}
               onClick={()=>onChange(opt.value)}
-              className={active ? "px-3 py-1.5 text-sm bg-amber-400/90 text-black"
-                                : "px-3 py-1.5 text-sm bg-white/5 text-slate-200 hover:bg-white/10"}
-              style={i?{borderLeft:"1px solid rgba(255,255,255,.1)"}:{}}
-              aria-pressed={active}>
+              className={active ? "px-3 py-1.5 text-sm" : "px-3 py-1.5 text-sm"}
+              style={{background: active? "#103061":"#0c1c3e", color:"#e7ecff",
+                      borderLeft: i? "1px solid #1a2c5a":"none"}} aria-pressed={active}>
               {opt.label}
             </button>
           );
@@ -89,7 +88,6 @@ function Segmented({ label, value, onChange, options }){
 function KosmischerMixer(){
   const [mode, setMode] = useState("coach");
   const [timeframe, setTimeframe] = useState("week");
-  const [copied, setCopied] = useState(false);
   const [weights, setWeights] = useState({ ...PRESETS.Balance });
 
   const total = useMemo(()=>round2(sumValues(weights)),[weights]);
@@ -107,16 +105,6 @@ function KosmischerMixer(){
 
   const onChangeWeight = (key,val) => setWeights(rebalance(weights, key, val));
 
-  const onCopy = async () => {
-    const payload = { mode, timeframe,
-      weights: Object.fromEntries(METHODS.map(m=>[m.key, round2(weights[m.key])]))
-    };
-    try {
-      await navigator.clipboard.writeText(JSON.stringify(payload,null,2));
-      setCopied(true); setTimeout(()=>setCopied(false),1200);
-    } catch {}
-  };
-
   useEffect(()=>{
     const detail = { mode, timeframe,
       weights: Object.fromEntries(METHODS.map(m=>[m.key, round2(weights[m.key])])) };
@@ -124,24 +112,23 @@ function KosmischerMixer(){
   }, [mode, timeframe, weights]);
 
   return (
-    <div className="mx-auto max-w-3xl p-4" style={{color:"#e5e7eb"}}>
-      <div className="rounded-2xl p-6 shadow-xl"
-           style={{background:"linear-gradient(180deg,#0b1020,#000)",border:"1px solid rgba(255,255,255,.08)"}}>
+    <div className="mx-auto max-w-3xl" style={{color:"#e7ecff"}}>
+      <div className="rounded-2xl p-5"
+           style={{background:"linear-gradient(180deg,#0f1933,#0b1328)",border:"1px solid #1a2c5a"}}>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-2xl font-semibold">Kosmischer Mixer<span className="text-slate-400">™</span></h2>
+          <h2 className="text-xl font-semibold">Kosmischer Mixer<span style={{color:"#9fb2d9"}}>™</span></h2>
           <div className="flex flex-wrap gap-2">
             {Object.keys(PRESETS).map(p=>(
               <button key={p} onClick={()=>setPreset(p)}
-                className="rounded-xl border bg-white/5 px-3 py-1.5 text-sm hover:bg-white/10"
-                style={{borderColor:"rgba(255,255,255,.1)"}}>{p}</button>
+                className="rounded-xl px-3 py-1.5 text-sm"
+                style={{background:"#0c1c3e",border:"1px solid #1a2c5a"}}>{p}</button>
             ))}
             <button onClick={()=>setPreset("Balance")}
-              className="rounded-xl border bg-white/5 px-3 py-1.5 text-sm hover:bg-white/10"
-              style={{borderColor:"rgba(255,255,255,.1)"}}>Zurücksetzen</button>
+              className="rounded-xl px-3 py-1.5 text-sm" style={{background:"#0c1c3e",border:"1px solid #1a2c5a"}}>Zurücksetzen</button>
           </div>
         </div>
 
-        <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Segmented label="Ton" value={mode}
             onChange={(v)=>setMode(v)}
             options={MODES.map(m=>({value:m.key,label:m.label}))}/>
@@ -150,63 +137,46 @@ function KosmischerMixer(){
             options={TIMEFRAMES.map(t=>({value:t.key,label:t.label}))}/>
         </div>
 
-        <div className="mt-6 flex flex-col items-center gap-6 sm:flex-row">
+        <div className="mt-5 flex flex-col items-center gap-6 sm:flex-row">
           <div className="flex items-center justify-center">
             <div className="h-40 w-40 rounded-full" style={{ background: gradient }} aria-label="Gewichtungs-Donut"/>
-            <div className="-ml-32 h-28 w-28 rounded-full" style={{ background:"rgba(0,0,0,.9)", border:"1px solid rgba(255,255,255,.1)" }}/>
+            <div className="-ml-32 h-28 w-28 rounded-full" style={{ background:"rgba(10,16,34,.95)", border:"1px solid #1a2c5a" }}/>
           </div>
           <div className="grid flex-1 grid-cols-1 gap-2 sm:grid-cols-2">
             {METHODS.map(m=>(
               <div key={m.key} className="flex items-center justify-between gap-3 rounded-xl p-3"
-                   style={{background:"rgba(255,255,255,.05)",border:"1px solid rgba(255,255,255,.1)"}}>
+                   style={{background:"#0c1c3e",border:"1px solid #1a2c5a"}}>
                 <div className="flex items-center gap-2">
                   <span className="inline-block h-3 w-3 rounded-full" style={{background:m.color}}></span>
-                  <span className="text-sm text-slate-200">{m.label}</span>
+                  <span className="text-sm">{m.label}</span>
                 </div>
-                <span className="tabular-nums text-sm text-slate-300">{round2(weights[m.key])}%</span>
+                <span className="tabular-nums text-sm" style={{color:"#bdd0ff"}}>{round2(weights[m.key])}%</span>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="mt-6 grid grid-cols-1 gap-4">
+        <div className="mt-5 grid grid-cols-1 gap-4">
           {METHODS.map(m=>(
             <div key={m.key} className="rounded-2xl p-4"
-                 style={{background:"rgba(255,255,255,.05)",border:"1px solid rgba(255,255,255,.1)"}}>
+                 style={{background:"#0c1c3e",border:"1px solid #1a2c5a"}}>
               <label htmlFor={`slider-${m.key}`} className="flex items-center justify-between text-sm">
                 <span className="flex items-center gap-2">
                   <span className="inline-block h-3 w-3 rounded-full" style={{background:m.color}}></span>{m.label}
                 </span>
-                <span className="tabular-nums text-slate-300">{round2(weights[m.key])}%</span>
+                <span className="tabular-nums" style={{color:"#bdd0ff"}}>{round2(weights[m.key])}%</span>
               </label>
               <input id={`slider-${m.key}`} type="range" min="0" max="100" step="1"
                 value={Math.round(weights[m.key])}
                 onChange={(e)=>onChangeWeight(m.key, Number(e.target.value))}
-                className="mt-2 w-full cursor-pointer accent-amber-400"
+                className="mt-2 w-full cursor-pointer" style={{accentColor:"#5aa7ff"}}
                 aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(weights[m.key])}/>
             </div>
           ))}
         </div>
 
-        <div className="mt-6 flex flex-col items-center justify-between gap-3 sm:flex-row">
-          <div className="text-sm text-slate-400">Summe: <span className="tabular-nums font-medium text-slate-200">
-            {total.toFixed(2)}%</span> · bleibt automatisch bei 100%</div>
-          <div className="flex items-center gap-2">
-            <button onClick={onCopy}
-              className="rounded-xl bg-amber-400/90 px-4 py-2 text-sm font-medium text-black shadow hover:bg-amber-300">
-              JSON kopieren
-            </button>
-          </div>
-        </div>
-
-        {copied && (
-          <div role="status" className="mt-3 rounded-xl p-3 text-center"
-               style={{background:"rgba(16,185,129,.1)", color:"#6ee7b7", border:"1px solid rgba(16,185,129,.3)"}}>
-            JSON in die Zwischenablage kopiert ✓
-          </div>
-        )}
+        <div className="mt-5 text-sm" style={{color:"#9fb2d9"}}>Summe: <span className="tabular-nums" style={{color:"#e7ecff"}}>{total.toFixed(2)}%</span> · bleibt automatisch bei 100%</div>
       </div>
-      <p className="mt-4 text-xs" style={{color:"#94a3b8"}}>Tipp: „Rational“ → sachlicher; „Mystisch“ → erzählerischer.</p>
     </div>
   );
 }

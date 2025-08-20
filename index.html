@@ -2,54 +2,113 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <title>horoskop.one – Dein achtsamer Horoskop-Kompass</title>
+  <title>horoskop.one – Mystischer Kompass</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="color-scheme" content="light only" />
+  <meta name="color-scheme" content="dark light" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&family=EB+Garamond:ital,wght@0,500;0,600;1,500&display=swap" rel="stylesheet">
   <style>
-    :root { --bg:#f5f3fa; --bg-card:#ffffff; --ink:#2c2541; --pri:#5b3e9e; --pri-2:#37205d; --card-bd:#ece3ff; --chip-bd:#e6d8ff; }
-    *{box-sizing:border-box} body{font-family:Inter,system-ui,Arial,sans-serif;margin:0;background:linear-gradient(180deg,var(--bg),#e7e2f2);color:var(--ink)}
-    header{background:linear-gradient(135deg,var(--pri),var(--pri-2));color:#fff;padding:24px 14px;text-align:center}
-    header .topnav{display:flex;gap:12px;justify-content:center;margin-top:8px}
-    header .topnav a{color:#e7defc;font-size:14px;text-decoration:none} header .topnav a:hover{text-decoration:underline}
-    main{max-width:950px;margin:20px auto;padding:16px;background:#fff;border-radius:14px;box-shadow:0 8px 20px rgba(0,0,0,.12)}
-    h2{margin:0 0 8px} label{display:block;margin:10px 0 6px;font-weight:700}
-    input[type="text"],input[type="date"],input[type="time"],select{width:100%;padding:10px 12px;border-radius:10px;border:1px solid #cfc7e6;background:#fbfaff;font-size:16px}
-    .btn{display:inline-block;padding:10px 14px;border-radius:10px;border:none;background:var(--pri);color:#fff;font-size:16px;cursor:pointer}
-    .btn.secondary{background:#efe8ff;color:#2c2541;border:1px solid #ded5ff} .btn:hover{opacity:.95} .btnrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
-    .badge{display:inline-block;padding:4px 8px;border:1px solid var(--chip-bd);border-radius:999px;font-size:12px;margin:2px 6px 2px 0;background:#f8f4ff}
-    .result{margin-top:12px} .reading-card{background:#faf7ff;border-radius:12px;padding:16px;margin:12px 0;border:1px solid var(--card-bd)}
-    .hl{display:flex;gap:10px;padding:10px 12px;border:1px solid #efe8ff;border-radius:12px;margin:6px 0}
-    .why{margin-top:6px} .why .badge{background:#fff;border-color:#e9e9f2;color:#555}
-    details.reading{border:1px solid #efe8ff;border-radius:12px;margin:10px 0;background:#fdfbff}
-    details.reading summary{cursor:pointer;padding:10px 12px;font-weight:700;list-style:none}
-    details.reading summary::-webkit-details-marker{display:none}
-    .meta{font-size:12px;color:#6b6280;margin-top:6px} .status{margin-top:6px;color:#555;font-size:14px}
-    .disclaimer{font-size:13px;color:#666;margin-top:16px;text-align:center}
+    :root{
+      --bg:#0b1020; --bg2:#0f1630; --panel:#0f162b; --panel-2:#101a34; --ink:#e7ecff; --muted:#9fb2d9;
+      --brand:#5aa7ff; --brand2:#6bd4ff; --gold:#f1c27d; --chip:#0d203f; --chip-bd:#203a6b;
+      --accent:#3ec4e4;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:radial-gradient(1200px 600px at 20% -10%, #1a2451 0%, transparent 60%),
+                            radial-gradient(900px 600px at 90% 10%, #10204a 0%, transparent 60%),
+                            linear-gradient(180deg, var(--bg), var(--bg2));
+         color:var(--ink); font-family:'Plus Jakarta Sans',system-ui,Arial,sans-serif; line-height:1.45}
+    .stars::before{content:'';position:fixed;inset:0;pointer-events:none;
+      background-image:radial-gradient(1px 1px at 20% 30%, #fff8 60%, transparent 61%),
+                       radial-gradient(1px 1px at 70% 20%, #fff5 60%, transparent 61%),
+                       radial-gradient(1px 1px at 40% 70%, #fff4 60%, transparent 61%),
+                       radial-gradient(1px 1px at 85% 60%, #fff6 60%, transparent 61%);
+      background-repeat:no-repeat; }
+    header{padding:28px 16px 34px;border-bottom:1px solid #152149;position:relative}
+    header .brand{display:flex;justify-content:center;align-items:center;gap:12px}
+    .sigil{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-size:18px;
+      background:radial-gradient(60% 60% at 50% 40%, #23335f 0%, #111b35 60%);
+      border:1px solid #2a3f79; box-shadow:0 0 12px #2a3f7933}
+    .title{font-weight:700;letter-spacing:.2px}
+    .sub{color:var(--muted);font-size:14px;margin-top:6px}
+    nav{margin-top:8px;display:flex;gap:18px;justify-content:center}
+    nav a{color:#a9c4ff;text-decoration:none;font-size:14px} nav a:hover{text-decoration:underline}
+    main{max-width:980px;margin:24px auto;padding:0 14px 40px}
+    .panel{background:linear-gradient(180deg, #0e1730, #0c1428);border:1px solid #1a2c5a;border-radius:16px;box-shadow:0 12px 36px #0008}
+    .section{padding:18px}
+    h2{margin:0 0 10px 0;font-size:20px}
+    label{display:block;margin:12px 0 6px;font-weight:700;color:#cfe0ff;font-size:14px}
+    input[type="text"],input[type="date"],input[type="time"],select{
+      width:100%;padding:12px 12px;border-radius:12px;border:1px solid #24417b;background:#0b1530;color:#e7ecff;font-size:16px}
+    input::placeholder{color:#6e86b3}
+    .btn{display:inline-flex;gap:8px;align-items:center;padding:10px 14px;border-radius:12px;border:1px solid #2d4b8d;background:#103061;color:#fff;cursor:pointer}
+    .btn:hover{filter:brightness(1.1)}
+    .btn.brand{background:linear-gradient(180deg,#1653a8,#0f3c7b);border-color:#2f63b3}
+    .btn.ghost{background:#0c1c3e}
+    .row{display:flex;gap:12px;flex-wrap:wrap}
+    .chip{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--chip-bd);background:var(--chip);padding:6px 10px;border-radius:999px;color:#bdd0ff;font-size:12px}
+    .badge{display:inline-block;padding:4px 10px;border:1px solid #2a446f;border-radius:999px;background:#0c1e3a;color:#a2c5ff;font-size:12px}
+    .reading{margin-top:14px}
+    .card{background:linear-gradient(180deg,#0f1933,#0b1328);border:1px solid #1a2c5a;border-radius:14px;padding:16px}
+    details{border:1px solid #1a2c5a;border-radius:14px;margin:10px 0;background:#0b142b}
+    details[open]{box-shadow:0 0 0 1px #1b2f61 inset}
+    summary{cursor:pointer;padding:12px 14px;font-weight:700}
+    .why{margin:6px 14px 12px}
+    .meta{font-size:12px;color:#95abd9;margin-top:6px}
+    .disclaimer{font-size:12px;color:#7e96c9;margin-top:16px;text-align:center}
+    .divider{height:1px;background:#152149;margin:14px 0}
+    .icon{opacity:.9}
+    .small{font-size:12px;color:#9fb2d9}
+    .ring{display:grid;place-items:center; padding:18px 0}
+    .wheel{width:220px;height:220px;border-radius:50%;border:1px dashed #2c427a;display:grid;place-items:center;
+      background:radial-gradient(60% 60% at 50% 40%, #142044 0%, #0a1226 65%); box-shadow:inset 0 0 24px #000a}
+    .wheel:after{content:"☉";font-family:serif;font-size:30px;color:#ffc96a;filter:drop-shadow(0 0 6px #ffc96a)}
+    .top-actions{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
+    .switch{font-size:13px;color:#a5bcef}
+    .right{display:flex;gap:8px;align-items:center}
+    .hidden{display:none}
   </style>
-  <script>tailwind={};tailwind.config={corePlugins:{preflight:false}};</script>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
-<body>
+<body class="stars">
   <header>
-    <div><strong>horoskop.one</strong> – achtsam & erklärbar</div>
-    <div class="topnav">
+    <div class="brand">
+      <div class="sigil">☽</div>
+      <div>
+        <div class="title">horoskop.one</div>
+        <div class="sub">Mystischer Kompass – achtsam, erklärbar</div>
+      </div>
+    </div>
+    <nav>
       <a href="methoden.html">Methoden</a>
       <a href="impressum.html">Impressum</a>
       <a href="datenschutz.html">Datenschutz</a>
-    </div>
+    </nav>
   </header>
-  <main>
-    <button id="toggle-mixer" class="badge" style="border:none;background:#fff;margin-bottom:8px">Erweiterte Einstellungen ▾</button>
-    <section id="mixerSection" class="rounded-2xl" style="margin:0 0 1rem 0;display:none">
-      <h2>Kosmischer Mixer</h2><div id="mixer-root"></div>
-    </section>
 
-    <section id="birthInfo">
+  <main>
+    <section class="panel section">
+      <div class="top-actions">
+        <div class="switch">
+          <span class="badge">Erweiterte Einstellungen</span>
+          <button id="btn-toggle-mixer" class="btn ghost small">anzeigen ▾</button>
+        </div>
+        <div class="right">
+          <span class="chip"><span class="icon">♟</span><span id="chip-mode">Coach</span></span>
+          <span class="chip"><span class="icon">🕰</span><span id="chip-timeframe">Woche</span></span>
+        </div>
+      </div>
+      <div id="mixer-wrap" class="hidden">
+        <div id="mixer-root"></div>
+        <div class="divider"></div>
+      </div>
+
+      <div class="ring">
+        <div class="wheel"></div>
+      </div>
+
       <h2>Deine Geburtsdaten</h2>
-      <p class="meta">Datum & Ort genügen. Falls keine exakte Uhrzeit: „Morgens / Mittags / Abends / Nachts“ wählen.</p>
+      <p class="small">Datum & Ort genügen. Falls keine exakte Uhrzeit: „Morgens / Mittags / Abends / Nachts“ wählen.</p>
 
       <label for="birthDate">Geburtsdatum</label>
       <input type="date" id="birthDate" />
@@ -57,12 +116,12 @@
       <label for="birthPlace">Geburtsort</label>
       <input type="text" id="birthPlace" placeholder="z. B. Berlin" />
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div>
+      <div class="row">
+        <div style="flex:1 1 220px">
           <label for="birthTime">Geburtszeit (optional)</label>
           <input type="time" id="birthTime" placeholder="--:--" />
         </div>
-        <div>
+        <div style="flex:1 1 220px">
           <label for="timeApprox">…oder ungefähr</label>
           <select id="timeApprox">
             <option value="">Unbekannt</option>
@@ -86,85 +145,126 @@
         <option value="jahr">Nächstes Jahr</option>
       </select>
 
-      <div class="btnrow">
-        <button class="btn secondary" onclick="generateAnalysis()">Sofort-Analyse (offline)</button>
-        <button class="btn" onclick="generateAiReading()">Gold-Reading (AI)</button>
+      <div class="row" style="margin-top:10px">
+        <button class="btn ghost" onclick="generateAnalysis()">Sofort-Analyse (offline)</button>
+        <button class="btn brand" onclick="generateAiReading()">Gold-Reading (AI)</button>
       </div>
 
-      <div class="meta">Erklärbar (Why-Chips) · Reproduzierbar (Seed) · DSGVO-first.</div>
-      <div id="status" class="status"></div>
-      <div id="result" class="result"></div>
-    </section>
+      <div id="status" class="meta"></div>
 
-    <p class="disclaimer">Unterhaltung & achtsame Selbstreflexion. Keine medizinische, rechtliche oder finanzielle Beratung.
-    Bei Krisen oder akuter Gefahr: 112 (EU) / lokale Beratungsstellen.</p>
+      <div id="ephemeris" class="row" style="margin-top:8px"></div>
+
+      <div id="result" class="reading"></div>
+
+      <div class="disclaimer">Unterhaltung & achtsame Selbstreflexion. Keine medizinische, rechtliche oder finanzielle Beratung.
+        Bei Krisen oder akuter Gefahr: 112 (EU) / lokale Beratungsstellen.</div>
+    </section>
   </main>
 
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script type="text/babel" data-presets="react" src="components/horoskop.cdn.jsx"></script>
+
   <script type="text/babel">
     const mixerRoot = ReactDOM.createRoot(document.getElementById('mixer-root'));
     mixerRoot.render(<KosmischerMixer />);
     window.__mixerState = { mode: 'coach', timeframe: 'week', weights: { astro: 34, num: 13, tarot: 17, iching: 14, cn: 11, tree: 11 } };
-    window.addEventListener('horoskop:mixer', (e)=>{ window.__mixerState = e.detail; });
+    window.addEventListener('horoskop:mixer', (e)=>{
+      window.__mixerState = e.detail;
+      document.getElementById('chip-mode').textContent =
+        e.detail.mode==='mystic'?'Mystisch':(e.detail.mode==='skeptic'?'Skeptisch':'Coach');
+      document.getElementById('chip-timeframe').textContent =
+        e.detail.timeframe==='day'?'Heute':(e.detail.timeframe==='week'?'Woche':'Monat');
+    });
 
-    const mixer = document.getElementById('mixerSection'); const tbtn = document.getElementById('toggle-mixer');
-    tbtn.onclick = ()=>{ mixer.style.display = mixer.style.display === 'none' ? 'block':'none'; tbtn.textContent = mixer.style.display==='none'?'Erweiterte Einstellungen ▾':'Erweiterte Einstellungen ▴'; };
-  </script>
-
-  <script>
-    // Minimaler Offline-Kurzkompass, damit der Button nicht ins Leere läuft
-    function generateAnalysis(){
-      const birthDate=document.getElementById('birthDate').value;
-      const birthPlace=document.getElementById('birthPlace').value.trim();
-      const birthTime=document.getElementById('birthTime').value;
-      const approx=document.getElementById('timeApprox').value||'unbekannt';
-      const out=document.getElementById('result');
-      if(!birthDate||!birthPlace){ out.textContent='Bitte Datum und Ort eingeben.'; return; }
-      const timeInfo=birthTime?`Uhrzeit ${birthTime}`:`Zeit ungefähr: ${approx}`;
-      out.innerHTML = `<div class="reading-card"><b>Kurzkompass (offline)</b><br>Datum: ${birthDate} · Ort: ${birthPlace} · ${timeInfo}.<br>Für die volle Analyse bitte „Gold-Reading (AI)“ nutzen.</div>`;
-    }
+    document.getElementById('btn-toggle-mixer').onclick = () => {
+      const w = document.getElementById('mixer-wrap');
+      const btn = document.getElementById('btn-toggle-mixer');
+      const shown = w.classList.toggle('hidden');
+      btn.textContent = shown ? 'anzeigen ▾' : 'ausblenden ▴';
+    };
   </script>
 
   <script>
     const RAILWAY_BASE = "https://horoskopone-production.up.railway.app"; // ggf. anpassen
 
+    function fmtTime(s){
+      if(!s) return '';
+      try{
+        const t = s.includes('T') ? s.split('T')[1] : s;
+        const [hh,mm] = t.split(':');
+        return `${hh}:${mm}`;
+      }catch(e){ return ''; }
+    }
+
+    function setEphemeris(meta){
+      const bar = document.getElementById('ephemeris'); bar.innerHTML='';
+      const p = meta?.profile || {}; const e = meta?.ephemeris || {};
+      const chips = [];
+      if(p.place) chips.push(['📍', p.place]);
+      if(p.timezone) chips.push(['🕒', p.timezone]);
+      if(typeof e.birth_is_day === 'boolean') chips.push(['☀️', e.birth_is_day?'Taggeburt':'Nachtgeburt']);
+      if(e.season) chips.push(['🜄', e.season==='summer'?'Sommer': e.season==='spring'?'Frühling': e.season==='autumn'?'Herbst':'Winter']);
+      if(e.moon_phase_name) chips.push(['☾', e.moon_phase_name]);
+      if(e.sunrise || e.sunset) chips.push(['⟲', `SR ${fmtTime(e.sunrise)} · SS ${fmtTime(e.sunset)}`]);
+      chips.forEach(([i,t])=>{
+        const el=document.createElement('span'); el.className='chip';
+        el.innerHTML=`<span class="icon">${i}</span><span>${t}</span>`; bar.appendChild(el);
+      });
+    }
+
     function renderReadingUI(data){
       const box=document.getElementById('result'); box.innerHTML="";
-      const head=document.createElement('div'); head.className='reading-card';
-      head.innerHTML=`<div class="meta">Modus: <b>${data?.meta?.mode||'-'}</b> · Zeitraum: <b>${data?.meta?.timeframe||'-'}</b> · Seed: <code>${data?.meta?.seed||'-'}</code> · Ort: <b>${data?.meta?.profile?.place||''}</b> · TZ: <code>${data?.meta?.profile?.timezone||''}</code></div>`;
+      setEphemeris(data.meta);
+
+      const head=document.createElement('div'); head.className='card';
+      head.innerHTML=`<div class="small">Modus: <b>${data?.meta?.mode||'-'}</b> · Zeitraum: <b>${data?.meta?.timeframe||'-'}</b> · Seed: <code>${data?.meta?.seed||'-'}</code></div>`;
       box.appendChild(head);
 
       if(Array.isArray(data.highlights) && data.highlights.length){
-        const wrap=document.createElement('div'); wrap.className='reading-card';
+        const wrap=document.createElement('div'); wrap.className='card';
         wrap.innerHTML=`<h3 style="margin:0 0 8px 0">Deine 3 Highlights</h3>`;
         data.highlights.slice(0,3).forEach(h=>{
-          const row=document.createElement('div'); row.className='hl';
-          row.innerHTML=`<b>${h.title||'Highlight'}</b><span>${h.action||''}</span>`;
-          const why=document.createElement('div'); why.className='why';
-          (h.why||[]).forEach(w=>{ const chip=document.createElement('span'); chip.className='badge'; chip.textContent=w; why.appendChild(chip) });
-          row.appendChild(why); wrap.appendChild(row);
+          const row=document.createElement('div'); row.className='row'; row.style.margin='8px 0';
+          row.innerHTML=`<div style="flex:1"><b>${h.title||'Highlight'}</b><div class="small">${h.action||''}</div></div>`;
+          const why=document.createElement('div'); why.className='row';
+          (h.why||[]).forEach(w=>{ const chip=document.createElement('span'); chip.className='chip'; chip.textContent=w; why.appendChild(chip) });
+          wrap.appendChild(row); wrap.appendChild(why);
         });
         box.appendChild(wrap);
       }
 
       (data.sections||[]).forEach((s,i)=>{
         const area = s.area && s.area!=='undefined' ? s.area : (["Fokus","Beruf","Liebe","Energie","Soziales"][i%5]);
-        const det=document.createElement('details'); det.className='reading'; det.open=true;
-        det.innerHTML=`<summary>${area}</summary><div style="padding:0 12px 12px 12px">${s.text||''}${s.action?`<div class='meta'>Aktion: ${s.action}</div>`:''}</div>`;
+        const det=document.createElement('details'); det.open=true;
+        const summary=document.createElement('summary'); summary.textContent=area; det.appendChild(summary);
+        const inner=document.createElement('div'); inner.style.padding='0 14px 12px 14px';
+        inner.innerHTML = `<div style="margin-bottom:6px">${s.text||''}</div>${s.action?`<div class='small'>Aktion: ${s.action}</div>`:''}`;
+        det.appendChild(inner);
         const why=document.createElement('div'); why.className='why';
-        (s.why||[]).forEach(w=>{ const chip=document.createElement('span'); chip.className='badge'; chip.textContent=w; why.appendChild(chip) });
-        det.appendChild(why); box.appendChild(det);
+        (s.why||[]).forEach(w=>{ const chip=document.createElement('span'); chip.className='chip'; chip.textContent=w; why.appendChild(chip) });
+        det.appendChild(why);
+        box.appendChild(det);
       });
 
       if(data.ritual?.title){
-        const r=document.createElement('div'); r.className='reading-card';
+        const r=document.createElement('div'); r.className='card';
         r.innerHTML = `<h3 style="margin:0 0 8px 0">${data.ritual.title}</h3>
                        <ol style="margin:0 0 0 18px">${(data.ritual.steps||[]).map(x=>`<li>${x}</li>`).join("")}</ol>`;
         box.appendChild(r);
       }
-      const foot=document.createElement('div'); foot.className='meta';
-      foot.textContent=data.disclaimer||'Unterhaltung & achtsame Selbstreflexion. Keine Beratung.';
-      box.appendChild(foot);
+    }
+
+    function generateAnalysis(){
+      const birthDate=document.getElementById('birthDate').value;
+      const birthPlace=document.getElementById('birthPlace').value.trim();
+      const birthTime=document.getElementById('birthTime').value;
+      const approx=document.getElementById('timeApprox').value||'unbekannt';
+      const out=document.getElementById('result'); const eph=document.getElementById('ephemeris'); eph.innerHTML='';
+      if(!birthDate||!birthPlace){ out.textContent='Bitte Datum und Ort eingeben.'; return; }
+      const timeInfo=birthTime?`Uhrzeit ${birthTime}`:`Zeit ungefähr: ${approx}`;
+      out.innerHTML = `<div class="card"><b>Kurzkompass (offline)</b><br>Datum: ${birthDate} · Ort: ${birthPlace} · ${timeInfo}.<br><span class="small">Für die volle Analyse bitte „Gold-Reading (AI)“ nutzen.</span></div>`;
     }
 
     async function generateAiReading(){
