@@ -395,5 +395,7 @@ if(moon) chip(moon);
     }
     document.getElementById('btn-share').onclick = async ()=>{ if(!__lastData){ alert('Bitte zuerst ein Gold-Reading erzeugen.'); return; } const canvas = await makeShareCard(__lastData); canvas.toBlob((b)=>{ const url=URL.createObjectURL(b); const a=document.createElement('a'); a.href=url; a.download='horoskop-one-card.png'; a.click(); URL.revokeObjectURL(url); }); };
   </script>
+<script src="components/enhancements-v14.js"></script>
+
 </body>
 </html>
