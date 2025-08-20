@@ -17,6 +17,7 @@ const PRESETS = {
 };
 
 const MODES = [
+  { key: "mystic_coach", label: "Mystic Coach" },
   { key: "mystic", label: "Mystisch" },
   { key: "coach",  label: "Coach" },
   { key: "skeptic",label: "Skeptisch" },
@@ -86,7 +87,7 @@ function Segmented({ label, value, onChange, options }){
 }
 
 function KosmischerMixer(){
-  const [mode, setMode] = useState("coach");
+  const [mode, setMode] = useState("mystic_coach");
   const [timeframe, setTimeframe] = useState("week");
   const [weights, setWeights] = useState({ ...PRESETS.Balance });
 
@@ -110,6 +111,18 @@ function KosmischerMixer(){
       weights: Object.fromEntries(METHODS.map(m=>[m.key, round2(weights[m.key])])) };
     window.dispatchEvent(new CustomEvent("horoskop:mixer", { detail }));
   }, [mode, timeframe, weights]);
+
+  // Inbound sync (Heute-Shortcut etc.)
+  useEffect(()=>{
+    const handler = (e)=>{
+      const d = e.detail || {};
+      if (d.mode) setMode(d.mode);
+      if (d.timeframe) setTimeframe(d.timeframe);
+      if (d.weights) setWeights(d.weights);
+    };
+    window.addEventListener("horoskop:set", handler);
+    return ()=> window.removeEventListener("horoskop:set", handler);
+  }, []);
 
   return (
     <div className="mx-auto max-w-3xl" style={{color:"#e7ecff"}}>
@@ -154,25 +167,6 @@ function KosmischerMixer(){
               </div>
             ))}
           </div>
-        </div>
-
-        <div className="mt-5 grid grid-cols-1 gap-4">
-          {METHODS.map(m=>(
-            <div key={m.key} className="rounded-2xl p-4"
-                 style={{background:"#0c1c3e",border:"1px solid #1a2c5a"}}>
-              <label htmlFor={`slider-${m.key}`} className="flex items-center justify-between text-sm">
-                <span className="flex items-center gap-2">
-                  <span className="inline-block h-3 w-3 rounded-full" style={{background:m.color}}></span>{m.label}
-                </span>
-                <span className="tabular-nums" style={{color:"#bdd0ff"}}>{round2(weights[m.key])}%</span>
-              </label>
-              <input id={`slider-${m.key}`} type="range" min="0" max="100" step="1"
-                value={Math.round(weights[m.key])}
-                onChange={(e)=>onChangeWeight(m.key, Number(e.target.value))}
-                className="mt-2 w-full cursor-pointer" style={{accentColor:"#5aa7ff"}}
-                aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(weights[m.key])}/>
-            </div>
-          ))}
         </div>
 
         <div className="mt-5 text-sm" style={{color:"#9fb2d9"}}>Summe: <span className="tabular-nums" style={{color:"#e7ecff"}}>{total.toFixed(2)}%</span> · bleibt automatisch bei 100%</div>
