@@ -443,6 +443,22 @@ if(moon) chip(moon);
 <link rel="stylesheet" href="components/enhancements-v16.css">
 <script src="components/enhancements-v16.js"></script>
 
+<script src="/frontend/reading-client.js"></script>
+<script>
+  async function onSterneFragen() {
+    const reading = await HoroskopOne.callReading({
+      birthDate: document.querySelector('#geburtsdatum').value,
+      birthPlace: document.querySelector('#geburtsort').value,
+      birthTime: document.querySelector('#geburtszeit')?.value || null,
+      approxDaypartUI: document.querySelector('#ungefähr')?.value || 'unbekannt',
+      periodUI: document.querySelector('#zeitraum')?.value || 'Heute',
+      seed: undefined,
+      mixer: {}
+    });
+    console.log(reading);
+    // TODO: ins UI rendern
+  }
+</script>
 
 </body>
 </html>
