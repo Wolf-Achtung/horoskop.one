@@ -1,0 +1,122 @@
+
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HOROSKOPO.NE — Dein Moment unter den Sternen</title>
+
+    <!-- Content Security Policy (tight, no inline scripts; allow API + Nominatim) -->
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      script-src 'self';
+      connect-src 'self' https://horoskopone-production.up.railway.app https://nominatim.openstreetmap.org;
+      img-src 'self' data: blob:;
+      style-src 'self' 'unsafe-inline';
+      font-src 'self';
+      base-uri 'self';
+      form-action 'self';
+      frame-ancestors 'none';
+    "> 
+
+    <link rel="stylesheet" href="/styles.css" />
+    <meta name="color-scheme" content="dark light">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="brand">
+        <span class="logo">✷</span> <strong>HOROSKOP.ONE</strong>
+        <span class="tagline">Sternen­kunst — achtsam, poetisch, erklärbar</span>
+      </div>
+      <nav class="nav">
+        <a href="#method">Methoden</a>
+        <a href="#privacy">Datenschutz</a>
+      </nav>
+    </header>
+
+    <main class="container">
+      <!-- Zodiac visual -->
+      <section class="hero">
+        <canvas id="zodiac-canvas" width="520" height="520" aria-hidden="true"></canvas>
+      </section>
+
+      <!-- Form -->
+      <section class="card">
+        <h2>Dein Moment unter den Sternen</h2>
+        <form id="astro-form" autocomplete="off">
+          <div class="grid">
+            <label>Geburtsdatum
+              <input type="date" id="birthDate" name="birthDate" required min="1900-01-01" max="2035-12-31" />
+            </label>
+
+            <label>Geburtsort
+              <input type="text" id="birthPlace" name="birthPlace" placeholder="Stadt, Ort" autocomplete="off" required />
+              <input type="hidden" id="birthLat" name="birthLat" />
+              <input type="hidden" id="birthLon" name="birthLon" />
+              <div id="place-suggest" class="autocomplete-list" role="listbox" aria-label="Vorschläge"></div>
+            </label>
+
+            <label>Geburtszeit (optional)
+              <input type="time" id="birthTime" name="birthTime" placeholder="14:00" />
+            </label>
+
+            <label>…oder ungefähr
+              <select id="timeApprox" name="timeApprox">
+                <option value="">Unbekannt</option>
+                <option value="morning">Morgens</option>
+                <option value="noon">Mittags</option>
+                <option value="evening">Abends</option>
+                <option value="night">Nachts</option>
+              </select>
+            </label>
+
+            <label>Vorhersagezeitraum
+              <select id="timeFrame" name="timeFrame">
+                <option value="today">Heute</option>
+                <option value="week" selected>Woche</option>
+                <option value="month">Monat</option>
+              </select>
+            </label>
+
+            <label>Modus
+              <select id="mode" name="mode" title="Tonalität des Textes">
+                <option value="balanced" selected>Ausgewogen</option>
+                <option value="skeptic">Skeptisch (erklärend)</option>
+                <option value="poetic">Poetisch</option>
+                <option value="trailer">Trailer-Energie 🔥</option>
+              </select>
+            </label>
+
+          </div>
+
+          <div class="actions">
+            <button type="submit" id="btnAsk">Sterne fragen</button>
+            <button type="button" id="btnShare" class="ghost">Share‑Card erstellen</button>
+            <a id="btnDownload" class="ghost" href="#" download="horoskop-one.png" hidden>Card downloaden</a>
+          </div>
+
+          <p id="status" class="status" aria-live="polite"></p>
+          <details id="debug" class="debug" hidden><summary>Details</summary><pre id="debugPre"></pre></details>
+        </form>
+      </section>
+
+      <section id="result" class="card result" aria-live="polite">
+        <h3>Dein Reading</h3>
+        <div id="readingOut"></div>
+      </section>
+
+      <section id="shareCardPreview" class="card" hidden>
+        <h3>Share‑Card Vorschau</h3>
+        <canvas id="shareCanvas" width="1200" height="630"></canvas>
+      </section>
+
+    </main>
+
+    <footer class="site-footer">
+      <small>© horoskop.one · Achtsamkeit vor Absolutheit · <a id="permalink" href="#">Permalink</a></small>
+    </footer>
+
+    <!-- Built JS bundle with SRI filled by build step -->
+    <script defer src="__APP_JS__" integrity="__INTEGRITY__" crossorigin="anonymous"></script>
+  </body>
+</html>
