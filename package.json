@@ -1,12 +1,11 @@
 {
   "name": "horoskop.one-gold",
-  "version": "1.0.3",
+  "version": "1.0.2",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "node scripts/build.mjs",
-    "build": "node scripts/build.mjs",
-    "clean": "node -e \"(async()=>{const fs=require('fs');fs.rmSync('dist',{recursive:true,force:true});})();\""
+    "build": "node scripts/build.mjs"
   },
   "devDependencies": {
     "esbuild": "^0.21.5"

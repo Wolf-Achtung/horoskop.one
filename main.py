@@ -36,15 +36,18 @@ def favicon(): return Response(status_code=204)
 tf = TimezoneFinder()
 
 def parse_birth_date(date_str: str) -> Optional[dt.date]:
-    m = re.match(r"(\d{1,2})\.(\d{1,2})\.(\d{4})", (date_str or "").strip())
-    if not m: return None
-    d, mth, y = int(m.group(1)), int(m.group(2)), int(m.group(3))
-    return dt.date(y, mth, d)
-
-def parse_birth_time(time_str: Optional[str]) -> Optional[dt.time]:
-    if not time_str: return None
-    m = re.match(r"(\d{1,2}):(\d{2})", time_str.strip())
-    if not m: return None
+    s = (date_str or '').strip()
+    m = re.match(r'^(\\d{4})-(\\d{2})-(\\d{2})$', s)
+    if m:
+        y, mth, d = int(m.group(1)), int(m.group(2)), int(m.group(3))
+        return dt.date(y, mth, d)
+    m = re.match(r'^(\\d{1,2})\\.(\\d{1,2})\\.(\\d{2,4})$', s)
+    if m:
+        d, mth, y = int(m.group(1)), int(m.group(2)), int(m.group(3))
+        if y < 100:
+            y = 2000 + y if y < 30 else 1900 + y
+        return dt.date(y, mth, d)
+    return None
     h, mi = int(m.group(1)), int(m.group(2))
     return dt.time(max(0, min(23, h)), max(0, min(59, mi)))
 
@@ -320,35 +323,16 @@ Gib nur JSON:
 # Run: uvicorn main:app --host 0.0.0.0 --port 8080
 
 
-def parse_birth_date2(date_str: str) -> Optional[dt.date]:
-    s = (date_str or "").strip()
-    m = re.match(r"^(\d{4})-(\d{2})-(\d{2})$", s)  # ISO
-    if m:
-        y, mth, d = int(m.group(1)), int(m.group(2)), int(m.group(3))
-        return dt.date(y, mth, d)
-    m = re.match(r"^(\d{1,2})\.(\d{1,2})\.(\d{2,4})$", s)  # D.M.Y / DD.MM.YYYY
-    if m:
-        d, mth, y = int(m.group(1)), int(m.group(2)), int(m.group(3))
-        if y < 100:
-            y = 2000 + y if y < 30 else 1900 + y
-        return dt.date(y, mth, d)
-    return None
-
-# override
-parse_birth_date = parse_birth_date2
-
-
-# Backwards-compatible alias
-@app.post("/readings", response_model=ReadingResponse)
+@app.post('/readings', response_model=ReadingResponse)
 async def readings_alias(req: ReadingRequest = Body(...)):
     return await reading(req)
 
 
-# Serve built frontend (dist/) as static site
+# Serve built frontend
 try:
     here = os.path.dirname(__file__)
-    dist_dir = os.path.join(here, "dist")
+    dist_dir = os.path.join(here, 'dist')
     if os.path.isdir(dist_dir):
-        app.mount("/", StaticFiles(directory=dist_dir, html=True), name="static")
+        app.mount('/', StaticFiles(directory=dist_dir, html=True), name='static')
 except Exception as _e:
-    print("Static mount failed:", _e)
+    print('Static mount failed:', _e)

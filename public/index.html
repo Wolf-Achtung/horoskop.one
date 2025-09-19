@@ -48,18 +48,15 @@
             <label>Geburtsdatum
               <input type="date" id="birthDate" required min="1900-01-01" max="2035-12-31"/>
             </label>
-
             <label>Geburtsort
               <input type="text" id="birthPlace" placeholder="Stadt, Ort" autocomplete="off" required/>
               <input type="hidden" id="birthLat"/>
               <input type="hidden" id="birthLon"/>
               <div id="place-suggest" class="autocomplete-list" role="listbox" aria-label="Vorschläge"></div>
             </label>
-
             <label>Geburtszeit (optional)
               <input type="time" id="birthTime" placeholder="14:00"/>
             </label>
-
             <label>…oder ungefähr
               <select id="timeApprox">
                 <option value="">Unbekannt</option>
@@ -69,7 +66,6 @@
                 <option value="night">Nachts</option>
               </select>
             </label>
-
             <label>Vorhersagezeitraum
               <select id="timeFrame">
                 <option value="today">Heute</option>
@@ -77,7 +73,6 @@
                 <option value="month">Monat</option>
               </select>
             </label>
-
             <label>Modus
               <select id="mode" title="Tonalität des Textes">
                 <option value="balanced" selected>Ausgewogen</option>
@@ -87,13 +82,11 @@
               </select>
             </label>
           </div>
-
           <div class="actions">
             <button type="submit" id="btnAsk">Sterne fragen</button>
             <button type="button" id="btnShare" class="ghost">Share‑Card erstellen</button>
             <a id="btnDownload" class="ghost" href="#" download="horoskop-one.png" hidden>Card downloaden</a>
           </div>
-
           <p id="status" class="status" aria-live="polite"></p>
           <details id="debug" class="debug" hidden><summary>Details</summary><pre id="debugPre"></pre></details>
         </form>

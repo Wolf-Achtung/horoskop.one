@@ -1,6 +1,8 @@
-fastapi==0.111.0
-uvicorn[standard]==0.30.1
-httpx==0.27.0
-timezonefinder==6.4.1
-openai>=1.35.10
-pyswisseph==2.10.3.1 ; python_version < "3.12"
+fastapi>=0.110
+uvicorn[standard]>=0.29
+httpx>=0.24
+pydantic>=2.6
+python-multipart>=0.0.9
+timezonefinder>=6.0
+openai>=1.40
+pyswisseph<3.12
