@@ -1,4 +1,3 @@
-
 import { build } from 'esbuild';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -11,7 +10,6 @@ const __dirname = path.dirname(__filename);
 const outdir = path.resolve(__dirname, '..', 'dist');
 const publicDir = path.resolve(__dirname, '..', 'public');
 
-const production = !process.argv.includes('--watch');
 if (!fs.existsSync(outdir)) fs.mkdirSync(outdir, { recursive: true });
 
 function sri(filePath) {
@@ -21,15 +19,13 @@ function sri(filePath) {
 }
 
 async function copyPublicWithReplace(replacements) {
-  // copy all files from public to dist, replacing placeholders in text files
   const entries = fs.readdirSync(publicDir, { withFileTypes: true });
   for (const e of entries) {
     const src = path.join(publicDir, e.name);
     const dst = path.join(outdir, e.name);
     if (e.isDirectory()) {
       fs.mkdirSync(dst, { recursive: true });
-      // recurse
-      const stack = [ [src, dst] ];
+      const stack = [[src, dst]];
       while (stack.length) {
         const [s,d] = stack.pop();
         for (const child of fs.readdirSync(s, { withFileTypes: true })) {
@@ -40,7 +36,6 @@ async function copyPublicWithReplace(replacements) {
             stack.push([sc, dc]);
           } else {
             let buf = fs.readFileSync(sc);
-            // Replace placeholders only in text files (basic heuristic)
             const isText = /\.(html|css|js|json|txt|xml|svg)$/i.test(child.name);
             if (isText) {
               let txt = buf.toString('utf8');
@@ -69,48 +64,31 @@ async function copyPublicWithReplace(replacements) {
 }
 
 async function run() {
-  const buildResult = await build({
+  await build({
     entryPoints: ['src/main.ts'],
     outdir: 'dist/assets',
     bundle: true,
-    sourcemap: production ? false : true,
-    minify: production,
+    sourcemap: false,
+    minify: true,
     target: ['es2019'],
     format: 'iife',
     platform: 'browser',
     loader: { '.svg': 'text' },
-    logLevel: 'info',
-    watch: process.argv.includes('--watch') ? {
-      onRebuild(error, result) {
-        if (error) console.error('✖ rebuild failed', error);
-        else console.log('✔ rebuilt');
-      }
-    } : false
+    logLevel: 'info'
   });
 
-  // Compute SRI for the main output (assume it's "main.js" but esbuild can hash names; here we keep name stable)
-  // Determine the single js bundle file in dist/assets
   const assetsDir = path.resolve(outdir, 'assets');
   const files = fs.readdirSync(assetsDir).filter(f => f.endsWith('.js'));
-  if (files.length !== 1) {
-    console.warn('Expected exactly one JS asset, found:', files);
-  }
   const jsFile = files[0];
-  const jsPath = path.join(assetsDir, jsFile);
-  const integrity = sri(jsPath);
-  console.log('SRI:', integrity);
+  const integrity = sri(path.join(assetsDir, jsFile));
 
   await copyPublicWithReplace({
     '__APP_JS__': `/assets/${jsFile}`,
     '__INTEGRITY__': integrity
   });
 
-  // Copy headers template if present
   const headersSrc = path.resolve(__dirname, '..', '_headers');
-  if (fs.existsSync(headersSrc)) {
-    fs.copyFileSync(headersSrc, path.join(outdir, '_headers'));
-  }
-
+  if (fs.existsSync(headersSrc)) fs.copyFileSync(headersSrc, path.join(outdir, '_headers'));
   console.log('Build complete → dist/');
 }
 

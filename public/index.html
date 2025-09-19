@@ -1,12 +1,15 @@
-
 <!doctype html>
 <html lang="de">
   <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>HOROSKOPO.NE — Dein Moment unter den Sternen</title>
-
-    <!-- Content Security Policy (tight, no inline scripts; allow API + Nominatim) -->
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>HOROSKOP.ONE — Dein Moment unter den Sternen</title>
+    <meta name="description" content="Dein Moment unter den Sternen — achtsam, poetisch, erklärbar.">
+    <meta property="og:title" content="horoskop.one"/>
+    <meta property="og:description" content="Dein Moment unter den Sternen — achtsam, poetisch, erklärbar."/>
+    <meta property="og:image" content="/assets/og-horoskopone-gold.png"/>
+    <meta property="og:type" content="website"/>
+    <meta name="twitter:card" content="summary_large_image"/>
     <meta http-equiv="Content-Security-Policy" content="
       default-src 'self';
       script-src 'self';
@@ -17,10 +20,8 @@
       base-uri 'self';
       form-action 'self';
       frame-ancestors 'none';
-    "> 
-
-    <link rel="stylesheet" href="/styles.css" />
-    <meta name="color-scheme" content="dark light">
+    ">
+    <link rel="stylesheet" href="/styles.css">
   </head>
   <body>
     <header class="site-header">
@@ -29,39 +30,38 @@
         <span class="tagline">Sternen­kunst — achtsam, poetisch, erklärbar</span>
       </div>
       <nav class="nav">
-        <a href="#method">Methoden</a>
-        <a href="#privacy">Datenschutz</a>
+        <a href="/methoden.html">Methoden</a>
+        <a href="/impressum.html">Impressum</a>
+        <a href="/datenschutz.html">Datenschutz</a>
       </nav>
     </header>
 
     <main class="container">
-      <!-- Zodiac visual -->
       <section class="hero">
         <canvas id="zodiac-canvas" width="520" height="520" aria-hidden="true"></canvas>
       </section>
 
-      <!-- Form -->
       <section class="card">
         <h2>Dein Moment unter den Sternen</h2>
         <form id="astro-form" autocomplete="off">
           <div class="grid">
             <label>Geburtsdatum
-              <input type="date" id="birthDate" name="birthDate" required min="1900-01-01" max="2035-12-31" />
+              <input type="date" id="birthDate" required min="1900-01-01" max="2035-12-31"/>
             </label>
 
             <label>Geburtsort
-              <input type="text" id="birthPlace" name="birthPlace" placeholder="Stadt, Ort" autocomplete="off" required />
-              <input type="hidden" id="birthLat" name="birthLat" />
-              <input type="hidden" id="birthLon" name="birthLon" />
+              <input type="text" id="birthPlace" placeholder="Stadt, Ort" autocomplete="off" required/>
+              <input type="hidden" id="birthLat"/>
+              <input type="hidden" id="birthLon"/>
               <div id="place-suggest" class="autocomplete-list" role="listbox" aria-label="Vorschläge"></div>
             </label>
 
             <label>Geburtszeit (optional)
-              <input type="time" id="birthTime" name="birthTime" placeholder="14:00" />
+              <input type="time" id="birthTime" placeholder="14:00"/>
             </label>
 
             <label>…oder ungefähr
-              <select id="timeApprox" name="timeApprox">
+              <select id="timeApprox">
                 <option value="">Unbekannt</option>
                 <option value="morning">Morgens</option>
                 <option value="noon">Mittags</option>
@@ -71,7 +71,7 @@
             </label>
 
             <label>Vorhersagezeitraum
-              <select id="timeFrame" name="timeFrame">
+              <select id="timeFrame">
                 <option value="today">Heute</option>
                 <option value="week" selected>Woche</option>
                 <option value="month">Monat</option>
@@ -79,14 +79,13 @@
             </label>
 
             <label>Modus
-              <select id="mode" name="mode" title="Tonalität des Textes">
+              <select id="mode" title="Tonalität des Textes">
                 <option value="balanced" selected>Ausgewogen</option>
                 <option value="skeptic">Skeptisch (erklärend)</option>
                 <option value="poetic">Poetisch</option>
                 <option value="trailer">Trailer-Energie 🔥</option>
               </select>
             </label>
-
           </div>
 
           <div class="actions">
@@ -109,14 +108,12 @@
         <h3>Share‑Card Vorschau</h3>
         <canvas id="shareCanvas" width="1200" height="630"></canvas>
       </section>
-
     </main>
 
     <footer class="site-footer">
       <small>© horoskop.one · Achtsamkeit vor Absolutheit · <a id="permalink" href="#">Permalink</a></small>
     </footer>
 
-    <!-- Built JS bundle with SRI filled by build step -->
     <script defer src="__APP_JS__" integrity="__INTEGRITY__" crossorigin="anonymous"></script>
   </body>
 </html>
