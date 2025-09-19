@@ -7,6 +7,7 @@ from fastapi import FastAPI, Body, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from timezonefinder import TimezoneFinder
 from zoneinfo import ZoneInfo
@@ -317,3 +318,37 @@ Gib nur JSON:
     return ReadingResponse(meta=meta, sections=sections, chips=why_chips, disclaimer=disclaimer)
 
 # Run: uvicorn main:app --host 0.0.0.0 --port 8080
+
+
+def parse_birth_date2(date_str: str) -> Optional[dt.date]:
+    s = (date_str or "").strip()
+    m = re.match(r"^(\d{4})-(\d{2})-(\d{2})$", s)  # ISO
+    if m:
+        y, mth, d = int(m.group(1)), int(m.group(2)), int(m.group(3))
+        return dt.date(y, mth, d)
+    m = re.match(r"^(\d{1,2})\.(\d{1,2})\.(\d{2,4})$", s)  # D.M.Y / DD.MM.YYYY
+    if m:
+        d, mth, y = int(m.group(1)), int(m.group(2)), int(m.group(3))
+        if y < 100:
+            y = 2000 + y if y < 30 else 1900 + y
+        return dt.date(y, mth, d)
+    return None
+
+# override
+parse_birth_date = parse_birth_date2
+
+
+# Backwards-compatible alias
+@app.post("/readings", response_model=ReadingResponse)
+async def readings_alias(req: ReadingRequest = Body(...)):
+    return await reading(req)
+
+
+# Serve built frontend (dist/) as static site
+try:
+    here = os.path.dirname(__file__)
+    dist_dir = os.path.join(here, "dist")
+    if os.path.isdir(dist_dir):
+        app.mount("/", StaticFiles(directory=dist_dir, html=True), name="static")
+except Exception as _e:
+    print("Static mount failed:", _e)
