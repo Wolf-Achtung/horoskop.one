@@ -1,4 +1,4 @@
-# main.py  — horoskop.one API v5.4 longform (corrected, single-file)
+# main.py  — HORRORSKOPE.ONE API v6.0 (Horror-Edition)
 import os, re, json, datetime as dt
 from typing import Optional, Dict, Any, List
 
@@ -16,7 +16,7 @@ from openai import OpenAI
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 
-app = FastAPI(title="horoskop.one API", version="v5.4-longform")
+app = FastAPI(title="HORRORSKOPE.ONE API", version="v6.0-horror")
 
 raw_origins = os.getenv("CORS_ALLOW_ORIGINS", "")
 origins = [o.strip() for o in raw_origins.split(",") if o.strip()] or ["*"]
@@ -48,6 +48,14 @@ def parse_birth_date(date_str: str) -> Optional[dt.date]:
             y = 2000 + y if y < 30 else 1900 + y
         return dt.date(y, mth, d)
     return None
+
+def parse_birth_time(time_str: Optional[str]) -> Optional[dt.time]:
+    if not time_str:
+        return None
+    s = time_str.strip()
+    m = re.match(r'^(\\d{1,2}):(\\d{2})$', s)
+    if not m:
+        return None
     h, mi = int(m.group(1)), int(m.group(2))
     return dt.time(max(0, min(23, h)), max(0, min(59, mi)))
 
@@ -111,7 +119,7 @@ def celtic_tree(d:dt.date)->str:
 async def geocode(place:str)->Optional[Dict[str,float]]:
     if not place: return None
     url="https://nominatim.openstreetmap.org/search"; params={"format":"json","limit":"1","q":place}
-    headers={"User-Agent":"horoskop.one/1.0 (contact: support@horoskop.one)"}
+    headers={"User-Agent":"horrorskope.one/6.0 (contact: support@horrorskope.one)"}
     async with httpx.AsyncClient(timeout=10) as cli:
         r=await cli.get(url, params=params, headers=headers)
         if r.status_code!=200: return None
@@ -168,7 +176,7 @@ def swe_compute(bdate:dt.date,btime:Optional[dt.time],lat:Optional[float],lon:Op
 
 def oa_text(prompt:str, seed:Optional[int]=None, temperature:float=0.8)->str:
     kwargs=dict(model=MODEL, temperature=temperature, messages=[
-        {"role":"system","content":"Du bist ein präziser, poetischer, freundlicher Schreibassistent."},
+        {"role":"system","content":"Du bist ein düsterer, satirischer Horror-Wahrsager mit schwarzem Humor. Deine Vorhersagen sind gespickt mit übertriebenen Gefahren (Zombies, Vampire, Aliens, kosmische Schrecken), aber immer mit einem Augenzwinkern und praktischen Überlebenstipps."},
         {"role":"user","content":prompt},
     ])
     if seed is not None: kwargs["seed"]=seed
@@ -237,76 +245,90 @@ async def reading(req: ReadingRequest = Body(...)):
         if swe_data.get("moonHouse"): why_chips.append(f"Mondhaus {swe_data['moonHouse']}")
 
     outline_prompt=f"""
-Du bist ein achtsam-mystischer Coach. Erstelle eine OUTLINE als JSON (keinen Fließtext).
+Du bist ein satirischer Horror-Wahrsager. Erstelle ein HORRORSKOPE-OUTLINE als JSON (keinen Fließtext).
+Deine Aufgabe: Vorhersage absurder, übertriebener Gefahren (Zombies, Vampire, Aliens, Dämonen, kosmische Schrecken,
+verfluchte Gegenstände, etc.) basierend auf den astrologischen Daten - aber IMMER mit schwarzem Humor und praktischen
+Überlebenstipps!
+
 Struktur:
 {{
- "fokus": {{"kern":"...", "punkte":["...","...","..."]}},
- "beruf": {{"kern":"...", "punkte":["...","...","..."]}},
- "liebe": {{"kern":"...", "punkte":["...","...","..."]}},
- "energie": {{"kern":"...", "punkte":["...","...","..."]}}
+ "gefahren": {{"kern":"Hauptgefahr beschreiben", "punkte":["Gefahr 1","Gefahr 2","Überlebenstipp"]}},
+ "ueberlebensstrategien": {{"kern":"Wie man dem Chaos entkommt", "punkte":["Strategie 1","Strategie 2","Konkreter Tipp"]}},
+ "beziehungen": {{"kern":"Zwischenmenschliche Horror-Szenarien", "punkte":["Warnung 1","Warnung 2","Beziehungstipp"]}},
+ "schutzrituale": {{"kern":"Magische Abwehr", "punkte":["Ritual 1","Ritual 2","Praktische Schutzmaßnahme"]}}
 }}
 
-Rahmendaten:
+Rahmendaten (nutze diese für kreative Horror-Assoziationen):
 - Zeitraum: {req.period}
 - Ort: {req.birthPlace} → lat={lat}, lon={lon}, Zeitzone={tzname}
 - Datum: {bdate.strftime('%d.%m.%Y')} · Tagesabschnitt: {dpart}
 - Saison/Hemisphäre: {season} / {hemisphere}
-- Mini-Ephemeriden: Sonne≈{sun_sign}, Mondphase={moon}, I-Ging={hex_idx}, Lebenszahl={lifepath}, Chinesisch={cn_animal}, Baum={tree}
-- Mixer: {', '.join(mixer_list) if mixer_list else 'Standard'}
+- Sternzeichen: {sun_sign}, Mondphase={moon}, I-Ging={hex_idx}, Lebenszahl={lifepath}, Chinesisches Tier={cn_animal}, Keltischer Baum={tree}
 
 Regeln:
-- Pro Bereich 3–4 Stichpunkte, direkt aus den Rahmendaten abgeleitet.
-- Letzter Stichpunkt = ultra-kurze Mini-Aktion (imperativ, 1 Satz) ohne „Aktion:“-Prefix.
-- Keine medizinisch/juristisch/finanziell heiklen Ratschläge.
+- Sei kreativ übertrieben! Zombies, Vampire, Aliens, Dämonen, verfluchte Objekte - alles erlaubt!
+- ABER: Immer satirisch/humorvoll, NIE wirklich beängstigend oder ernst gemeint
+- Jeder Bereich: 3 Punkte, der letzte ist immer ein praktischer Überlebens-/Schutztipp
+- Verbinde die Gefahren mit den astrologischen Daten (z.B. "Vollmond lockt Werwölfe an")
+- Sei absurd, aber unterhaltsam!
 """
     try:
-        outline_raw=oa_text(outline_prompt, seed=req.seed, temperature=0.4)
+        outline_raw=oa_text(outline_prompt, seed=req.seed, temperature=0.7)
         outline=try_load_json(outline_raw)
     except Exception as e:
-        outline={"fokus":{"kern":"","punkte":[]}, "error":str(e)}
+        outline={"gefahren":{"kern":"","punkte":[]}, "error":str(e)}
 
     swe_line=(f"Aszendent {swe_data['ascendant']['sign']}, MC {swe_data['mc']['sign']}, "
               f"Sonnenhaus {swe_data.get('sunHouse')}, Mondhaus {swe_data.get('moonHouse')}"
              ) if swe_data else "keine genaue Zeit/Ort ⇒ Aszendent & Häuser unbekannt"
 
     writing_prompt=f"""
-Formuliere aus der OUTLINE ein Horoskop mit 3–4 Sätzen je Sektion im Ton „mystischer Coach“
-(poetisch, warm, aber klar). Integriere die Mini-Aktion organisch in den Absatz. Keine Bullet-Listen.
+Formuliere aus der OUTLINE ein HORRORSKOPE mit 3–5 Sätzen je Sektion im Ton „satirischer Horror-Wahrsager"
+(düster-humorvoll, übertrieben dramatisch, aber mit praktischen Überlebenstipps). Integriere die Gefahren
+und Tipps organisch in spannende Horror-Narrative. Keine Bullet-Listen.
 
-Kontext (nur nutzen, nicht erneut aufzählen):
+Ton-Beispiele:
+- "Die Sterne warnen: Zombies werden von deiner Aura angezogen..."
+- "Vollmond + dein Sternzeichen = erhöhte Vampir-Aktivität in deiner Umgebung..."
+- "Schutz: Trage Knoblauch und meide dunkle Gassen nach 22 Uhr..."
+
+Kontext (nutze für kreative Horror-Assoziationen):
 - Zeitraum: {req.period} · Ort: {req.birthPlace} (Zeitzone {tzname})
 - Saison/Hemisphäre: {season} / {hemisphere}
-- Sonne≈{sun_sign}, Mondphase {moon}, I-Ging {hex_idx}, Lebenszahl {lifepath}, Chinesisch {cn_animal}, Baum {tree}, Tagesabschnitt {dpart}.
-- Swiss-Ephemeris: {swe_line}.
+- Sternzeichen: {sun_sign}, Mondphase {moon}, I-Ging {hex_idx}, Lebenszahl {lifepath}, Chinesisch {cn_animal}, Baum {tree}, Tagesabschnitt {dpart}
+- Swiss-Ephemeris: {swe_line}
 
 OUTLINE:
 ```json
 {json.dumps(outline, ensure_ascii=False, indent=2)}
 ```
+
 Gib nur JSON:
 {{
- "fokus": "Absatz",
- "beruf": "Absatz",
- "liebe": "Absatz",
- "energie": "Absatz"
+ "gefahren": "Absatz über drohende Gefahren",
+ "ueberlebensstrategien": "Absatz über Überlebensstrategien",
+ "beziehungen": "Absatz über zwischenmenschliche Horror-Szenarien",
+ "schutzrituale": "Absatz über Schutzrituale und Abwehr"
 }}
 """
     try:
-        longform_raw=oa_text(writing_prompt, seed=req.seed, temperature=0.8)
+        longform_raw=oa_text(writing_prompt, seed=req.seed, temperature=0.9)
         data=try_load_json(longform_raw)
     except Exception as e:
-        data={"fokus":"","beruf":"","liebe":"","energie":"","error":str(e)}
+        data={"gefahren":"","ueberlebensstrategien":"","beziehungen":"","schutzrituale":"","error":str(e)}
 
     sections=[
-        Section(title="Fokus",  text=(data.get("fokus")  or "").strip(), chips=[why_chips[0],why_chips[1],f"Saison: {season}"]),
-        Section(title="Beruf",  text=(data.get("beruf")  or "").strip(), chips=[f"Lebenszahl {life_path_number(bdate)}"]),
-        Section(title="Liebe",  text=(data.get("liebe")  or "").strip(), chips=[f"Mondphase: {moon}"]),
-        Section(title="Energie",text=(data.get("energie") or "").strip(), chips=[f"Tag/Nacht: {dpart}"]),
+        Section(title="🧟 Drohende Gefahren",  text=(data.get("gefahren")  or "").strip(), chips=[f"Sternzeichen {sun_sign}", f"Mondphase: {moon}", f"Saison: {season}"]),
+        Section(title="🛡️ Überlebensstrategien",  text=(data.get("ueberlebensstrategien")  or "").strip(), chips=[f"Lebenszahl {life_path_number(bdate)}", f"Ort: {req.birthPlace or 'unbekannt'}"]),
+        Section(title="💀 Beziehungen im Chaos",  text=(data.get("beziehungen")  or "").strip(), chips=[f"Chinesisch: {cn_animal}", f"Tag/Nacht: {dpart}"]),
+        Section(title="✨ Schutzrituale",text=(data.get("schutzrituale") or "").strip(), chips=[f"Baum: {tree}", f"I-Ging: {hex_idx}"]),
     ]
 
-    disclaimer=("Hinweis: Dieses Angebot dient ausschließlich der Unterhaltung "
-                "und achtsamen Selbstreflexion und ersetzt keine professionelle Beratung. "
-                "Bei Krisen oder akuter Gefahr: 112 (EU) / lokale Beratungsstellen.")
+    disclaimer=("⚠️ WICHTIG: Dieses HORRORSKOPE ist reine SATIRE und UNTERHALTUNG! "
+                "Alle Gefahren (Zombies, Vampire, Aliens, etc.) sind FIKTIV und ÜBERTRIEBEN. "
+                "Nimm die 'Warnungen' nicht ernst - es geht um Spaß und schwarzen Humor! "
+                "Bei echten Krisen: 112 (EU) / lokale Beratungsstellen. "
+                "Keine Haftung für Begegnungen mit tatsächlichen Untoten. 🧛‍♂️💀🧟")
 
     meta={
         "period": req.period, "tone": req.tone,

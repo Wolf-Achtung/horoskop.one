@@ -10,13 +10,18 @@ COPY scripts ./scripts
 RUN node scripts/build.mjs
 
 # ---------- Stage 2: Python API ----------
-FROM python:3.11-slim AS api
+FROM python:3.12-slim AS api
 WORKDIR /app
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
 # Python-Dependencies
 COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
 # App-Code + gebautes Frontend
 COPY . ./
