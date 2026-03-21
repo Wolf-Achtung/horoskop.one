@@ -1,4 +1,4 @@
-# main.py  — horoskop.one API v5.4 longform (corrected, single-file)
+# main.py  — horoskop.one API v6.0 deep-reading (single-file)
 import os, re, json, datetime as dt
 from typing import Optional, Dict, Any, List
 
@@ -16,7 +16,7 @@ from openai import OpenAI
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 
-app = FastAPI(title="horoskop.one API", version="v5.4-longform")
+app = FastAPI(title="horoskop.one API", version="v6.0-deep-reading")
 
 raw_origins = os.getenv("CORS_ALLOW_ORIGINS", "")
 origins = [o.strip() for o in raw_origins.split(",") if o.strip()] or ["*"]
@@ -37,17 +37,23 @@ tf = TimezoneFinder()
 
 def parse_birth_date(date_str: str) -> Optional[dt.date]:
     s = (date_str or '').strip()
-    m = re.match(r'^(\\d{4})-(\\d{2})-(\\d{2})$', s)
+    m = re.match(r'^(\d{4})-(\d{2})-(\d{2})$', s)
     if m:
         y, mth, d = int(m.group(1)), int(m.group(2)), int(m.group(3))
         return dt.date(y, mth, d)
-    m = re.match(r'^(\\d{1,2})\\.(\\d{1,2})\\.(\\d{2,4})$', s)
+    m = re.match(r'^(\d{1,2})\.(\d{1,2})\.(\d{2,4})$', s)
     if m:
         d, mth, y = int(m.group(1)), int(m.group(2)), int(m.group(3))
         if y < 100:
             y = 2000 + y if y < 30 else 1900 + y
         return dt.date(y, mth, d)
     return None
+
+def parse_birth_time(time_str: str) -> Optional[dt.time]:
+    s = (time_str or '').strip()
+    m = re.match(r'^(\d{1,2}):(\d{2})$', s)
+    if not m:
+        return None
     h, mi = int(m.group(1)), int(m.group(2))
     return dt.time(max(0, min(23, h)), max(0, min(59, mi)))
 
@@ -187,6 +193,296 @@ def try_load_json(maybe:str)->Any:
     try: return json.loads(maybe)
     except: return {"raw": maybe}
 
+# ---------------------------------------------------------------------------
+# Deep-Reading Types – 7 specialized prompts inspired by life-path coaching
+# + 1 "classic" (the original 4-section reading)
+# ---------------------------------------------------------------------------
+
+DEEP_READING_TYPES = {
+    "classic": {
+        "label": "Klassisches Reading",
+        "desc": "Fokus, Beruf, Liebe & Energie – dein Tages-/Wochen-/Monatshoroskop.",
+    },
+    "blueprint": {
+        "label": "Lebensplan-Decoder",
+        "desc": "Persönlichkeitsmerkmale, verborgene Stärken, Schwächen und Lebensaufgabe.",
+    },
+    "soul_purpose": {
+        "label": "Seelenaufgabe",
+        "desc": "Kernmission, Lektionen und dein Beitrag für die Welt – mit Alltagsimpulsen.",
+    },
+    "career": {
+        "label": "Berufung & Karriere",
+        "desc": "3 ideale Karrierepfade, natürliche Talente und ein Feld, das du meiden solltest.",
+    },
+    "relationship": {
+        "label": "Beziehungs-Landkarte",
+        "desc": "Kompatibilität, Liebeslektionen und das Bild deines idealen Partners.",
+    },
+    "wealth": {
+        "label": "Fülle & Wohlstand",
+        "desc": "Geld-Persönlichkeit, Blockaden und deine individuelle Wohlstandsstrategie.",
+    },
+    "timeline": {
+        "label": "Zukunfts-Zeitstrahl",
+        "desc": "Wendepunkte, Wachstumsphasen und deine 5-Jahres-Roadmap.",
+    },
+    "genius": {
+        "label": "Inneres Genie",
+        "desc": "Dein einzigartiges Talent und eine 3-Schritte-Routine, um es zu entfalten.",
+    },
+}
+
+def _deep_system_prompt(rtype: str) -> str:
+    """Return the system prompt for a given reading type."""
+    base = (
+        "Du bist ein tiefgründiger, achtsam-mystischer Lebensberater. "
+        "Du verbindest Psychologie, Astrologie, Numerologie, Archetypen und intuitive Weisheit. "
+        "Deine Sprache ist poetisch, warm, ehrlich und ermutigend – niemals oberflächlich. "
+        "Du gibst immer konkrete, umsetzbare Impulse. "
+        "Antworte immer auf Deutsch."
+    )
+    specifics = {
+        "blueprint": (
+            "Du bist ein Lebensplan-Decoder. Analysiere den Menschen anhand von Psychologie, "
+            "Numerologie und Lebensmuster-Mapping. Entdecke tiefste Persönlichkeitsmerkmale, "
+            "verborgene Stärken, Schwächen und die Lebens-Blaupause. "
+            "Liefere eine ehrliche Analyse, die sich anfühlt, als würdest du die Person schon ewig kennen, "
+            "und hebe die eine größte Lebensaufgabe hervor."
+        ),
+        "soul_purpose": (
+            "Du bist ein Seelenaufgaben-Guide. Enthülle die Kernmission des Lebens, "
+            "die Lektionen, die zu lernen sind, und den Beitrag, den diese Seele der Welt schenken soll. "
+            "Beschreibe nicht nur – gib klare, umsetzbare Ratschläge, wie man ab heute "
+            "sein tägliches Leben auf diese Seelenaufgabe ausrichten kann."
+        ),
+        "career": (
+            "Du bist ein Zukunfts-Karrierementor. Analysiere natürliche Talente, "
+            "Entscheidungsstil und verborgene Antriebe. "
+            "Enthülle 3 Karriere- oder Geschäftspfade, auf denen außergewöhnlicher Erfolg wartet, "
+            "und nenne ein Feld, das unbedingt gemieden werden sollte."
+        ),
+        "relationship": (
+            "Du bist ein Beziehungs-Schicksalsberater. Entdecke die Art von Menschen, "
+            "die am besten kompatibel sind, die Liebeslektionen, die gelernt werden müssen, "
+            "und die Rolle, die Beziehungen auf der Lebensreise spielen. "
+            "Beschreibe genau, welcher Partner am besten zum höchsten Selbst führt."
+        ),
+        "wealth": (
+            "Du bist ein Fülle-Coach. Entschlüssle, wie Wohlstand, Chancen und Überfluss "
+            "angezogen werden sollen. Enthülle die natürliche Geld-Persönlichkeit, "
+            "die Fehler, die finanzielles Wachstum blockieren, und die Wohlstandsstrategie, "
+            "die zum wahren Selbst passt – keine generischen Tipps."
+        ),
+        "timeline": (
+            "Du bist ein Zukunfts-Zeitstrahl-Guide. Nutze das Geburtsdatum als Zeitkarte. "
+            "Zeige die Schlüssel-Wendepunkte der Lebensreise (Vergangenheit, Gegenwart, Zukunft), "
+            "die Phasen des Wachstums und der Herausforderung, und den konkreten 5-Jahres-Pfad. "
+            "Schreibe es wie eine Roadmap, sodass klar erkennbar ist, wohin die Reise geht."
+        ),
+        "genius": (
+            "Du bist ein Inneres-Genie-Mentor. Identifiziere das einzigartige Talent oder die Fähigkeit, "
+            "die diese Person von 99 % der Menschen unterscheidet. "
+            "Gib dann eine praktische 3-Schritte-Tagesroutine, um dieses Genie zu entfalten "
+            "und in Meisterschaft und Anerkennung zu verwandeln."
+        ),
+    }
+    return base + "\n\n" + specifics.get(rtype, "")
+
+def _deep_user_prompt(rtype: str, ctx: Dict[str, Any]) -> str:
+    """Build the user prompt for a deep reading, incorporating all astrological context."""
+    # Shared context block used by all reading types
+    context_block = f"""
+Geburtsdaten:
+- Datum: {ctx['bdate_str']} · Tagesabschnitt: {ctx['dpart']}
+- Ort: {ctx['place']} (lat={ctx['lat']}, lon={ctx['lon']}, Zeitzone={ctx['tzname']})
+- Saison / Hemisphäre: {ctx['season']} / {ctx['hemisphere']}
+
+Astrologisches Profil:
+- Sternzeichen (Sonne): {ctx['sun_sign']}
+- Mondphase: {ctx['moon']} (Zyklus: {ctx['moon_frac']:.1%})
+- Lebenszahl (Numerologie): {ctx['lifepath']}
+- Chinesisches Tierzeichen: {ctx['cn_animal']} (Jahr {ctx['birth_year']})
+- Keltischer Baum: {ctx['tree']}
+- I-Ging Hexagramm: {ctx['hex_idx']}
+{ctx['swe_line']}
+"""
+
+    instructions = {
+        "blueprint": f"""
+{context_block}
+Erstelle eine tiefgehende Lebensplan-Analyse als JSON:
+{{
+  "persoenlichkeit": "3-4 Sätze: Kernpersönlichkeit basierend auf Sternzeichen, Lebenszahl und chinesischem Zeichen",
+  "staerken": "3-4 verborgene Stärken als Fließtext, poetisch aber klar",
+  "schwaechen": "3-4 ehrliche Schwächen/Wachstumsfelder als Fließtext",
+  "lebensaufgabe": "Die eine große Lebensaufgabe, 3-4 Sätze, tiefgründig und motivierend",
+  "tagesimpuls": "Ein konkreter Impuls für heute (1-2 Sätze, Imperativ)"
+}}
+Leite alles spezifisch aus den Geburtsdaten ab. Keine generischen Phrasen.
+""",
+        "soul_purpose": f"""
+{context_block}
+Erstelle eine Seelenaufgaben-Analyse als JSON:
+{{
+  "kernmission": "3-4 Sätze: Die zentrale Lebensaufgabe der Seele",
+  "lektionen": "3-4 Sätze: Die wichtigsten Lektionen, die zu lernen sind",
+  "weltbeitrag": "3-4 Sätze: Der einzigartige Beitrag für die Welt",
+  "alltagsausrichtung": "3 konkrete, sofort umsetzbare Schritte (als Fließtext), um ab heute das Leben auf die Seelenaufgabe auszurichten",
+  "affirmation": "Ein kraftvoller Leitsatz (1 Satz)"
+}}
+Leite alles spezifisch aus den Geburtsdaten ab.
+""",
+        "career": f"""
+{context_block}
+Erstelle eine Berufungs-Analyse als JSON:
+{{
+  "talente": "3-4 Sätze: Natürliche Talente und Entscheidungsstil",
+  "pfad_1": {{"titel": "Karrierepfad-Name", "beschreibung": "2-3 Sätze warum dieser Pfad ideal ist"}},
+  "pfad_2": {{"titel": "Karrierepfad-Name", "beschreibung": "2-3 Sätze"}},
+  "pfad_3": {{"titel": "Karrierepfad-Name", "beschreibung": "2-3 Sätze"}},
+  "meiden": {{"feld": "Berufsfeld-Name", "grund": "2-3 Sätze warum dieses Feld gemieden werden sollte"}},
+  "naechster_schritt": "Ein konkreter Schritt für diese Woche (1-2 Sätze)"
+}}
+Leite Talente und Pfade spezifisch aus Sternzeichen, Lebenszahl und chinesischem Zeichen ab.
+""",
+        "relationship": f"""
+{context_block}
+Erstelle eine Beziehungs-Analyse als JSON:
+{{
+  "liebesstil": "3-4 Sätze: Wie diese Person liebt und geliebt werden möchte",
+  "kompatibilitaet": "3-4 Sätze: Welche Sternzeichen/Typen am besten passen und warum",
+  "liebeslektionen": "3-4 Sätze: Die wichtigsten Beziehungslektionen",
+  "idealer_partner": "3-4 Sätze: Exakte Beschreibung des Partners, der zum höchsten Selbst führt",
+  "beziehungsimpuls": "Ein konkreter Impuls für die Partnerschaft oder Partnersuche (1-2 Sätze)"
+}}
+Leite alles aus dem astrologischen Profil ab, besonders Venus-bezogene Aspekte und Mondphase.
+""",
+        "wealth": f"""
+{context_block}
+Erstelle eine Wohlstands-Analyse als JSON:
+{{
+  "geld_persoenlichkeit": "3-4 Sätze: Die natürliche Beziehung zu Geld und Ressourcen",
+  "blockaden": "3-4 Sätze: Welche Muster und Fehler finanzielles Wachstum blockieren",
+  "wohlstandsstrategie": "3-4 Sätze: Die individuelle Strategie zur Fülle, die zum wahren Selbst passt",
+  "chancen_zeitfenster": "2-3 Sätze: Aktuelle kosmische Chancen-Fenster für Wohlstand",
+  "geld_ritual": "Ein konkretes tägliches Ritual für Fülle-Bewusstsein (1-2 Sätze)"
+}}
+Keine generischen Finanztipps. Aus dem astrologischen Profil ableiten.
+Hinweis: Dies ist keine Finanzberatung, sondern achtsame Selbstreflexion.
+""",
+        "timeline": f"""
+{context_block}
+Erstelle einen Zukunfts-Zeitstrahl als JSON:
+{{
+  "vergangene_phase": "3-4 Sätze: Die prägendste Phase der Vergangenheit und was sie gelehrt hat",
+  "aktuelle_phase": "3-4 Sätze: Wo die Person gerade steht und welche Energie gerade wirkt",
+  "wendepunkt": "2-3 Sätze: Der nächste große Wendepunkt (wann und warum)",
+  "jahr_1_2": "3-4 Sätze: Die nächsten 1-2 Jahre – Fokus, Chancen, Herausforderungen",
+  "jahr_3_5": "3-4 Sätze: Jahre 3-5 – wohin die Reise geht, Transformation",
+  "vision": "Ein kraftvolles Zukunftsbild (2-3 Sätze, poetisch und konkret)"
+}}
+Nutze Saturn-Zyklen, Lebenszahl-Phasen und I-Ging für die Zeitstruktur.
+""",
+        "genius": f"""
+{context_block}
+Erstelle eine Inneres-Genie-Analyse als JSON:
+{{
+  "einzigartiges_talent": "3-4 Sätze: Das eine Talent oder die eine Fähigkeit, die diese Person von 99% der Menschen abhebt",
+  "warum_dieses_talent": "2-3 Sätze: Warum gerade dieses Talent im astrologischen Profil verankert ist",
+  "schritt_1": {{"titel": "Morgenroutine-Titel", "beschreibung": "2-3 Sätze: Konkreter erster Tagesschritt"}},
+  "schritt_2": {{"titel": "Tagesübung-Titel", "beschreibung": "2-3 Sätze: Konkreter zweiter Schritt"}},
+  "schritt_3": {{"titel": "Abendritual-Titel", "beschreibung": "2-3 Sätze: Konkreter dritter Schritt"}},
+  "meisterschafts_vision": "2-3 Sätze: Wie sich Meisterschaft und Anerkennung entfalten werden"
+}}
+Leite das Talent spezifisch aus Sternzeichen + Lebenszahl + chinesischem Zeichen ab.
+""",
+    }
+    return instructions.get(rtype, "")
+
+def _deep_section_map() -> Dict[str, List[Dict[str, str]]]:
+    """Map reading types to their section definitions (title + JSON key)."""
+    return {
+        "blueprint": [
+            {"key": "persoenlichkeit", "title": "Deine Persönlichkeit"},
+            {"key": "staerken", "title": "Verborgene Stärken"},
+            {"key": "schwaechen", "title": "Wachstumsfelder"},
+            {"key": "lebensaufgabe", "title": "Deine Lebensaufgabe"},
+            {"key": "tagesimpuls", "title": "Impuls für heute"},
+        ],
+        "soul_purpose": [
+            {"key": "kernmission", "title": "Deine Kernmission"},
+            {"key": "lektionen", "title": "Deine Lektionen"},
+            {"key": "weltbeitrag", "title": "Dein Beitrag für die Welt"},
+            {"key": "alltagsausrichtung", "title": "Ausrichtung im Alltag"},
+            {"key": "affirmation", "title": "Dein Leitsatz"},
+        ],
+        "career": [
+            {"key": "talente", "title": "Deine natürlichen Talente"},
+            {"key": "pfad_1", "title": "Karrierepfad 1", "nested": True},
+            {"key": "pfad_2", "title": "Karrierepfad 2", "nested": True},
+            {"key": "pfad_3", "title": "Karrierepfad 3", "nested": True},
+            {"key": "meiden", "title": "Dieses Feld meiden", "nested": True},
+            {"key": "naechster_schritt", "title": "Dein nächster Schritt"},
+        ],
+        "relationship": [
+            {"key": "liebesstil", "title": "Dein Liebesstil"},
+            {"key": "kompatibilitaet", "title": "Kompatibilität"},
+            {"key": "liebeslektionen", "title": "Deine Liebeslektionen"},
+            {"key": "idealer_partner", "title": "Dein idealer Partner"},
+            {"key": "beziehungsimpuls", "title": "Impuls für deine Beziehung"},
+        ],
+        "wealth": [
+            {"key": "geld_persoenlichkeit", "title": "Deine Geld-Persönlichkeit"},
+            {"key": "blockaden", "title": "Deine Blockaden"},
+            {"key": "wohlstandsstrategie", "title": "Deine Wohlstandsstrategie"},
+            {"key": "chancen_zeitfenster", "title": "Kosmisches Chancen-Fenster"},
+            {"key": "geld_ritual", "title": "Dein Fülle-Ritual"},
+        ],
+        "timeline": [
+            {"key": "vergangene_phase", "title": "Deine Vergangenheit"},
+            {"key": "aktuelle_phase", "title": "Wo du jetzt stehst"},
+            {"key": "wendepunkt", "title": "Der nächste Wendepunkt"},
+            {"key": "jahr_1_2", "title": "Die nächsten 1–2 Jahre"},
+            {"key": "jahr_3_5", "title": "Jahre 3–5: Deine Transformation"},
+            {"key": "vision", "title": "Deine Vision"},
+        ],
+        "genius": [
+            {"key": "einzigartiges_talent", "title": "Dein einzigartiges Talent"},
+            {"key": "warum_dieses_talent", "title": "Warum dieses Talent"},
+            {"key": "schritt_1", "title": "Schritt 1: Morgenroutine", "nested": True},
+            {"key": "schritt_2", "title": "Schritt 2: Tagesübung", "nested": True},
+            {"key": "schritt_3", "title": "Schritt 3: Abendritual", "nested": True},
+            {"key": "meisterschafts_vision", "title": "Deine Meisterschafts-Vision"},
+        ],
+    }
+
+def _extract_sections(rtype: str, data: Dict[str, Any], why_chips: List[str]) -> List:
+    """Convert the AI JSON response into Section objects based on reading type."""
+    section_defs = _deep_section_map().get(rtype, [])
+    sections = []
+    for i, sdef in enumerate(section_defs):
+        key = sdef["key"]
+        title = sdef["title"]
+        raw = data.get(key, "")
+        if sdef.get("nested") and isinstance(raw, dict):
+            t = raw.get("titel", raw.get("feld", ""))
+            desc = raw.get("beschreibung", raw.get("grund", ""))
+            text = f"**{t}** — {desc}" if t else str(desc)
+        elif isinstance(raw, dict):
+            text = json.dumps(raw, ensure_ascii=False)
+        else:
+            text = str(raw).strip()
+        chips_for = [why_chips[min(i, len(why_chips) - 1)]] if why_chips else []
+        sections.append({"title": title, "text": text, "chips": chips_for})
+    return sections
+
+# ---------------------------------------------------------------------------
+# Request / Response models
+# ---------------------------------------------------------------------------
+
+VALID_READING_TYPES = list(DEEP_READING_TYPES.keys())
+
 class ReadingRequest(BaseModel):
     birthDate: str
     birthPlace: str
@@ -194,6 +490,7 @@ class ReadingRequest(BaseModel):
     approxDaypart: Optional[str] = None
     period: str = Field("day", description="day|week|month")
     tone: str = "mystic_deep"
+    readingType: str = Field("classic", description="classic|blueprint|soul_purpose|career|relationship|wealth|timeline|genius")
     seed: Optional[int] = None
     mixer: Optional[Dict[str,int]] = None
 
@@ -210,6 +507,11 @@ class ReadingResponse(BaseModel):
 
 @app.get("/health")
 def health(): return {"ok": True, "model": MODEL}
+
+@app.get("/reading-types")
+def reading_types():
+    """Return available reading types for the frontend."""
+    return [{"id": k, **v} for k, v in DEEP_READING_TYPES.items()]
 
 @app.post("/reading", response_model=ReadingResponse)
 async def reading(req: ReadingRequest = Body(...)):
@@ -236,7 +538,31 @@ async def reading(req: ReadingRequest = Body(...)):
         if swe_data.get("sunHouse"):  why_chips.append(f"Sonnenhaus {swe_data['sunHouse']}")
         if swe_data.get("moonHouse"): why_chips.append(f"Mondhaus {swe_data['moonHouse']}")
 
-    outline_prompt=f"""
+    swe_line=(f"Aszendent {swe_data['ascendant']['sign']}, MC {swe_data['mc']['sign']}, "
+              f"Sonnenhaus {swe_data.get('sunHouse')}, Mondhaus {swe_data.get('moonHouse')}"
+             ) if swe_data else "keine genaue Zeit/Ort ⇒ Aszendent & Häuser unbekannt"
+
+    rtype = req.readingType if req.readingType in VALID_READING_TYPES else "classic"
+
+    disclaimer=("Hinweis: Dieses Angebot dient ausschließlich der Unterhaltung "
+                "und achtsamen Selbstreflexion und ersetzt keine professionelle Beratung. "
+                "Bei Krisen oder akuter Gefahr: 112 (EU) / lokale Beratungsstellen.")
+
+    meta={
+        "period": req.period, "tone": req.tone, "readingType": rtype,
+        "readingLabel": DEEP_READING_TYPES[rtype]["label"],
+        "birthDate": req.birthDate, "birthPlace": req.birthPlace, "birthTime": req.birthTime,
+        "approxDaypart": dpart, "geo": {"lat":lat,"lon":lon,"tz":tzname},
+        "season": season, "hemisphere": "Nord" if (lat is None or lat>=0) else "Süd",
+        "mini": {"sunSignApprox": zodiac_from_date(bdate), "moonPhase": moon, "moonFrac": round(mf,3),
+                 "iChing": iching_index(bdate), "lifePath": life_path_number(bdate),
+                 "chinese": chinese_animal(bdate.year), "tree": celtic_tree(bdate)},
+        "swiss": swe_data,
+    }
+
+    # --- Classic reading (original 4-section flow) ---
+    if rtype == "classic":
+        outline_prompt=f"""
 Du bist ein achtsam-mystischer Coach. Erstelle eine OUTLINE als JSON (keinen Fließtext).
 Struktur:
 {{
@@ -256,21 +582,17 @@ Rahmendaten:
 
 Regeln:
 - Pro Bereich 3–4 Stichpunkte, direkt aus den Rahmendaten abgeleitet.
-- Letzter Stichpunkt = ultra-kurze Mini-Aktion (imperativ, 1 Satz) ohne „Aktion:“-Prefix.
+- Letzter Stichpunkt = ultra-kurze Mini-Aktion (imperativ, 1 Satz) ohne „Aktion:"-Prefix.
 - Keine medizinisch/juristisch/finanziell heiklen Ratschläge.
 """
-    try:
-        outline_raw=oa_text(outline_prompt, seed=req.seed, temperature=0.4)
-        outline=try_load_json(outline_raw)
-    except Exception as e:
-        outline={"fokus":{"kern":"","punkte":[]}, "error":str(e)}
+        try:
+            outline_raw=oa_text(outline_prompt, seed=req.seed, temperature=0.4)
+            outline=try_load_json(outline_raw)
+        except Exception as e:
+            outline={"fokus":{"kern":"","punkte":[]}, "error":str(e)}
 
-    swe_line=(f"Aszendent {swe_data['ascendant']['sign']}, MC {swe_data['mc']['sign']}, "
-              f"Sonnenhaus {swe_data.get('sunHouse')}, Mondhaus {swe_data.get('moonHouse')}"
-             ) if swe_data else "keine genaue Zeit/Ort ⇒ Aszendent & Häuser unbekannt"
-
-    writing_prompt=f"""
-Formuliere aus der OUTLINE ein Horoskop mit 3–4 Sätzen je Sektion im Ton „mystischer Coach“
+        writing_prompt=f"""
+Formuliere aus der OUTLINE ein Horoskop mit 3–4 Sätzen je Sektion im Ton „mystischer Coach"
 (poetisch, warm, aber klar). Integriere die Mini-Aktion organisch in den Absatz. Keine Bullet-Listen.
 
 Kontext (nur nutzen, nicht erneut aufzählen):
@@ -291,33 +613,53 @@ Gib nur JSON:
  "energie": "Absatz"
 }}
 """
-    try:
-        longform_raw=oa_text(writing_prompt, seed=req.seed, temperature=0.8)
-        data=try_load_json(longform_raw)
-    except Exception as e:
-        data={"fokus":"","beruf":"","liebe":"","energie":"","error":str(e)}
+        try:
+            longform_raw=oa_text(writing_prompt, seed=req.seed, temperature=0.8)
+            data=try_load_json(longform_raw)
+        except Exception as e:
+            data={"fokus":"","beruf":"","liebe":"","energie":"","error":str(e)}
 
-    sections=[
-        Section(title="Fokus",  text=(data.get("fokus")  or "").strip(), chips=[why_chips[0],why_chips[1],f"Saison: {season}"]),
-        Section(title="Beruf",  text=(data.get("beruf")  or "").strip(), chips=[f"Lebenszahl {life_path_number(bdate)}"]),
-        Section(title="Liebe",  text=(data.get("liebe")  or "").strip(), chips=[f"Mondphase: {moon}"]),
-        Section(title="Energie",text=(data.get("energie") or "").strip(), chips=[f"Tag/Nacht: {dpart}"]),
-    ]
+        sections=[
+            Section(title="Fokus",  text=(data.get("fokus")  or "").strip(), chips=[why_chips[0],why_chips[1],f"Saison: {season}"]),
+            Section(title="Beruf",  text=(data.get("beruf")  or "").strip(), chips=[f"Lebenszahl {life_path_number(bdate)}"]),
+            Section(title="Liebe",  text=(data.get("liebe")  or "").strip(), chips=[f"Mondphase: {moon}"]),
+            Section(title="Energie",text=(data.get("energie") or "").strip(), chips=[f"Tag/Nacht: {dpart}"]),
+        ]
+        return ReadingResponse(meta=meta, sections=sections, chips=why_chips, disclaimer=disclaimer)
 
-    disclaimer=("Hinweis: Dieses Angebot dient ausschließlich der Unterhaltung "
-                "und achtsamen Selbstreflexion und ersetzt keine professionelle Beratung. "
-                "Bei Krisen oder akuter Gefahr: 112 (EU) / lokale Beratungsstellen.")
-
-    meta={
-        "period": req.period, "tone": req.tone,
-        "birthDate": req.birthDate, "birthPlace": req.birthPlace, "birthTime": req.birthTime,
-        "approxDaypart": dpart, "geo": {"lat":lat,"lon":lon,"tz":tzname},
-        "season": season, "hemisphere": "Nord" if (lat is None or lat>=0) else "Süd",
-        "mini": {"sunSignApprox": zodiac_from_date(bdate), "moonPhase": moon, "moonFrac": round(mf,3),
-                 "iChing": iching_index(bdate), "lifePath": life_path_number(bdate),
-                 "chinese": chinese_animal(bdate.year), "tree": celtic_tree(bdate)},
-        "swiss": swe_data,
+    # --- Deep readings (7 specialized types) ---
+    ctx = {
+        "bdate_str": bdate.strftime('%d.%m.%Y'),
+        "dpart": dpart,
+        "place": req.birthPlace,
+        "lat": lat, "lon": lon, "tzname": tzname,
+        "season": season, "hemisphere": hemisphere,
+        "sun_sign": sun_sign, "moon": moon, "moon_frac": mf,
+        "lifepath": lifepath, "cn_animal": cn_animal,
+        "birth_year": bdate.year,
+        "tree": tree, "hex_idx": hex_idx,
+        "swe_line": (f"- Swiss-Ephemeris: {swe_line}" if swe_data
+                     else "- (Keine exakte Geburtszeit → keine Häuser/Aszendent-Berechnung)"),
     }
+
+    system_prompt = _deep_system_prompt(rtype)
+    user_prompt = _deep_user_prompt(rtype, ctx)
+
+    try:
+        raw = client.chat.completions.create(
+            model=MODEL, temperature=0.7,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            **({"seed": req.seed} if req.seed is not None else {}),
+        ).choices[0].message.content
+        data = try_load_json(raw)
+    except Exception as e:
+        data = {"error": str(e)}
+
+    sections = [Section(**s) for s in _extract_sections(rtype, data, why_chips)]
+
     return ReadingResponse(meta=meta, sections=sections, chips=why_chips, disclaimer=disclaimer)
 
 # Run: uvicorn main:app --host 0.0.0.0 --port 8080
