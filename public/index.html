@@ -78,10 +78,65 @@
                 <option value="balanced" selected>Ausgewogen</option>
                 <option value="skeptic">Skeptisch (erklärend)</option>
                 <option value="poetic">Poetisch</option>
-                <option value="trailer">Trailer-Energie 🔥</option>
+                <option value="trailer">Trailer-Energie</option>
               </select>
             </label>
           </div>
+
+          <fieldset class="reading-type-fieldset">
+            <legend>Was möchtest du erfahren?</legend>
+            <div class="reading-type-grid">
+              <label class="rt-card rt-selected" data-rt="classic">
+                <input type="radio" name="readingType" value="classic" checked hidden/>
+                <span class="rt-icon">✷</span>
+                <strong>Klassisches Reading</strong>
+                <small>Fokus, Beruf, Liebe &amp; Energie</small>
+              </label>
+              <label class="rt-card" data-rt="blueprint">
+                <input type="radio" name="readingType" value="blueprint" hidden/>
+                <span class="rt-icon">🧬</span>
+                <strong>Lebensplan-Decoder</strong>
+                <small>Persönlichkeit, Stärken, Schwächen &amp; Lebensaufgabe</small>
+              </label>
+              <label class="rt-card" data-rt="soul_purpose">
+                <input type="radio" name="readingType" value="soul_purpose" hidden/>
+                <span class="rt-icon">🔮</span>
+                <strong>Seelenaufgabe</strong>
+                <small>Kernmission, Lektionen &amp; Alltagsimpulse</small>
+              </label>
+              <label class="rt-card" data-rt="career">
+                <input type="radio" name="readingType" value="career" hidden/>
+                <span class="rt-icon">🚀</span>
+                <strong>Berufung &amp; Karriere</strong>
+                <small>3 ideale Pfade &amp; ein Feld zum Meiden</small>
+              </label>
+              <label class="rt-card" data-rt="relationship">
+                <input type="radio" name="readingType" value="relationship" hidden/>
+                <span class="rt-icon">💫</span>
+                <strong>Beziehungs-Landkarte</strong>
+                <small>Kompatibilität, Liebeslektionen &amp; idealer Partner</small>
+              </label>
+              <label class="rt-card" data-rt="wealth">
+                <input type="radio" name="readingType" value="wealth" hidden/>
+                <span class="rt-icon">✦</span>
+                <strong>Fülle &amp; Wohlstand</strong>
+                <small>Geld-Persönlichkeit &amp; Wohlstandsstrategie</small>
+              </label>
+              <label class="rt-card" data-rt="timeline">
+                <input type="radio" name="readingType" value="timeline" hidden/>
+                <span class="rt-icon">⏳</span>
+                <strong>Zukunfts-Zeitstrahl</strong>
+                <small>Wendepunkte &amp; 5-Jahres-Roadmap</small>
+              </label>
+              <label class="rt-card" data-rt="genius">
+                <input type="radio" name="readingType" value="genius" hidden/>
+                <span class="rt-icon">⚡</span>
+                <strong>Inneres Genie</strong>
+                <small>Dein einzigartiges Talent &amp; 3-Schritte-Routine</small>
+              </label>
+            </div>
+            <input type="hidden" id="readingType" value="classic"/>
+          </fieldset>
           <div class="actions">
             <button type="submit" id="btnAsk">Sterne fragen</button>
             <button type="button" id="btnShare" class="ghost">Share‑Card erstellen</button>
@@ -107,6 +162,22 @@
       <small>© horoskop.one · Achtsamkeit vor Absolutheit · <a id="permalink" href="#">Permalink</a></small>
     </footer>
 
+    <script>
+      // Reading type card selection
+      document.addEventListener('DOMContentLoaded', function(){
+        const cards = document.querySelectorAll('.rt-card');
+        const hidden = document.getElementById('readingType');
+        cards.forEach(function(card){
+          card.addEventListener('click', function(){
+            cards.forEach(function(c){ c.classList.remove('rt-selected'); });
+            card.classList.add('rt-selected');
+            var radio = card.querySelector('input[type=radio]');
+            if(radio) radio.checked = true;
+            if(hidden) hidden.value = card.getAttribute('data-rt') || 'classic';
+          });
+        });
+      });
+    </script>
     <script defer src="__APP_JS__" integrity="__INTEGRITY__" crossorigin="anonymous"></script>
   </body>
 </html>
