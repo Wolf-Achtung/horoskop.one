@@ -116,15 +116,17 @@ def celtic_tree(d:dt.date)->str:
 
 async def geocode(place:str)->Optional[Dict[str,float]]:
     if not place: return None
-    url="https://nominatim.openstreetmap.org/search"; params={"format":"json","limit":"1","q":place}
-    headers={"User-Agent":"horoskop.one/1.0 (contact: support@horoskop.one)"}
-    async with httpx.AsyncClient(timeout=10) as cli:
-        r=await cli.get(url, params=params, headers=headers)
-        if r.status_code!=200: return None
-        data=r.json() or []
-        if not data: return None
-        try: return {"lat":float(data[0]["lat"]), "lon":float(data[0]["lon"])}
-        except: return None
+    try:
+        url="https://nominatim.openstreetmap.org/search"; params={"format":"json","limit":"1","q":place}
+        headers={"User-Agent":"horoskop.one/1.0 (contact: support@horoskop.one)"}
+        async with httpx.AsyncClient(timeout=10) as cli:
+            r=await cli.get(url, params=params, headers=headers)
+            if r.status_code!=200: return None
+            data=r.json() or []
+            if not data: return None
+            return {"lat":float(data[0]["lat"]), "lon":float(data[0]["lon"])}
+    except Exception:
+        return None
 
 def find_timezone(lat:Optional[float], lon:Optional[float])->str:
     if lat is None or lon is None: return "Europe/Berlin"
@@ -514,8 +516,9 @@ def reading_types():
     """Return available reading types for the frontend."""
     return [{"id": k, **v} for k, v in DEEP_READING_TYPES.items()]
 
-@app.post("/reading", response_model=ReadingResponse)
+@app.post("/reading")
 async def reading(req: ReadingRequest = Body(...)):
+  try:
     bdate=parse_birth_date(req.birthDate) or dt.date.today()
     btime=parse_birth_time(req.birthTime)
     dpart=(req.approxDaypart or daypart_from_time(btime)).lower()
@@ -665,6 +668,16 @@ Gib nur JSON:
     sections = [Section(**s) for s in _extract_sections(rtype, data, why_chips)]
 
     return ReadingResponse(meta=meta, sections=sections, chips=why_chips, disclaimer=disclaimer)
+  except Exception as exc:
+    # Never return 500 — always give the frontend a usable response
+    import traceback; traceback.print_exc()
+    fallback_disclaimer=("Hinweis: Dieses Angebot dient ausschließlich der Unterhaltung "
+                         "und achtsamen Selbstreflexion und ersetzt keine professionelle Beratung.")
+    return ReadingResponse(
+        meta={"error": str(exc), "readingType": getattr(req, 'readingType', 'classic')},
+        sections=[Section(title="Fehler", text=f"Es ist ein Fehler aufgetreten: {exc}", chips=[])],
+        chips=[], disclaimer=fallback_disclaimer,
+    )
 
 # Run: uvicorn main:app --host 0.0.0.0 --port 8080
 
