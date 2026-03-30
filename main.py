@@ -509,6 +509,7 @@ class ReadingResponse(BaseModel):
     disclaimer: str
 
 @app.get("/health")
+@app.get("/healthz")
 def health(): return {"ok": True, "model": MODEL}
 
 @app.get("/reading-types")
