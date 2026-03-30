@@ -182,11 +182,11 @@ def oa_text(prompt:str, seed:Optional[int]=None, temperature:float=0.8)->str:
     return cr.choices[0].message.content
 
 def try_load_json(maybe:str)->Any:
-    m=re.search(r"```json([\\s\\S]*?)```", maybe)
+    m=re.search(r"```json([\s\S]*?)```", maybe)
     if m:
         try: return json.loads(m.group(1))
         except: pass
-    m=re.search(r"\\{[\\s\\S]*\\}$", maybe.strip())
+    m=re.search(r"\{[\s\S]*\}$", maybe.strip())
     if m:
         try: return json.loads(m.group(0))
         except: pass
@@ -493,6 +493,7 @@ class ReadingRequest(BaseModel):
     readingType: str = Field("classic", description="classic|blueprint|soul_purpose|career|relationship|wealth|timeline|genius")
     seed: Optional[int] = None
     mixer: Optional[Dict[str,int]] = None
+    coords: Optional[Dict[str,float]] = None
 
 class Section(BaseModel):
     title: str
@@ -519,7 +520,10 @@ async def reading(req: ReadingRequest = Body(...)):
     btime=parse_birth_time(req.birthTime)
     dpart=(req.approxDaypart or daypart_from_time(btime)).lower()
 
-    geo=await geocode(req.birthPlace); lat=geo["lat"] if geo else None; lon=geo["lon"] if geo else None
+    if req.coords and req.coords.get("lat") is not None and req.coords.get("lon") is not None:
+        lat, lon = req.coords["lat"], req.coords["lon"]
+    else:
+        geo=await geocode(req.birthPlace); lat=geo["lat"] if geo else None; lon=geo["lon"] if geo else None
     tzname=find_timezone(lat,lon); _=now_local(bdate,tzname)
 
     hemisphere="Nord" if (lat is None or lat>=0) else "Süd"
