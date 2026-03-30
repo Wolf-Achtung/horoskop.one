@@ -86,54 +86,46 @@
           <fieldset class="reading-type-fieldset">
             <legend>Was möchtest du erfahren?</legend>
             <div class="reading-type-grid">
-              <label class="rt-card rt-selected" data-rt="classic">
-                <input type="radio" name="readingType" value="classic" checked hidden/>
+              <div class="rt-card rt-selected" data-rt="classic">
                 <span class="rt-icon">✷</span>
                 <strong>Klassisches Reading</strong>
                 <small>Fokus, Beruf, Liebe &amp; Energie</small>
-              </label>
-              <label class="rt-card" data-rt="blueprint">
-                <input type="radio" name="readingType" value="blueprint" hidden/>
+              </div>
+              <div class="rt-card" data-rt="blueprint">
                 <span class="rt-icon">🧬</span>
                 <strong>Lebensplan-Decoder</strong>
                 <small>Persönlichkeit, Stärken, Schwächen &amp; Lebensaufgabe</small>
-              </label>
-              <label class="rt-card" data-rt="soul_purpose">
-                <input type="radio" name="readingType" value="soul_purpose" hidden/>
+              </div>
+              <div class="rt-card" data-rt="soul_purpose">
                 <span class="rt-icon">🔮</span>
                 <strong>Seelenaufgabe</strong>
                 <small>Kernmission, Lektionen &amp; Alltagsimpulse</small>
-              </label>
-              <label class="rt-card" data-rt="career">
-                <input type="radio" name="readingType" value="career" hidden/>
+              </div>
+              <div class="rt-card" data-rt="career">
                 <span class="rt-icon">🚀</span>
                 <strong>Berufung &amp; Karriere</strong>
                 <small>3 ideale Pfade &amp; ein Feld zum Meiden</small>
-              </label>
-              <label class="rt-card" data-rt="relationship">
-                <input type="radio" name="readingType" value="relationship" hidden/>
+              </div>
+              <div class="rt-card" data-rt="relationship">
                 <span class="rt-icon">💫</span>
                 <strong>Beziehungs-Landkarte</strong>
                 <small>Kompatibilität, Liebeslektionen &amp; idealer Partner</small>
-              </label>
-              <label class="rt-card" data-rt="wealth">
-                <input type="radio" name="readingType" value="wealth" hidden/>
+              </div>
+              <div class="rt-card" data-rt="wealth">
                 <span class="rt-icon">✦</span>
                 <strong>Fülle &amp; Wohlstand</strong>
                 <small>Geld-Persönlichkeit &amp; Wohlstandsstrategie</small>
-              </label>
-              <label class="rt-card" data-rt="timeline">
-                <input type="radio" name="readingType" value="timeline" hidden/>
+              </div>
+              <div class="rt-card" data-rt="timeline">
                 <span class="rt-icon">⏳</span>
                 <strong>Zukunfts-Zeitstrahl</strong>
                 <small>Wendepunkte &amp; 5-Jahres-Roadmap</small>
-              </label>
-              <label class="rt-card" data-rt="genius">
-                <input type="radio" name="readingType" value="genius" hidden/>
+              </div>
+              <div class="rt-card" data-rt="genius">
                 <span class="rt-icon">⚡</span>
                 <strong>Inneres Genie</strong>
                 <small>Dein einzigartiges Talent &amp; 3-Schritte-Routine</small>
-              </label>
+              </div>
             </div>
             <input type="hidden" id="readingType" value="classic"/>
           </fieldset>
@@ -171,8 +163,6 @@
           card.addEventListener('click', function(){
             cards.forEach(function(c){ c.classList.remove('rt-selected'); });
             card.classList.add('rt-selected');
-            var radio = card.querySelector('input[type=radio]');
-            if(radio) radio.checked = true;
             if(hidden) hidden.value = card.getAttribute('data-rt') || 'classic';
           });
         });

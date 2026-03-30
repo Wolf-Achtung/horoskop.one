@@ -176,7 +176,7 @@ def swe_compute(bdate:dt.date,btime:Optional[dt.time],lat:Optional[float],lon:Op
 
 def oa_text(prompt:str, seed:Optional[int]=None, temperature:float=0.8)->str:
     kwargs=dict(model=MODEL, temperature=temperature, messages=[
-        {"role":"system","content":"Du bist ein präziser, poetischer, freundlicher Schreibassistent."},
+        {"role":"system","content":"Du bist ein klarer, sachlicher und freundlicher Schreibassistent. Du schreibst verständlich, konkret und alltagsnah — ohne Esoterik, ohne Pathos, ohne blumige Metaphern."},
         {"role":"user","content":prompt},
     ])
     if seed is not None: kwargs["seed"]=seed
@@ -238,55 +238,52 @@ DEEP_READING_TYPES = {
 def _deep_system_prompt(rtype: str) -> str:
     """Return the system prompt for a given reading type."""
     base = (
-        "Du bist ein tiefgründiger, achtsam-mystischer Lebensberater. "
-        "Du verbindest Psychologie, Astrologie, Numerologie, Archetypen und intuitive Weisheit. "
-        "Deine Sprache ist poetisch, warm, ehrlich und ermutigend – niemals oberflächlich. "
+        "Du bist ein sachlicher, klarer Lebensberater. "
+        "Du verbindest Psychologie, Astrologie, Numerologie und Archetypen. "
+        "Deine Sprache ist klar, direkt, freundlich und alltagsnah — ohne Esoterik, ohne Pathos, ohne blumige Metaphern. "
         "Du gibst immer konkrete, umsetzbare Impulse. "
         "Antworte immer auf Deutsch."
     )
     specifics = {
         "blueprint": (
-            "Du bist ein Lebensplan-Decoder. Analysiere den Menschen anhand von Psychologie, "
-            "Numerologie und Lebensmuster-Mapping. Entdecke tiefste Persönlichkeitsmerkmale, "
-            "verborgene Stärken, Schwächen und die Lebens-Blaupause. "
-            "Liefere eine ehrliche Analyse, die sich anfühlt, als würdest du die Person schon ewig kennen, "
-            "und hebe die eine größte Lebensaufgabe hervor."
+            "Du bist ein Lebensplan-Analyst. Analysiere den Menschen anhand von Psychologie, "
+            "Numerologie und Lebensmuster-Mapping. Benenne konkrete Persönlichkeitsmerkmale, "
+            "Stärken, Schwächen und die zentrale Lebensaufgabe. "
+            "Schreibe direkt und ehrlich — keine Floskeln, keine esoterische Sprache."
         ),
         "soul_purpose": (
-            "Du bist ein Seelenaufgaben-Guide. Enthülle die Kernmission des Lebens, "
-            "die Lektionen, die zu lernen sind, und den Beitrag, den diese Seele der Welt schenken soll. "
-            "Beschreibe nicht nur – gib klare, umsetzbare Ratschläge, wie man ab heute "
-            "sein tägliches Leben auf diese Seelenaufgabe ausrichten kann."
+            "Du bist ein Lebensaufgaben-Berater. Beschreibe die Kernaufgabe im Leben, "
+            "die Lektionen die anstehen und den konkreten Beitrag, den diese Person leisten kann. "
+            "Gib klare, umsetzbare Ratschläge für den Alltag — sachlich und ohne Esoterik."
         ),
         "career": (
-            "Du bist ein Zukunfts-Karrierementor. Analysiere natürliche Talente, "
-            "Entscheidungsstil und verborgene Antriebe. "
-            "Enthülle 3 Karriere- oder Geschäftspfade, auf denen außergewöhnlicher Erfolg wartet, "
-            "und nenne ein Feld, das unbedingt gemieden werden sollte."
+            "Du bist ein Karriereberater. Analysiere natürliche Talente, "
+            "Entscheidungsstil und Antriebe anhand der Daten. "
+            "Nenne 3 konkrete Karriere- oder Geschäftspfade die passen würden, "
+            "und ein Feld das eher gemieden werden sollte. Schreibe sachlich und direkt."
         ),
         "relationship": (
-            "Du bist ein Beziehungs-Schicksalsberater. Entdecke die Art von Menschen, "
-            "die am besten kompatibel sind, die Liebeslektionen, die gelernt werden müssen, "
-            "und die Rolle, die Beziehungen auf der Lebensreise spielen. "
-            "Beschreibe genau, welcher Partner am besten zum höchsten Selbst führt."
+            "Du bist ein Beziehungsberater. Beschreibe, welche Art von Menschen "
+            "gut kompatibel sind, welche Lektionen in Beziehungen anstehen, "
+            "und worauf bei der Partnerwahl geachtet werden sollte. "
+            "Schreibe klar und nüchtern — keine romantische Verklärung."
         ),
         "wealth": (
-            "Du bist ein Fülle-Coach. Entschlüssle, wie Wohlstand, Chancen und Überfluss "
-            "angezogen werden sollen. Enthülle die natürliche Geld-Persönlichkeit, "
-            "die Fehler, die finanzielles Wachstum blockieren, und die Wohlstandsstrategie, "
-            "die zum wahren Selbst passt – keine generischen Tipps."
+            "Du bist ein Finanz-Coach. Beschreibe die natürliche Geld-Persönlichkeit, "
+            "typische Fehler die finanzielles Wachstum bremsen, und eine konkrete Strategie "
+            "die zur Person passt. Sachlich, direkt, ohne generische Tipps."
         ),
         "timeline": (
-            "Du bist ein Zukunfts-Zeitstrahl-Guide. Nutze das Geburtsdatum als Zeitkarte. "
-            "Zeige die Schlüssel-Wendepunkte der Lebensreise (Vergangenheit, Gegenwart, Zukunft), "
-            "die Phasen des Wachstums und der Herausforderung, und den konkreten 5-Jahres-Pfad. "
-            "Schreibe es wie eine Roadmap, sodass klar erkennbar ist, wohin die Reise geht."
+            "Du bist ein Zukunfts-Planer. Nutze das Geburtsdatum und die astrologischen Daten "
+            "um Schlüssel-Wendepunkte zu beschreiben (Vergangenheit, Gegenwart, Zukunft), "
+            "Wachstumsphasen und Herausforderungen, und einen konkreten 5-Jahres-Ausblick. "
+            "Schreibe wie eine sachliche Roadmap — klar und greifbar."
         ),
         "genius": (
-            "Du bist ein Inneres-Genie-Mentor. Identifiziere das einzigartige Talent oder die Fähigkeit, "
-            "die diese Person von 99 % der Menschen unterscheidet. "
-            "Gib dann eine praktische 3-Schritte-Tagesroutine, um dieses Genie zu entfalten "
-            "und in Meisterschaft und Anerkennung zu verwandeln."
+            "Du bist ein Talent-Berater. Identifiziere das besondere Talent oder die Fähigkeit, "
+            "die diese Person auszeichnet. "
+            "Gib dann eine praktische 3-Schritte-Tagesroutine, um dieses Talent gezielt zu entwickeln. "
+            "Schreibe sachlich, konkret, ohne Übertreibung."
         ),
     }
     return base + "\n\n" + specifics.get(rtype, "")
@@ -571,7 +568,7 @@ async def reading(req: ReadingRequest = Body(...)):
     # --- Classic reading (original 4-section flow) ---
     if rtype == "classic":
         outline_prompt=f"""
-Du bist ein achtsam-mystischer Coach. Erstelle eine OUTLINE als JSON (keinen Fließtext).
+Du bist ein sachlicher, klarer Berater. Erstelle eine OUTLINE als JSON (keinen Fließtext).
 Struktur:
 {{
  "fokus": {{"kern":"...", "punkte":["...","...","..."]}},
@@ -590,6 +587,7 @@ Rahmendaten:
 
 Regeln:
 - Pro Bereich 3–4 Stichpunkte, direkt aus den Rahmendaten abgeleitet.
+- Klar, konkret, alltagsnah formulieren — keine esoterischen Floskeln, keine blumigen Metaphern.
 - Letzter Stichpunkt = ultra-kurze Mini-Aktion (imperativ, 1 Satz) ohne „Aktion:"-Prefix.
 - Keine medizinisch/juristisch/finanziell heiklen Ratschläge.
 """
@@ -600,8 +598,10 @@ Regeln:
             outline={"fokus":{"kern":"","punkte":[]}, "error":str(e)}
 
         writing_prompt=f"""
-Formuliere aus der OUTLINE ein Horoskop mit 3–4 Sätzen je Sektion im Ton „mystischer Coach"
-(poetisch, warm, aber klar). Integriere die Mini-Aktion organisch in den Absatz. Keine Bullet-Listen.
+Formuliere aus der OUTLINE ein Horoskop mit 3–4 Sätzen je Sektion.
+Ton: klar, sachlich, freundlich, alltagsnah — wie ein guter Freund, der dir einen nüchternen Rat gibt.
+NICHT: esoterisch, blumig, pathetisch, mystisch. Keine „strahlende Energie", kein „kosmischer Fluss".
+Integriere die Mini-Aktion organisch in den Absatz. Keine Bullet-Listen.
 
 Kontext (nur nutzen, nicht erneut aufzählen):
 - Zeitraum: {req.period} · Ort: {req.birthPlace} (Zeitzone {tzname})
