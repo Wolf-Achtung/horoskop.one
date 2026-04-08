@@ -252,7 +252,7 @@
       ...(m && typeof m.seed !== 'undefined' ? { seed: m.seed } : {})
     };
 
-    $('result').innerHTML = '<div class="card">⏳ Berechnung läuft – bitte warten (kann bis zu 60 s dauern) …</div>';
+    $('result').innerHTML = '<div class="card">Berechnung läuft – bitte warten (kann bis zu 60 s dauern) …</div>';
 
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 90000);
