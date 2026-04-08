@@ -349,17 +349,72 @@ def celtic_tree(d:dt.date)->str:
         if (s<=e and s<=d<=e) or (s>e and (d>=s or d<=e)): return name
     return "Birke"
 
-async def geocode(place:str)->Optional[Dict[str,float]]:
-    if not place: return None
+async def geocode(place: str) -> Optional[Dict[str, Any]]:
+    """Resolve a free-text birthplace to coordinates via Nominatim.
+
+    Strategy (two-pass):
+      1. DACH-first — restrict to countrycodes=de,at,ch so that common German
+         town names (Neustadt, Stuttgart-Weilimdorf, Bad Saulgau, …) don't
+         collide with homonyms in the US or elsewhere.
+      2. If that yields nothing, retry worldwide so international users and
+         less common place names still work.
+
+    Returns a dict with lat, lon, display (canonical label) and
+    countryCode, or None if the place couldn't be resolved.
+    """
+    if not place:
+        return None
+    headers = {
+        "User-Agent": "horoskop.one/1.0 (contact: kontakt@horoskop.one)",
+        "Accept-Language": "de,en",
+    }
+    base_params = {
+        "format": "jsonv2",
+        "limit": "5",
+        "addressdetails": "1",
+        "q": place.strip(),
+    }
+
+    def _pick(data: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+        if not data:
+            return None
+        # Prefer administrative / populated-place hits over e.g. shops, bus stops.
+        preferred_classes = {"place", "boundary"}
+        ordered = sorted(
+            data,
+            key=lambda d: (0 if d.get("class") in preferred_classes else 1,
+                           -float(d.get("importance") or 0)),
+        )
+        hit = ordered[0]
+        addr = hit.get("address") or {}
+        return {
+            "lat": float(hit["lat"]),
+            "lon": float(hit["lon"]),
+            "display": hit.get("display_name") or place,
+            "countryCode": (addr.get("country_code") or "").upper() or None,
+        }
+
     try:
-        url="https://nominatim.openstreetmap.org/search"; params={"format":"json","limit":"1","q":place}
-        headers={"User-Agent":"horoskop.one/1.0 (contact: support@horoskop.one)"}
         async with httpx.AsyncClient(timeout=10) as cli:
-            r=await cli.get(url, params=params, headers=headers)
-            if r.status_code!=200: return None
-            data=r.json() or []
-            if not data: return None
-            return {"lat":float(data[0]["lat"]), "lon":float(data[0]["lon"])}
+            # Pass 1: DACH only
+            r = await cli.get(
+                "https://nominatim.openstreetmap.org/search",
+                params={**base_params, "countrycodes": "de,at,ch"},
+                headers=headers,
+            )
+            if r.status_code == 200:
+                hit = _pick(r.json() or [])
+                if hit:
+                    return hit
+            # Pass 2: worldwide fallback
+            r = await cli.get(
+                "https://nominatim.openstreetmap.org/search",
+                params=base_params,
+                headers=headers,
+            )
+            if r.status_code != 200:
+                return None
+            return _pick(r.json() or [])
     except (httpx.HTTPError, ValueError, KeyError, TypeError):
         return None
 
@@ -842,8 +897,8 @@ class ReadingRequest(BaseModel):
     tone: str = "mystic_deep"
     readingType: str = Field("classic", description="classic|blueprint|soul_purpose|career|relationship|wealth|timeline|genius")
     seed: Optional[int] = None
-    mixer: Optional[Dict[str,int]] = None
-    coords: Optional[Dict[str,float]] = None
+    mixer: Optional[Dict[str, float]] = None
+    coords: Optional[Dict[str, float]] = None
 
 class Section(BaseModel):
     title: str
@@ -934,10 +989,18 @@ async def _reading_impl(req: ReadingRequest):
     btime=parse_birth_time(req.birthTime)
     dpart=(req.approxDaypart or daypart_from_time(btime)).lower()
 
+    resolved_place = None
+    country_code = None
     if req.coords and req.coords.get("lat") is not None and req.coords.get("lon") is not None:
         lat, lon = req.coords["lat"], req.coords["lon"]
     else:
-        geo=await geocode(req.birthPlace); lat=geo["lat"] if geo else None; lon=geo["lon"] if geo else None
+        geo = await geocode(req.birthPlace)
+        if geo:
+            lat, lon = geo["lat"], geo["lon"]
+            resolved_place = geo.get("display")
+            country_code = geo.get("countryCode")
+        else:
+            lat, lon = None, None
     tzname=find_timezone(lat,lon); _=now_local(bdate,tzname)
 
     hemisphere="Nord" if (lat is None or lat>=0) else "Süd"
@@ -989,6 +1052,7 @@ async def _reading_impl(req: ReadingRequest):
         "readingType": rtype,
         "readingLabel": DEEP_READING_TYPES[rtype]["label"],
         "birthDate": req.birthDate, "birthPlace": req.birthPlace, "birthTime": req.birthTime,
+        "resolvedPlace": resolved_place, "countryCode": country_code,
         "approxDaypart": dpart, "geo": {"lat":lat,"lon":lon,"tz":tzname},
         "season": season, "hemisphere": "Nord" if (lat is None or lat>=0) else "Süd",
         "mini": {
@@ -1024,7 +1088,7 @@ Struktur:
 
 Rahmendaten:
 - Zeitraum: {req.period}
-- Ort: {req.birthPlace} → lat={lat}, lon={lon}, Zeitzone={tzname}
+- Ort: {resolved_place or req.birthPlace} → lat={lat}, lon={lon}, Zeitzone={tzname}
 - Datum: {bdate.strftime('%d.%m.%Y')} · Tagesabschnitt: {dpart}
 - Saison/Hemisphäre: {season} / {hemisphere}
 
@@ -1063,7 +1127,7 @@ Integriere die Mini-Aktion organisch in den Absatz. Keine Bullet-Listen.
 {mixer_block}
 
 Kontext (nur nutzen, nicht erneut aufzählen):
-- Zeitraum: {req.period} · Ort: {req.birthPlace} (Zeitzone {tzname})
+- Zeitraum: {req.period} · Ort: {resolved_place or req.birthPlace} (Zeitzone {tzname})
 - Saison/Hemisphäre: {season} / {hemisphere}
 - Sonne≈{sun_sign}, Mondphase {moon}, Tagesabschnitt {dpart}.
 - Numerologie: Lebenszahl {lifepath} ({lifepath_arch}); Persönliche Jahreszahl {personal_year}, Monat {personal_month}, Tag {personal_day}.

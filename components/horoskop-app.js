@@ -45,36 +45,195 @@
     });
   })();
 
-  // ----- Seed planet-orbit animations with real heliocentric longitudes -----
-  // Each <g class="planet-orbit orbit-X"> has its dot drawn at the top of the
-  // orbit (angle = -90°). By setting a negative `animation-delay` we advance
-  // the CSS rotate() keyframe so every planet starts at its current ecliptic
-  // position — no layout shift, no JS frame loop.
-  (function seedPlanets() {
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    // Days since J2000.0 epoch (2000-01-01 12:00 TT).
-    const daysSinceJ2000 = (Date.now() - Date.UTC(2000, 0, 1, 12, 0, 0)) / 86400000;
-    // Simplified mean longitudes (deg) and mean motions (deg/day) — good enough
-    // for a visual "roughly where the planets are today".
-    const planets = {
-      mercury: { period:  22, L0: 252.25, n: 4.09233445 },
-      venus:   { period:  38, L0: 181.98, n: 1.60213034 },
-      earth:   { period:  56, L0: 100.46, n: 0.98560028 },
-      mars:    { period:  72, L0: 355.43, n: 0.52402068 },
-      jupiter: { period:  96, L0:  34.35, n: 0.08308529 },
-      saturn:  { period: 124, L0:  50.08, n: 0.03344414 },
-      uranus:  { period: 160, L0: 314.06, n: 0.01172834 },
-      neptune: { period: 200, L0: 304.35, n: 0.00598103 }
-    };
-    for (const [name, p] of Object.entries(planets)) {
-      const lon = (((p.L0 + p.n * daysSinceJ2000) % 360) + 360) % 360;
-      // Dot starts at angle -90° (12 o'clock). We want ecliptic longitude
-      // lon (0° = Aries = 3 o'clock), so rotate by (lon + 90) degrees.
-      const rot = (lon + 90) % 360;
-      const delay = -(rot / 360) * p.period;
-      const el = document.querySelector('.orbit-' + name);
-      if (el) el.style.animationDelay = delay.toFixed(2) + 's';
+  // ----- Live heliocentric hero wheel ----------------------------------------
+  // Each <g class="planet-orbit orbit-X"> has its dot drawn at angle -90°
+  // (12 o'clock). We compute the current mean ecliptic longitude for every
+  // planet from a simplified Kepler mean-motion model (J2000.0 epoch) and
+  // apply it as a direct rotate() transform on the group. A slow time-lapse
+  // loop then advances the clock at ~1 real day per second, so Mercury
+  // visibly drifts over a few minutes while Neptun is essentially still —
+  // astronomically honest. On every page load the starting positions match
+  // today's real sky.
+  (function liveSky() {
+    // Simplified mean longitudes L0 (deg, J2000.0) and mean motions n (deg/day).
+    // Values are standard osculating elements rounded for visual fidelity;
+    // accurate to a few degrees, which is all the 380px hero needs.
+    const PLANETS = [
+      { name: 'mercury', L0: 252.25, n: 4.09233445, el: null },
+      { name: 'venus',   L0: 181.98, n: 1.60213034, el: null },
+      { name: 'earth',   L0: 100.46, n: 0.98560028, el: null },
+      { name: 'mars',    L0: 355.43, n: 0.52402068, el: null },
+      { name: 'jupiter', L0:  34.35, n: 0.08308529, el: null },
+      { name: 'saturn',  L0:  50.08, n: 0.03344414, el: null },
+      { name: 'uranus',  L0: 314.06, n: 0.01172834, el: null },
+      { name: 'neptune', L0: 304.35, n: 0.00598103, el: null }
+    ];
+    for (const p of PLANETS) p.el = document.querySelector('.orbit-' + p.name);
+    if (!PLANETS.some(p => p.el)) return; // no hero SVG on this page
+
+    // Days since J2000.0 (2000-01-01 12:00 TT, close enough to UTC here).
+    const J2000_MS = Date.UTC(2000, 0, 1, 12, 0, 0);
+    // Time-lapse factor: how many simulated days pass per real second of
+    // animation. 1.0 = 1 day/sec → Merkur moves ~4°/min (noticeable),
+    // Neptun ~0.003°/min (still). Gives a gently living wheel.
+    const TIME_LAPSE = 1.0;
+
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const pageLoadReal = Date.now();
+
+    function render(nowMs) {
+      // Simulated time = real-now + (elapsed since load) × (TIME_LAPSE − 1)
+      // so that at page load we show the exact current sky, and from there
+      // each real second adds TIME_LAPSE days to the simulated clock.
+      const simMs = nowMs + (nowMs - pageLoadReal) * (TIME_LAPSE * 86400 - 1);
+      const daysSinceJ2000 = (simMs - J2000_MS) / 86400000;
+      for (const p of PLANETS) {
+        if (!p.el) continue;
+        const lon = (((p.L0 + p.n * daysSinceJ2000) % 360) + 360) % 360;
+        // Dot sits at -90° (top). Ecliptic longitude 0° = 3 o'clock, so the
+        // rotation that takes the dot from the top to longitude λ is λ+90°.
+        const rot = (lon + 90) % 360;
+        p.el.style.transform = 'rotate(' + rot.toFixed(2) + 'deg)';
+      }
+      const cap = document.getElementById('sky-date');
+      if (cap) {
+        const d = new Date(simMs);
+        cap.textContent = 'Himmel am ' + d.toLocaleDateString('de-DE', {
+          day: '2-digit', month: 'long', year: 'numeric'
+        });
+      }
     }
+
+    render(Date.now());
+    if (reduce) return; // respect reduced-motion: keep the static snapshot
+    // Tick once per second; `.planet-orbit { transition: transform 1s linear }`
+    // smooths the drift between ticks, so the motion looks continuous without
+    // a requestAnimationFrame loop burning battery.
+    setInterval(() => render(Date.now()), 1000);
+  })();
+
+  // ----- Birthplace autocomplete (Nominatim) ---------------------------------
+  // Live-search against OpenStreetMap Nominatim so users see whether their
+  // place resolved BEFORE hitting "Sterne fragen", and we can stash the
+  // lat/lon + canonical label straight into the request payload. Two-pass
+  // strategy: DACH-countries first (typical for a German-language app),
+  // then worldwide fallback if nothing comes back.
+  (function birthplaceAutocomplete() {
+    const input = $('birthPlace');
+    const list  = $('place-suggest');
+    const status = $('place-status');
+    const latH = $('birthLat');
+    const lonH = $('birthLon');
+    if (!input || !list) return;
+
+    const NOMINATIM = 'https://nominatim.openstreetmap.org/search';
+    let debounceTimer = null;
+    let lastQuery = '';
+    let activeIdx = -1;
+    let items = [];
+
+    function setStatus(kind, text) {
+      if (!status) return;
+      status.className = 'place-status' + (kind ? ' ' + kind : '');
+      status.textContent = text || '';
+    }
+
+    function closeList() {
+      list.classList.remove('open');
+      list.innerHTML = '';
+      activeIdx = -1;
+    }
+
+    function renderList() {
+      list.innerHTML = '';
+      items.forEach((it, i) => {
+        const row = document.createElement('div');
+        row.className = 'ps-item' + (i === activeIdx ? ' active' : '');
+        row.setAttribute('role', 'option');
+        const main = document.createElement('span');
+        main.textContent = it.display;
+        row.appendChild(main);
+        if (it.country) {
+          const cc = document.createElement('span');
+          cc.className = 'ps-country';
+          cc.textContent = it.country;
+          row.appendChild(cc);
+        }
+        row.addEventListener('mousedown', (e) => {
+          e.preventDefault();
+          choose(it);
+        });
+        list.appendChild(row);
+      });
+      list.classList.toggle('open', items.length > 0);
+    }
+
+    function choose(it) {
+      input.value = it.display;
+      if (latH) latH.value = String(it.lat);
+      if (lonH) lonH.value = String(it.lon);
+      setStatus('ok', '✓ Erkannt: ' + it.display + (it.country ? ' (' + it.country + ')' : ''));
+      closeList();
+    }
+
+    async function queryNominatim(q, countryCodes) {
+      const params = new URLSearchParams({
+        format: 'jsonv2',
+        limit: '6',
+        addressdetails: '1',
+        q: q
+      });
+      if (countryCodes) params.set('countrycodes', countryCodes);
+      const url = NOMINATIM + '?' + params.toString();
+      try {
+        const r = await fetch(url, {
+          headers: { 'Accept': 'application/json', 'Accept-Language': 'de,en' }
+        });
+        if (!r.ok) return [];
+        const data = await r.json();
+        return (data || []).map(row => ({
+          display: row.display_name || row.name || q,
+          lat: parseFloat(row.lat),
+          lon: parseFloat(row.lon),
+          country: ((row.address && row.address.country_code) || '').toUpperCase()
+        })).filter(x => !isNaN(x.lat) && !isNaN(x.lon));
+      } catch (e) {
+        return [];
+      }
+    }
+
+    async function search(q) {
+      lastQuery = q;
+      setStatus('', 'Suche …');
+      let hits = await queryNominatim(q, 'de,at,ch');
+      if (!hits.length) hits = await queryNominatim(q, '');
+      if (q !== lastQuery) return; // stale response
+      items = hits.slice(0, 6);
+      if (!items.length) {
+        setStatus('warn', 'Kein Treffer. Tipp: Land oder PLZ ergänzen, z. B. „Neustadt, Weinstraße" oder „10405 Berlin".');
+        closeList();
+        return;
+      }
+      setStatus('', items.length + ' Vorschläge');
+      renderList();
+    }
+
+    input.addEventListener('input', () => {
+      if (latH) latH.value = '';
+      if (lonH) lonH.value = '';
+      const q = input.value.trim();
+      clearTimeout(debounceTimer);
+      if (q.length < 3) { closeList(); setStatus('', ''); return; }
+      debounceTimer = setTimeout(() => search(q), 280);
+    });
+    input.addEventListener('keydown', (e) => {
+      if (!list.classList.contains('open')) return;
+      if (e.key === 'ArrowDown') { e.preventDefault(); activeIdx = Math.min(items.length - 1, activeIdx + 1); renderList(); }
+      else if (e.key === 'ArrowUp')   { e.preventDefault(); activeIdx = Math.max(0, activeIdx - 1); renderList(); }
+      else if (e.key === 'Enter' && activeIdx >= 0) { e.preventDefault(); choose(items[activeIdx]); }
+      else if (e.key === 'Escape') { closeList(); }
+    });
+    input.addEventListener('blur', () => { setTimeout(closeList, 120); });
   })();
 
   // ----- "Heute" shortcut ----------------------------------------------------
@@ -284,6 +443,13 @@
     const rtEl = $('readingType');
     const readingType = (rtEl && rtEl.value) ? rtEl.value : 'classic';
 
+    // If the autocomplete resolved the birthplace, pass the coords straight
+    // through so the backend skips its own Nominatim call.
+    const latH = $('birthLat'), lonH = $('birthLon');
+    const latV = latH && latH.value ? parseFloat(latH.value) : NaN;
+    const lonV = lonH && lonH.value ? parseFloat(lonH.value) : NaN;
+    const coords = (!isNaN(latV) && !isNaN(lonV)) ? { lat: latV, lon: lonV } : null;
+
     const payload = {
       birthDate: d,
       birthPlace: p,
@@ -292,6 +458,7 @@
       readingType,
       ...(t && /^\d{1,2}:\d{2}$/.test(t) ? { birthTime: t } : {}),
       ...(mixer ? { mixer } : {}),
+      ...(coords ? { coords } : {}),
       tone: (m && m.mode) ? m.mode : 'mystic_coach',
       ...(m && typeof m.seed !== 'undefined' ? { seed: m.seed } : {})
     };
