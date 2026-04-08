@@ -130,6 +130,15 @@
             </div>
             <input type="hidden" id="readingType" value="classic"/>
           </fieldset>
+
+          <details class="mixer-details">
+            <summary>
+              <strong>⚖ Kosmischer Mixer</strong>
+              <span class="mixer-hint">— Methoden &amp; Ton vor der Analyse feintunen (optional)</span>
+            </summary>
+            <div id="mixer-root"></div>
+          </details>
+
           <div class="actions">
             <button type="submit" id="btnAsk">Sterne fragen</button>
             <button type="button" id="btnShare" class="ghost">Share‑Card erstellen</button>
@@ -143,10 +152,6 @@
       <section id="result" class="card result" aria-live="polite">
         <h3>Dein Reading</h3>
         <div id="readingOut"></div>
-      </section>
-
-      <section class="card">
-        <div id="mixer-root"></div>
       </section>
 
       <section id="shareCardPreview" class="card" hidden>

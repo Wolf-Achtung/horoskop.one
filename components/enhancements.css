@@ -63,3 +63,13 @@
 .mixer-row input[type=range]{width:100px;accent-color:#9bb4ff}
 .mixer-foot{margin-top:14px;font-size:13px;color:#9fb2d9}
 .mixer-foot b{color:#e7ecff;font-variant-numeric:tabular-nums}
+
+/* ---- Collapsible mixer wrapper (optional pre-analysis fine-tuning) ---- */
+.mixer-details{margin-top:14px;border:1px solid #1a2c5a;border-radius:14px;background:#0b142b}
+.mixer-details>summary{cursor:pointer;padding:12px 14px;list-style:none;display:flex;align-items:center;gap:10px;color:#cfe0ff}
+.mixer-details>summary::-webkit-details-marker{display:none}
+.mixer-details>summary::before{content:'▸';display:inline-block;transition:transform .2s;color:#6bb7ff;font-size:14px}
+.mixer-details[open]>summary::before{transform:rotate(90deg)}
+.mixer-details>summary strong{font-family:'Cinzel Decorative','Caudex',serif;letter-spacing:.02em;font-size:15px}
+.mixer-details .mixer-hint{color:#9fb2d9;font-size:12px;font-style:italic}
+.mixer-details[open] .mixer-card{margin-top:0;border:none;background:transparent;padding:4px 14px 14px}
