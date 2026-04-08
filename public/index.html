@@ -13,10 +13,10 @@
     <meta http-equiv="Content-Security-Policy" content="
       default-src 'self';
       script-src 'self';
-      connect-src 'self' https://horoskopone-production-4739.up.railway.app https://nominatim.openstreetmap.org;
+      connect-src 'self' https://horoskopone-production-4739.up.railway.app https://horoskopone-production.up.railway.app https://nominatim.openstreetmap.org;
       img-src 'self' data: blob:;
-      style-src 'self' 'unsafe-inline';
-      font-src 'self';
+      style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+      font-src 'self' https://fonts.gstatic.com;
       base-uri 'self';
       form-action 'self';
       frame-ancestors 'none';

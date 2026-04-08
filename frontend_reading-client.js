@@ -1,5 +1,5 @@
 (function (global) {
-  const API_BASE = global.HOROSKOP_API_BASE || "https://horoskopone-production.up.railway.app";
+  const API_BASE = global.HOROSKOP_API_BASE || "https://horoskopone-production-4739.up.railway.app";
   const ENDPOINT = "/reading";
 
   function sanitizeTime(t) { return /^\d{1,2}:\d{2}$/.test((t||"").trim()) ? t.trim() : null; }
