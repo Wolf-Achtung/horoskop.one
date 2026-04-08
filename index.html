@@ -85,7 +85,9 @@
     .planet-legend b{font-weight:600;color:#e7ecff;letter-spacing:.01em}
     .sky-date{text-align:center;font-size:11px;color:#8aa4d6;margin-top:8px;font-style:italic;font-family:'Cormorant Garamond',serif}
     .sky-controls{display:flex;gap:8px;align-items:center;justify-content:center;margin-top:6px;flex-wrap:wrap}
-    .sky-controls input[type="date"]{width:auto;padding:6px 10px;font-size:13px;border-radius:8px;background:#0b1530;color:#e7ecff;border:1px solid #24417b;color-scheme:dark}
+    /* 16px font-size avoids the iOS-Safari zoom-on-focus trap (anything
+       <16px triggers a forced page zoom when the input is tapped). */
+    .sky-controls input[type="date"]{width:auto;padding:6px 10px;font-size:16px;border-radius:8px;background:#0b1530;color:#e7ecff;border:1px solid #24417b;color-scheme:dark}
 
     /* Nominatim autocomplete dropdown under the Geburtsort field */
     .place-suggest{position:absolute;top:100%;left:0;right:0;z-index:20;max-height:260px;overflow:auto;background:#0b1530;border:1px solid #24417b;border-radius:10px;margin-top:4px;display:none;box-shadow:0 10px 30px #0009}
@@ -106,6 +108,17 @@
     .site-footer nav a{color:#a9c4ff;text-decoration:none;padding:6px 8px;border-radius:8px}
     .site-footer nav a:hover{text-decoration:underline;color:#e7ecff}
     .footer-copy{margin-top:8px;color:#7e96c9;font-size:12px}
+
+    /* "Geburtszeit finden?" dialog. Without these the native <dialog>
+       uses UA defaults that either overflow the viewport on small
+       phones or sit awkwardly centred with huge padding. Match the
+       rest of the app visually and cap the width to the viewport. */
+    dialog#dlg-time{max-width:min(92vw,420px);width:100%;padding:18px 18px 14px;border-radius:14px;
+                    background:#0f162b;color:var(--ink);border:1px solid var(--bd);box-shadow:0 18px 48px #000a}
+    dialog#dlg-time::backdrop{background:rgba(6,10,22,.72);backdrop-filter:blur(2px)}
+    dialog#dlg-time h3{font-family:'Cinzel Decorative','Caudex',serif;color:#e7ecff;font-size:17px}
+    dialog#dlg-time ul{color:#bdd0ff}
+    dialog#dlg-time .row{margin-top:10px;justify-content:flex-end}
 
     .reading-type-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:10px}
     .rt-card{display:flex;flex-direction:column;align-items:flex-start;text-align:left;padding:12px;min-height:64px;
