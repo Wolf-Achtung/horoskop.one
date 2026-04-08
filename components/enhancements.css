@@ -64,11 +64,22 @@
 .mixer-foot{margin-top:14px;font-size:13px;color:#9fb2d9}
 .mixer-foot b{color:#e7ecff;font-variant-numeric:tabular-nums}
 
-/* ---- Collapsible mixer wrapper (optional pre-analysis fine-tuning) ---- */
+/* ---- Collapsible panel (shared by reading-type + mixer) ---- */
+.collapse-panel{margin-top:14px;border:1px solid #1a2c5a;border-radius:14px;background:#0b142b}
+.collapse-panel>summary{cursor:pointer;padding:12px 14px;list-style:none;display:flex;align-items:center;gap:10px;flex-wrap:wrap;color:#cfe0ff}
+.collapse-panel>summary::-webkit-details-marker{display:none}
+.collapse-panel>summary::before{content:'\25B8';display:inline-block;transition:transform .2s;color:#6bb7ff;font-size:14px;flex:0 0 auto}
+.collapse-panel[open]>summary::before{transform:rotate(90deg)}
+.collapse-panel>summary strong{font-family:'Cinzel Decorative','Caudex',serif;letter-spacing:.02em;font-size:15px}
+.collapse-panel .collapse-hint{color:#9fb2d9;font-size:12px;font-style:italic}
+.collapse-panel .collapse-value{color:#f1c27d;font-size:13px;margin-left:auto;font-weight:600}
+.collapse-panel[open] .mixer-card{margin-top:0;border:none;background:transparent;padding:4px 14px 14px}
+
+/* Legacy .mixer-details alias keeps backward compatibility with older markup */
 .mixer-details{margin-top:14px;border:1px solid #1a2c5a;border-radius:14px;background:#0b142b}
-.mixer-details>summary{cursor:pointer;padding:12px 14px;list-style:none;display:flex;align-items:center;gap:10px;color:#cfe0ff}
+.mixer-details>summary{cursor:pointer;padding:12px 14px;list-style:none;display:flex;align-items:center;gap:10px;flex-wrap:wrap;color:#cfe0ff}
 .mixer-details>summary::-webkit-details-marker{display:none}
-.mixer-details>summary::before{content:'▸';display:inline-block;transition:transform .2s;color:#6bb7ff;font-size:14px}
+.mixer-details>summary::before{content:'\25B8';display:inline-block;transition:transform .2s;color:#6bb7ff;font-size:14px}
 .mixer-details[open]>summary::before{transform:rotate(90deg)}
 .mixer-details>summary strong{font-family:'Cinzel Decorative','Caudex',serif;letter-spacing:.02em;font-size:15px}
 .mixer-details .mixer-hint{color:#9fb2d9;font-size:12px;font-style:italic}
