@@ -1040,9 +1040,7 @@ async def _reading_impl(req: ReadingRequest):
 
     rtype = req.readingType if req.readingType in VALID_READING_TYPES else "classic"
 
-    disclaimer=("Hinweis: Dieses Angebot dient ausschließlich der Unterhaltung "
-                "und achtsamen Selbstreflexion und ersetzt keine professionelle Beratung. "
-                "Bei Krisen oder akuter Gefahr: 112 (EU) / lokale Beratungsstellen.")
+    disclaimer="Unterhaltung & Selbstreflexion – kein Ersatz für professionelle Beratung. Krisen: 112 (EU)."
 
     meta={
         "period": req.period, "tone": req.tone,
@@ -1251,8 +1249,7 @@ Gib nur JSON:
   except Exception as exc:
     # Never return 500 — always give the frontend a usable response
     import traceback; traceback.print_exc()
-    fallback_disclaimer=("Hinweis: Dieses Angebot dient ausschließlich der Unterhaltung "
-                         "und achtsamen Selbstreflexion und ersetzt keine professionelle Beratung.")
+    fallback_disclaimer="Unterhaltung & Selbstreflexion – kein Ersatz für professionelle Beratung."
     return ReadingResponse(
         meta={"error": str(exc), "readingType": getattr(req, 'readingType', 'classic')},
         sections=[Section(title="Fehler", text=f"Es ist ein Fehler aufgetreten: {exc}", chips=[])],
