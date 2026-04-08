@@ -159,20 +159,7 @@
       <small>© horoskop.one · Achtsamkeit vor Absolutheit · <a id="permalink" href="#">Permalink</a></small>
     </footer>
 
-    <script>
-      // Reading type card selection
-      document.addEventListener('DOMContentLoaded', function(){
-        const cards = document.querySelectorAll('.rt-card');
-        const hidden = document.getElementById('readingType');
-        cards.forEach(function(card){
-          card.addEventListener('click', function(){
-            cards.forEach(function(c){ c.classList.remove('rt-selected'); });
-            card.classList.add('rt-selected');
-            if(hidden) hidden.value = card.getAttribute('data-rt') || 'classic';
-          });
-        });
-      });
-    </script>
+    <script defer src="/components/reading-type.js"></script>
     <script defer src="__APP_JS__" integrity="__INTEGRITY__" crossorigin="anonymous"></script>
     <script defer src="/components/enhancements.js"></script>
   </body>
