@@ -53,7 +53,13 @@ if _HAS_SLOWAPI:
 else:
     limiter = None
 
-READING_RATE_LIMIT = os.getenv("READING_RATE_LIMIT", "10/minute")
+# Rate limiting tuning — `/reading` is the expensive endpoint (OpenAI +
+# Swiss Ephemeris + Nominatim), so we default to a strict per-IP budget:
+# six calls per minute to allow quick "Heute → Woche → Monat" exploration
+# without enabling brute-force abuse, and eighty per day to cap long-tail
+# scripted replay. Both limits stack via slowapi's "L1;L2" syntax and can
+# be overridden at deploy time via the READING_RATE_LIMIT env var.
+READING_RATE_LIMIT = os.getenv("READING_RATE_LIMIT", "6/minute;80/day")
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request, exc):
