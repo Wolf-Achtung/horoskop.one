@@ -296,25 +296,6 @@
     })(performance.now());
   }
 
-  function ensureSkyToggle() {
-    if (document.getElementById('skyToggleVisible')) return;
-    const btn = document.createElement('button');
-    btn.id = 'skyToggleVisible';
-    btn.type = 'button';
-    btn.className = 'btn small ghost';
-    btn.style.cssText = 'position:absolute;right:10px;top:6px;z-index:5;opacity:.85;font-size:12px;padding:4px 10px';
-    btn.textContent = 'Himmel: kräftig';
-    const container = document.querySelector('.hero') || document.body;
-    if (container !== document.body) container.style.position = 'relative';
-    container.appendChild(btn);
-    let strong = true;
-    btn.addEventListener('click', () => {
-      strong = !strong;
-      window.INTENS = strong ? 1.0 : 0.5;
-      btn.textContent = strong ? 'Himmel: kräftig' : 'Himmel: dezent';
-    });
-  }
-
   // ----- Hero parallax (v14) --------------------------------------------------
   function ensureHeroParallax() {
     const hero = document.querySelector('.hero');
@@ -568,7 +549,6 @@
 
     ensureHeroParallax();
     startStarOverlay();
-    ensureSkyToggle();
 
     const bd = document.getElementById('birthDate');
     if (bd) {
