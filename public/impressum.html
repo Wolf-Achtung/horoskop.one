@@ -1,8 +1,80 @@
-<!doctype html><html lang='de'><head>
-<meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'>
-<title>Impressum – horoskop.one</title>
-<style>
-body{margin:0;background:#0b1020;color:#e7ecff;font-family:system-ui,Arial,sans-serif}
-main{max-width:900px;margin:40px auto;background:linear-gradient(180deg,#0f1933,#0b1328);border:1px solid #1a2c5a;border-radius:16px;padding:22px}
-a{color:#9bb4ff;text-decoration:none} a:hover{text-decoration:underline}
-</style></head><body><main><h1>Impressum</h1><p>[Dein Name/Firma] · [Adresse] · [Kontakt]</p><p><a href="index.html">← Zurück</a></p></main></body></html>
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Impressum – horoskop.one</title>
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src 'self';
+    img-src 'self' data:;
+    style-src 'self' 'unsafe-inline';
+    font-src 'self';
+    base-uri 'self';
+    form-action 'self';
+    frame-ancestors 'none';
+  ">
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    .legal{max-width:780px;margin:20px auto 60px;padding:0 16px}
+    .legal h1{font-size:28px;margin:18px 0 8px}
+    .legal h2{font-size:18px;margin:22px 0 6px;color:var(--brand)}
+    .legal p,.legal ul{color:var(--fg);opacity:.92;line-height:1.55}
+    .legal .card{padding:22px}
+    .legal a{color:var(--accent)}
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="brand"><span class="logo">✷</span> <strong>HOROSKOP.ONE</strong></div>
+    <nav class="nav">
+      <a href="/">Start</a>
+      <a href="/methoden.html">Methoden</a>
+      <a href="/datenschutz.html">Datenschutz</a>
+    </nav>
+  </header>
+  <main class="legal">
+    <section class="card">
+      <h1>Impressum</h1>
+
+      <h2>Verantwortlich für den Inhalt</h2>
+      <p>
+        Wolf Hohl<br>
+        Greifswalder Str. 224a<br>
+        10405 Berlin<br>
+        Deutschland
+      </p>
+
+      <h2>Kontakt</h2>
+      <p>Über die Kontaktmöglichkeiten auf <a href="https://horoskop.one/">horoskop.one</a>.</p>
+
+      <h2>Haftungsausschluss</h2>
+      <p>
+        Diese Website dient ausschließlich der Information und achtsamen
+        Selbstreflexion. Die erzeugten Texte sind Unterhaltung und ersetzen
+        keine medizinische, psychologische, rechtliche oder finanzielle
+        Beratung. Trotz sorgfältiger Prüfung übernehme ich keine Haftung für
+        Inhalte externer Links.
+      </p>
+
+      <h2>Urheberrecht</h2>
+      <p>
+        Alle Inhalte dieser Website unterliegen dem deutschen Urheberrecht.
+        Verwendete Bilder und Illustrationen wurden mit Hilfe von Midjourney
+        erzeugt.
+      </p>
+
+      <h2>Hinweis zum EU AI Act</h2>
+      <p>
+        Die Texte auf horoskop.one werden mit Hilfe eines Large Language Model
+        (OpenAI) erzeugt. Sie werden als <em>KI-generierte Inhalte</em>
+        gekennzeichnet und erheben keinen Anspruch auf wissenschaftliche
+        Gültigkeit oder individuelle Beratung. Eine Rechtsberatung wird nicht
+        angeboten oder ersetzt.
+      </p>
+
+      <p><a href="/">← Zurück zur Startseite</a></p>
+    </section>
+  </main>
+</body>
+</html>
