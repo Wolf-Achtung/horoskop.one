@@ -54,11 +54,24 @@
     .constellation svg{width:100%;height:34px;display:block;opacity:.9}
 
     .hero{display:flex;justify-content:center;align-items:center;padding:16px 0 8px}
-    .hero img{width:360px;height:360px;opacity:.97; filter:drop-shadow(0 14px 28px #000a); animation:wheel 160s linear infinite}
+    .hero svg{width:min(82vw,380px);height:auto;filter:drop-shadow(0 14px 28px #000a)}
+    .hero svg g.hero-ring,.hero svg g.hero-orbits,.hero svg g.hero-center,.hero svg g.hero-spark{transform-box:view-box;transform-origin:center;will-change:transform}
+    .hero-orbits-slow{animation:spin-cw 140s linear infinite}
+    .hero-orbits-mid{animation:spin-ccw 95s linear infinite}
+    .hero-orbits-fast{animation:spin-cw 55s linear infinite}
+    .hero-center{animation:hero-pulse 4.8s ease-in-out infinite}
+    .hero-spark{animation:hero-twinkle 3.4s ease-in-out infinite}
+    .hero-twink-a{animation:hero-twinkle 2.6s ease-in-out infinite}
+    .hero-twink-b{animation:hero-twinkle 3.1s ease-in-out .4s infinite}
+    .hero-twink-c{animation:hero-twinkle 3.8s ease-in-out .8s infinite}
+    @keyframes spin-cw{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+    @keyframes spin-ccw{from{transform:rotate(0deg)}to{transform:rotate(-360deg)}}
+    @keyframes hero-pulse{0%,100%{opacity:.72;transform:scale(1)}50%{opacity:1;transform:scale(1.06)}}
+    @keyframes hero-twinkle{0%,100%{opacity:.35}50%{opacity:.95}}
+    @media (prefers-reduced-motion:reduce){.hero-orbits-slow,.hero-orbits-mid,.hero-orbits-fast,.hero-center,.hero-spark,.hero-twink-a,.hero-twink-b,.hero-twink-c{animation:none}}
     canvas#starfield{position:fixed; inset:0; z-index:0; pointer-events:none; background: radial-gradient(1000px 600px at 50% -20%, #0e1a35 0%, transparent 60%);}
     nav{margin:6px 0 10px; display:flex; gap:16px; justify-content:center; font-size:14px}
     nav a{color:#a9c4ff; text-decoration:none} nav a:hover{text-decoration:underline}
-  @keyframes wheel{from{transform:rotate(0)}to{transform:rotate(360deg)}}
 
     .reading-type-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:8px}
     .rt-card{display:flex;flex-direction:column;align-items:center;text-align:center;padding:12px 8px;
@@ -92,7 +105,102 @@
   <main>
     <section class="panel section">
       <div class="hero">
-        <img src="assets/hero-wheel.svg" alt="Zodiak-Rad" />
+        <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Animiertes Rad aus Symbolen der Vorhersage-Welten">
+          <defs>
+            <radialGradient id="heroG" cx="50%" cy="45%" r="60%">
+              <stop offset="0%" stop-color="#2b3c6f"/>
+              <stop offset="70%" stop-color="#121b35"/>
+              <stop offset="100%" stop-color="#0a1226"/>
+            </radialGradient>
+            <radialGradient id="heroHalo" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#7fb6ff" stop-opacity=".28"/>
+              <stop offset="60%" stop-color="#7fb6ff" stop-opacity=".10"/>
+              <stop offset="100%" stop-color="#7fb6ff" stop-opacity="0"/>
+            </radialGradient>
+            <radialGradient id="heroCore" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#ffe6b3"/>
+              <stop offset="60%" stop-color="#f1c27d"/>
+              <stop offset="100%" stop-color="#c88a3a" stop-opacity="0"/>
+            </radialGradient>
+            <filter id="heroGlow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="4" result="b"/>
+              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+
+          <circle cx="200" cy="200" r="192" fill="url(#heroHalo)"/>
+          <circle cx="200" cy="200" r="175" fill="url(#heroG)" stroke="#334a86" stroke-width="1" stroke-dasharray="5 7"/>
+          <circle cx="200" cy="200" r="140" fill="none" stroke="#2a3f79" stroke-width="1" opacity=".6"/>
+          <circle cx="200" cy="200" r="100" fill="none" stroke="#2a3f79" stroke-width="1" opacity=".5"/>
+          <circle cx="200" cy="200" r="58"  fill="none" stroke="#2a3f79" stroke-width="1" opacity=".35"/>
+
+          <!-- Outer ring: Zodiac (12) — static glyphs (stays upright) -->
+          <g class="hero-ring" font-family="serif" font-size="22" fill="#cfe0ff" opacity=".95">
+            <text class="hero-twink-a" x="200" y="30"  text-anchor="middle">♑</text>
+            <text x="288" y="54"  text-anchor="middle">♒</text>
+            <text class="hero-twink-b" x="348" y="120" text-anchor="middle">♓</text>
+            <text x="370" y="207" text-anchor="middle">♈</text>
+            <text class="hero-twink-c" x="348" y="295" text-anchor="middle">♉</text>
+            <text x="288" y="361" text-anchor="middle">♊</text>
+            <text class="hero-twink-a" x="200" y="385" text-anchor="middle">♋</text>
+            <text x="112" y="361" text-anchor="middle">♌</text>
+            <text class="hero-twink-b" x="52"  y="295" text-anchor="middle">♍</text>
+            <text x="30"  y="207" text-anchor="middle">♎</text>
+            <text class="hero-twink-c" x="52"  y="120" text-anchor="middle">♏</text>
+            <text x="112" y="54"  text-anchor="middle">♐</text>
+          </g>
+
+          <!-- Middle ring: I Ging Bagua (8 Trigramme) — static, symmetric enough -->
+          <g class="hero-ring" font-family="serif" font-size="20" fill="#f1c27d" opacity=".9">
+            <text x="200" y="72"  text-anchor="middle">☰</text>
+            <text class="hero-twink-b" x="292" y="110" text-anchor="middle">☱</text>
+            <text x="330" y="207" text-anchor="middle">☲</text>
+            <text class="hero-twink-c" x="292" y="306" text-anchor="middle">☳</text>
+            <text x="200" y="344" text-anchor="middle">☴</text>
+            <text class="hero-twink-a" x="108" y="306" text-anchor="middle">☵</text>
+            <text x="70"  y="207" text-anchor="middle">☶</text>
+            <text class="hero-twink-b" x="108" y="110" text-anchor="middle">☷</text>
+          </g>
+
+          <!-- Inner ring: Tarot / Rune / Moon-Sun mix (6) — static -->
+          <g class="hero-ring" font-family="serif" font-size="18" fill="#bdd0ff" opacity=".92">
+            <text x="200" y="112" text-anchor="middle">✦</text>
+            <text class="hero-twink-c" x="278" y="162" text-anchor="middle">☽</text>
+            <text x="278" y="252" text-anchor="middle">ᚱ</text>
+            <text class="hero-twink-a" x="200" y="302" text-anchor="middle">✧</text>
+            <text x="122" y="252" text-anchor="middle">ᚦ</text>
+            <text class="hero-twink-b" x="122" y="162" text-anchor="middle">☀</text>
+          </g>
+
+          <!-- Orbital traveling dots (symmetric circles, safely rotatable) -->
+          <g class="hero-orbits hero-orbits-slow" fill="#e7c48a">
+            <circle cx="200" cy="30" r="3"/>
+            <circle cx="200" cy="370" r="2"/>
+          </g>
+          <g class="hero-orbits hero-orbits-mid" fill="#9bb4ff">
+            <circle cx="340" cy="200" r="2.5"/>
+            <circle cx="60"  cy="200" r="2"/>
+            <circle cx="200" cy="60"  r="1.8"/>
+          </g>
+          <g class="hero-orbits hero-orbits-fast" fill="#f1c27d">
+            <circle cx="270" cy="200" r="2"/>
+            <circle cx="130" cy="200" r="2"/>
+          </g>
+
+          <!-- Twinkle sparks in corners -->
+          <g class="hero-spark" fill="#e7c48a">
+            <circle cx="40"  cy="40"  r="1.4"/>
+            <circle cx="360" cy="40"  r="1.4"/>
+            <circle cx="40"  cy="360" r="1.4"/>
+            <circle cx="360" cy="360" r="1.4"/>
+          </g>
+
+          <!-- Center: glowing core -->
+          <g class="hero-center">
+            <circle cx="200" cy="200" r="26" fill="url(#heroCore)" opacity=".5"/>
+            <circle cx="200" cy="200" r="7"  fill="#f1c27d" filter="url(#heroGlow)"/>
+          </g>
+        </svg>
       </div>
 
       <h2 style="margin:0 0 8px;font-family:'EB Garamond',serif">Dein Moment unter den Sternen</h2>
@@ -168,6 +276,14 @@
         <option value="month">Monat</option>
       </select>
 
+      <details class="mixer-details">
+        <summary>
+          <strong>⚖ Kosmischer Mixer</strong>
+          <span class="mixer-hint">— Methoden &amp; Ton vor der Analyse feintunen (optional)</span>
+        </summary>
+        <div id="mixer-root"></div>
+      </details>
+
       <div class="row" style="margin-top:8px">
         <button id="btn-heute" class="btn ghost">🔮 Heute</button>
         <button id="btn-gold" class="btn brand">Sterne fragen</button>
@@ -181,10 +297,6 @@
 
       <div class="disclaimer">Unterhaltung & achtsame Selbstreflexion. Keine medizinische, rechtliche oder finanzielle Beratung.
         Bei Krisen oder akuter Gefahr: 112 (EU) / lokale Beratungsstellen.</div>
-    </section>
-
-    <section class="panel section" style="margin-top:14px">
-      <div id="mixer-root"></div>
     </section>
   </main>
 
