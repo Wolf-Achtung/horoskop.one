@@ -3,7 +3,7 @@ import os, re, json, datetime as dt
 from typing import Optional, Dict, Any, List
 
 import httpx
-from fastapi import FastAPI, Body, Response
+from fastapi import FastAPI, Body, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -12,19 +12,48 @@ from pydantic import BaseModel, Field
 from timezonefinder import TimezoneFinder
 from zoneinfo import ZoneInfo
 
+# Rate limiting (slowapi) — optional: falls das Paket fehlt, läuft die App
+# ohne Rate-Limiting weiter, statt beim Import abzustürzen.
+try:
+    from slowapi import Limiter, _rate_limit_exceeded_handler
+    from slowapi.util import get_remote_address
+    from slowapi.errors import RateLimitExceeded
+    _HAS_SLOWAPI = True
+except ImportError:
+    _HAS_SLOWAPI = False
+
 from openai import OpenAI
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 
 app = FastAPI(title="horoskop.one API", version="v6.0-deep-reading")
 
+# CORS: Default ist eine restriktive Allowlist der bekannten horoskop.one-Domains.
+# Über CORS_ALLOW_ORIGINS (komma-separiert) kann das überschrieben werden, z. B.
+# CORS_ALLOW_ORIGINS="*" für offene APIs in Dev-Umgebungen.
+DEFAULT_ORIGINS = [
+    "https://horoskop.one",
+    "https://www.horoskop.one",
+    "https://horoskopone-production-4739.up.railway.app",
+    "https://horoskopone-production.up.railway.app",
+]
 raw_origins = os.getenv("CORS_ALLOW_ORIGINS", "")
-origins = [o.strip() for o in raw_origins.split(",") if o.strip()] or ["*"]
+origins = [o.strip() for o in raw_origins.split(",") if o.strip()] or DEFAULT_ORIGINS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins, allow_credentials=True,
     allow_methods=["*"], allow_headers=["*"],
 )
+
+# Rate limiting (optional) — schützt den OpenAI-Key vor Missbrauch.
+if _HAS_SLOWAPI:
+    limiter = Limiter(key_func=get_remote_address, default_limits=[])
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+else:
+    limiter = None
+
+READING_RATE_LIMIT = os.getenv("READING_RATE_LIMIT", "10/minute")
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request, exc):
@@ -125,14 +154,15 @@ async def geocode(place:str)->Optional[Dict[str,float]]:
             data=r.json() or []
             if not data: return None
             return {"lat":float(data[0]["lat"]), "lon":float(data[0]["lon"])}
-    except Exception:
+    except (httpx.HTTPError, ValueError, KeyError, TypeError):
         return None
 
 def find_timezone(lat:Optional[float], lon:Optional[float])->str:
     if lat is None or lon is None: return "Europe/Berlin"
     try:
         tz=tf.timezone_at(lat=lat,lng=lon); return tz or "Europe/Berlin"
-    except: return "Europe/Berlin"
+    except (ValueError, TypeError):
+        return "Europe/Berlin"
 
 def now_local(d:dt.date, tzname:str)->dt.datetime:
     return dt.datetime(d.year,d.month,d.day,12,0,tzinfo=ZoneInfo(tzname))
@@ -151,7 +181,9 @@ def swe_compute(bdate:dt.date,btime:Optional[dt.time],lat:Optional[float],lon:Op
     house_sys=(house_sys or os.getenv("HOUSE_SYSTEM","P")).strip()[:1] or "P"
     loc=dt.datetime.combine(bdate,btime).replace(tzinfo=ZoneInfo(tzname)); ut=loc.astimezone(dt.timezone.utc)
     jd=swe.julday(ut.year,ut.month,ut.day,ut.hour+ut.minute/60+ut.second/3600)
-    cusps,ascmc=swe.houses(jd,lat,lon,house_sys); asc,mc=ascmc[0],ascmc[1]
+    raw_cusps,ascmc=swe.houses(jd,lat,lon,house_sys.encode()); asc,mc=ascmc[0],ascmc[1]
+    # pyswisseph 2.x gibt 12 Cusps zurück, ältere Bindings 13 (Index 0 unbenutzt).
+    cusps = [raw_cusps[i] for i in range(1, 13)] if len(raw_cusps) >= 13 else list(raw_cusps[:12])
     planets={"Sonne":swe.SUN,"Mond":swe.MOON,"Merkur":swe.MERCURY,"Venus":swe.VENUS,"Mars":swe.MARS,"Jupiter":swe.JUPITER,"Saturn":swe.SATURN,
              "Uranus":swe.URANUS,"Neptun":swe.NEPTUNE,"Pluto":swe.PLUTO}
     pos={}
@@ -187,13 +219,13 @@ def try_load_json(maybe:str)->Any:
     m=re.search(r"```json([\s\S]*?)```", maybe)
     if m:
         try: return json.loads(m.group(1))
-        except: pass
+        except json.JSONDecodeError: pass
     m=re.search(r"\{[\s\S]*\}$", maybe.strip())
     if m:
         try: return json.loads(m.group(0))
-        except: pass
+        except json.JSONDecodeError: pass
     try: return json.loads(maybe)
-    except: return {"raw": maybe}
+    except json.JSONDecodeError: return {"raw": maybe}
 
 # ---------------------------------------------------------------------------
 # Deep-Reading Types – 7 specialized prompts inspired by life-path coaching
@@ -514,8 +546,7 @@ def reading_types():
     """Return available reading types for the frontend."""
     return [{"id": k, **v} for k, v in DEEP_READING_TYPES.items()]
 
-@app.post("/reading")
-async def reading(req: ReadingRequest = Body(...)):
+async def _reading_impl(req: ReadingRequest):
   try:
     bdate=parse_birth_date(req.birthDate) or dt.date.today()
     btime=parse_birth_time(req.birthTime)
@@ -682,10 +713,27 @@ Gib nur JSON:
 
 # Run: uvicorn main:app --host 0.0.0.0 --port 8080
 
+# Öffentliche Routen mit optionalem Rate-Limiting. Slowapi erwartet ein
+# `Request`-Argument im Endpoint — das reichen wir an die gemeinsame
+# `_reading_impl`-Funktion weiter, ohne die Logik zu duplizieren.
+if _HAS_SLOWAPI and limiter is not None:
+    @app.post("/reading")
+    @limiter.limit(READING_RATE_LIMIT)
+    async def reading(request: Request, req: ReadingRequest = Body(...)):
+        return await _reading_impl(req)
 
-@app.post('/readings', response_model=ReadingResponse)
-async def readings_alias(req: ReadingRequest = Body(...)):
-    return await reading(req)
+    @app.post("/readings", response_model=ReadingResponse)
+    @limiter.limit(READING_RATE_LIMIT)
+    async def readings_alias(request: Request, req: ReadingRequest = Body(...)):
+        return await _reading_impl(req)
+else:
+    @app.post("/reading")
+    async def reading(req: ReadingRequest = Body(...)):
+        return await _reading_impl(req)
+
+    @app.post("/readings", response_model=ReadingResponse)
+    async def readings_alias(req: ReadingRequest = Body(...)):
+        return await _reading_impl(req)
 
 
 # Serve built frontend
@@ -694,5 +742,5 @@ try:
     dist_dir = os.path.join(here, 'dist')
     if os.path.isdir(dist_dir):
         app.mount('/', StaticFiles(directory=dist_dir, html=True), name='static')
-except Exception as _e:
+except OSError as _e:
     print('Static mount failed:', _e)

@@ -104,9 +104,13 @@ def swe_compute(req: SWERequest = Body(...)):
     ut_hour = ut.hour + ut.minute/60 + ut.second/3600
     jd = swe.julday(ut.year, ut.month, ut.day, ut_hour)
 
-    hcusps, ascmc = swe.houses(jd, req.lat, req.lon, req.houseSystem[:1] or "P")
-    # pyswisseph liefert 13 Werte, Index 1..12 sind die 12 Häuserspitzen
-    cusps = [hcusps[i] for i in range(1, 13)]
+    hcusps, ascmc = swe.houses(jd, req.lat, req.lon, (req.houseSystem[:1] or "P").encode())
+    # pyswisseph 2.x liefert ein 12-Tupel (Index 0..11) für die Häuserspitzen.
+    # Ältere Bindings lieferten 13 Werte — wir fallen defensiv zurück.
+    if len(hcusps) >= 13:
+        cusps = [hcusps[i] for i in range(1, 13)]
+    else:
+        cusps = [hcusps[i] for i in range(0, 12)]
 
     asc, mc = ascmc[0], ascmc[1]
 
