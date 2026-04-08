@@ -1,8 +1,307 @@
-<!doctype html><html lang='de'><head>
-<meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'>
-<title>Methoden-Lexikon – horoskop.one</title>
-<style>
-body{margin:0;background:#0b1020;color:#e7ecff;font-family:system-ui,Arial,sans-serif}
-main{max-width:900px;margin:40px auto;background:linear-gradient(180deg,#0f1933,#0b1328);border:1px solid #1a2c5a;border-radius:16px;padding:22px}
-a{color:#9bb4ff;text-decoration:none} a:hover{text-decoration:underline}
-</style></head><body><main><h1>Methoden-Lexikon</h1><p>Symbolische Systeme: Astrologie (Light), Numerologie, Tarot, I-Ging, chinesischer Tierkreis, Baumkreis. Transparent & achtsam.</p><p><a href="index.html">← Zurück</a></p></main></body></html>
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b1020">
+  <title>Methoden-Lexikon – horoskop.one</title>
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src 'self';
+    img-src 'self' data:;
+    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+    font-src 'self' https://fonts.gstatic.com;
+    base-uri 'self';
+    form-action 'self';
+    frame-ancestors 'none';
+  ">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cormorant+Garamond:ital,wght@0,500;1,500&display=swap" rel="stylesheet">
+  <style>
+    :root{--ink:#e7ecff;--muted:#a9b8e1;--panel:#0f162b;--bd:#1a2c5a;--accent:#6bb7ff;--gold:#f1c27d}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:'Plus Jakarta Sans',system-ui,Arial,sans-serif;line-height:1.6;
+         background:radial-gradient(1200px 600px at 10% -10%,#1a245144 0%,transparent 60%),
+                    radial-gradient(900px 600px at 90% 10%,#10204a55 0%,transparent 60%),
+                    linear-gradient(180deg,#0b1020,#101a34);color:var(--ink);overflow-x:hidden}
+    header{text-align:center;padding:22px 14px 6px}
+    header h1{font-family:'Cinzel Decorative',serif;margin:0;font-size:28px;letter-spacing:.02em}
+    header .sub{color:var(--muted);font-family:'Cormorant Garamond',serif;font-style:italic;font-size:15px}
+    main{max-width:860px;margin:20px auto 40px;padding:0 16px}
+    .card{background:linear-gradient(180deg,#0f1933,#0b1328);border:1px solid var(--bd);
+          border-radius:16px;padding:26px 24px;box-shadow:0 12px 36px #0008}
+    h2{font-family:'Cinzel Decorative',serif;color:var(--gold);margin:28px 0 4px;font-size:20px}
+    h2:first-of-type{margin-top:6px}
+    h3{margin:16px 0 4px;font-size:16px;color:#cfe0ff}
+    p{margin:6px 0 10px;color:#d3defa}
+    .method{border-top:1px dashed #24417b;padding-top:18px;margin-top:22px}
+    .method:first-of-type{border-top:none;padding-top:0;margin-top:0}
+    .origin{display:inline-block;font-size:12px;color:#9fb2d9;background:#0b1530;
+            border:1px solid #24417b;border-radius:999px;padding:3px 10px;margin:4px 0}
+    .origin b{color:#bdd0ff;font-weight:600}
+    .tag-row{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 10px}
+    .small{font-size:13px;color:var(--muted)}
+    a{color:var(--accent);text-decoration:none}
+    a:hover{text-decoration:underline}
+    .back{display:inline-block;margin-top:18px}
+
+    .site-footer{max-width:860px;margin:18px auto 30px;padding:18px 16px 10px;border-top:1px solid #1a2c5a;text-align:center}
+    .site-footer nav{display:flex;gap:22px;justify-content:center;flex-wrap:wrap;font-size:14px}
+    .site-footer nav a{color:#a9c4ff;padding:6px 8px;border-radius:8px}
+    .footer-copy{margin-top:8px;color:#7e96c9;font-size:12px}
+
+    @media(max-width:640px){
+      header h1{font-size:22px}
+      .card{padding:20px 16px}
+      h2{font-size:18px}
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Methoden-Lexikon</h1>
+    <div class="sub">Woher die Symbolik kommt – und wie sie in deinem Reading eingesetzt wird</div>
+  </header>
+
+  <main>
+    <section class="card">
+      <p>
+        horoskop.one greift auf sechs symbolische Systeme zurück, die im
+        <em>Kosmischen Mixer</em> frei gewichtet werden können. Jedes System
+        wurde über Jahrhunderte entwickelt und ist ein <strong>Werkzeug zur
+        Selbstreflexion</strong> – keine empirische Wissenschaft und keine
+        Ersatzberatung. Unten findest du Herkunft, Grundidee und die konkrete
+        Umsetzung in dieser App.
+      </p>
+
+      <!-- ========= 1. ASTROLOGIE ========= -->
+      <article class="method">
+        <h2>1. Astrologie &amp; Transite</h2>
+        <span class="origin"><b>Herkunft:</b> Mesopotamien · 2. Jt. v. Chr. → hellenistische Antike</span>
+        <p>
+          Das älteste überlieferte Deutungssystem. Babylonische Priester
+          notierten Mond- und Planetenläufe auf Keilschrifttafeln (u. a. der
+          <em>Enuma Anu Enlil</em>, ca. 1600 v. Chr.). Im hellenistischen
+          Alexandria wurde daraus die Geburtshoroskopie mit zwölf Häusern und
+          sieben klassischen Wandelsternen. Ptolemäus' <em>Tetrabiblos</em>
+          (2. Jh.) bleibt bis heute ein Standardwerk.
+        </p>
+        <h3>Grundidee</h3>
+        <p>
+          Die Positionen von Sonne, Mond und Planeten zum Geburtszeitpunkt –
+          projiziert auf den Tierkreis – werden als Landkarte möglicher
+          Temperament- und Lebensthemen gelesen. <em>Transite</em> vergleichen
+          die aktuellen Planetenstände mit der Geburtskonstellation.
+        </p>
+        <h3>Was diese App macht</h3>
+        <p>
+          Ein in Python eingebundener <strong>Swiss-Ephemeris-Kernel</strong>
+          (Astrodienst Zürich, basierend auf den JPL-Ephemeriden der NASA)
+          berechnet Sonne, Mond, Aufsteigenden und die Häuser 10 &amp; 11 für
+          dein Geburtsdatum. Ohne Geburtszeit verwenden wir 12:00 Ortszeit
+          und kennzeichnen die Auswertung entsprechend als näherungsweise.
+          Das Sternzeichen leitet sich aus dem tropischen Tierkreis ab.
+        </p>
+      </article>
+
+      <!-- ========= 2. NUMEROLOGIE ========= -->
+      <article class="method">
+        <h2>2. Numerologie &amp; Lebenszahl</h2>
+        <span class="origin"><b>Herkunft:</b> Pythagoras · 6. Jh. v. Chr. · Süditalien</span>
+        <p>
+          Pythagoras und seine Schule postulierten, dass Zahlen die Grundlage
+          aller Wirklichkeit seien. Im arabisch-jüdischen Mittelalter
+          verschmolz das mit gematrischen Traditionen der Kabbala; im 20.
+          Jahrhundert systematisierte Dr. Juno Jordan die heute
+          gebräuchlichen Lebenszahl-Archetypen.
+        </p>
+        <h3>Grundidee</h3>
+        <p>
+          Jede Ziffer 1 – 9 steht für ein Grundprinzip (1 = Initiative,
+          2 = Verbindung, … 9 = Vollendung). Die Meisterzahlen 11, 22 und 33
+          werden nicht weiter reduziert. Durch Quersummenbildung des
+          Geburtsdatums entsteht deine <em>Lebenszahl</em>.
+        </p>
+        <h3>Was diese App macht</h3>
+        <p>
+          <code>life_path_number()</code> addiert alle Ziffern deines
+          Geburtsdatums und reduziert auf eine einstellige Zahl oder eine
+          Meisterzahl. Zusätzlich berechnen wir das <em>Persönliche Jahr</em>
+          (Geburtsmonat + Geburtstag + aktuelles Jahr, quergesummt) als
+          rollierenden 1 – 9-Zyklus für den aktuellen Lernfokus.
+        </p>
+      </article>
+
+      <!-- ========= 3. TAROT ========= -->
+      <article class="method">
+        <h2>3. Tarot – Große Arkana</h2>
+        <span class="origin"><b>Herkunft:</b> Norditalien · 15. Jh. (<em>Tarocchi</em>) → okkulte Deutung ab 1781 (Court de Gébelin)</span>
+        <p>
+          Die Bilderfolge der 22 Großen Arkana entstand als Kartenspiel der
+          Renaissance (Visconti-Sforza-Deck, ca. 1450). Ihre Deutung als
+          mystisches System geht auf den französischen Gelehrten Antoine
+          Court de Gébelin zurück; 1910 schuf A. E. Waite gemeinsam mit
+          Pamela Colman Smith das heute bekannteste <em>Rider-Waite-Smith</em>-Deck.
+        </p>
+        <h3>Grundidee</h3>
+        <p>
+          Jede Karte – vom <em>Narren</em> (0) bis zur <em>Welt</em> (XXI) –
+          bildet eine archetypische Station auf dem Weg der Reifung ab
+          („Reise des Narren"). Gezogene Karten dienen als Projektions- und
+          Reflexionsfläche für eine Situation oder Frage.
+        </p>
+        <h3>Was diese App macht</h3>
+        <p>
+          <code>tarot_draw()</code> zieht <em>deterministisch</em> eine Karte
+          aus der Großen Arkana: Ein Hash aus Geburtsdatum + gewähltem
+          Zeitraum + Reading-Typ wird als Seed verwendet, sodass du bei
+          gleichem Input immer dieselbe Karte erhältst. Keine Zufallsshow –
+          jede Ziehung ist reproduzierbar und nachvollziehbar.
+        </p>
+      </article>
+
+      <!-- ========= 4. I GING ========= -->
+      <article class="method">
+        <h2>4. I Ging – das Buch der Wandlungen</h2>
+        <span class="origin"><b>Herkunft:</b> China · Westliche Zhou-Dynastie, ca. 1000 v. Chr.</span>
+        <p>
+          Das <em>Yijing</em> ist eines der ältesten Bücher der Menschheit.
+          Sein Kernbestand – 64 Hexagramme aus je sechs durchgezogenen (Yang)
+          oder unterbrochenen (Yin) Linien – wurde angeblich auf König Wen
+          zurückgeführt, kommentiert von Konfuzius und seinen Schülern im
+          <em>Zehn-Flügel</em>-Korpus. Richard Wilhelms deutsche Übersetzung
+          (1924) und das Vorwort von C. G. Jung machten es im Westen
+          populär.
+        </p>
+        <h3>Grundidee</h3>
+        <p>
+          Die 64 Hexagramme beschreiben Grundmuster von Wandel und Balance
+          zwischen Yin und Yang. Klassisch zieht man sie mit Schafgarbenstengeln
+          oder drei Münzen; das gezogene Hexagramm dient als meditativer
+          Spiegel für die eigene Lage.
+        </p>
+        <h3>Was diese App macht</h3>
+        <p>
+          <code>iching_index()</code> leitet das Hexagramm deterministisch
+          aus Jahr + Tag-des-Jahres ab (Modulo 64), sodass sich die Ziehung
+          sanft mit dem Tag ändert. <code>iching_lookup()</code> liefert Namen,
+          Kernbotschaft und eine Kurzdeutung – basierend auf Wilhelms
+          Nomenklatur.
+        </p>
+      </article>
+
+      <!-- ========= 5. CHINESISCHER TIERKREIS ========= -->
+      <article class="method">
+        <h2>5. Chinesischer Tierkreis (Shēngxiào)</h2>
+        <span class="origin"><b>Herkunft:</b> China · Han-Dynastie, ca. 200 v. Chr.</span>
+        <p>
+          Der zwölfjährige Tierzyklus (Ratte, Büffel, Tiger, Hase, Drache,
+          Schlange, Pferd, Ziege, Affe, Hahn, Hund, Schwein) entstand als
+          populäre Form des chinesischen Sexagesimal-Kalenders. Jedes Tier
+          wird mit einem Temperament und klassischen Stärken assoziiert und
+          ist Teil des traditionellen Mondkalenders.
+        </p>
+        <h3>Grundidee</h3>
+        <p>
+          Das Geburtsjahr bestimmt das Tier, das die Grundstimmung prägt.
+          Kombiniert mit den Fünf Elementen (Holz, Feuer, Erde, Metall,
+          Wasser) ergibt sich der 60-jährige Zyklus.
+        </p>
+        <h3>Was diese App macht</h3>
+        <p>
+          <code>chinese_animal()</code> ermittelt das Tier aus dem
+          Geburtsjahr über einen vereinfachten Offset zum gregorianischen
+          Kalender (nicht das exakte chinesische Neujahrsdatum – Grenzfälle
+          im Januar/Februar werden bewusst näherungsweise behandelt).
+        </p>
+      </article>
+
+      <!-- ========= 6. BAUMKREIS ========= -->
+      <article class="method">
+        <h2>6. Keltischer Baumkreis</h2>
+        <span class="origin"><b>Herkunft:</b> modern (Robert Graves, 1948) – inspiriert vom Ogham-Alphabet</span>
+        <p>
+          Der <em>Keltische Baumkalender</em> ist eine literarische
+          Rekonstruktion des Dichters Robert Graves aus seinem Buch
+          <em>The White Goddess</em>. Graves leitete 13 Baum-Monate aus dem
+          irischen Ogham-Alphabet ab; historisch belegt ist der Kalender in
+          dieser Form nicht, er hat sich aber als poetisches
+          Jahreszeitensystem etabliert.
+        </p>
+        <h3>Grundidee</h3>
+        <p>
+          Jedem Jahreszeitenabschnitt ist ein Baum zugeordnet (Birke, Eberesche,
+          Esche, Erle, Weide, Weißdorn, Eiche, Stechpalme, Hasel, Weinrebe,
+          Efeu, Schilfrohr, Holunder). Der Baum dient als Naturbild für die
+          Qualität des jeweiligen Zeitabschnitts.
+        </p>
+        <h3>Was diese App macht</h3>
+        <p>
+          <code>celtic_tree()</code> weist deinem Geburtsdatum den passenden
+          Baum aus Graves' Tabelle zu und kombiniert ihn mit einer kurzen
+          Bedeutungs-Skizze.
+        </p>
+      </article>
+
+      <!-- ========= Zusatzsignale ========= -->
+      <article class="method">
+        <h2>Zusatzsignale: Mondphase, Saison, Zeitfenster</h2>
+        <span class="origin"><b>Herkunft:</b> Astronomie &amp; Meteorologie</span>
+        <p>
+          Neben den symbolischen Systemen speist jedes Reading eine Handvoll
+          messbarer Umweltgrößen ein, um den Text im Hier und Jetzt zu
+          verankern:
+        </p>
+        <ul>
+          <li><strong>Mondphase</strong> – berechnet aus dem synodischen
+              Zyklus (<code>moon_phase_fraction()</code>), benannt von Neumond
+              bis abnehmender Sichel.</li>
+          <li><strong>Saison &amp; Hemisphäre</strong> – meteorologische
+              Jahreszeit am Geburtsort.</li>
+          <li><strong>Sonnenauf-/Untergang</strong> – per Swiss Ephemeris für
+              den Geburtsort, entscheidet Tag-/Nacht-Qualität.</li>
+          <li><strong>Zeitfenster</strong> – Morgens, Mittags, Abends oder
+              Nachts als grober Energie-Marker, falls keine exakte Geburtszeit
+              vorliegt.</li>
+        </ul>
+      </article>
+
+      <!-- ========= LLM ========= -->
+      <article class="method">
+        <h2>Der Text: KI-gestütztes Large Language Model</h2>
+        <span class="origin"><b>Technik:</b> OpenAI <code>gpt-4o-mini</code> über die offizielle API</span>
+        <p>
+          Die oben beschriebenen Symbolwerte werden in einen strukturierten
+          Prompt gegossen und an ein Large Language Model geschickt. Das
+          Modell erhält deine Gewichtung aus dem <em>Kosmischen Mixer</em>,
+          den gewählten Ton (Mystic Coach, Skeptisch …) sowie den Zeitraum
+          und formuliert daraus einen kohärenten Reflexionstext. Die
+          Antwort wird für maximal 24 Stunden in einem flüchtigen
+          Server-Cache gehalten, damit identische Anfragen nicht mehrfach
+          abgerechnet werden – siehe
+          <a href="datenschutz.html">Datenschutzerklärung</a>.
+        </p>
+        <p class="small">
+          <strong>Wichtig:</strong> Alle Aussagen sind als Unterhaltung und
+          achtsame Selbstreflexion gedacht. Keine medizinische,
+          psychologische, rechtliche oder finanzielle Beratung. Bei Krisen
+          oder akuter Gefahr wende dich an 112 (EU) oder lokale
+          Beratungsstellen.
+        </p>
+      </article>
+
+      <p class="back"><a href="/">← Zurück zur Startseite</a></p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <nav aria-label="Rechtliche Hinweise">
+      <a href="methoden.html">Methoden</a>
+      <a href="impressum.html">Impressum</a>
+      <a href="datenschutz.html">Datenschutz</a>
+    </nav>
+    <div class="footer-copy">© 2026 horoskop.one · Wolf Hohl · Berlin</div>
+  </footer>
+</body>
+</html>

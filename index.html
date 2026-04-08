@@ -90,8 +90,13 @@
     .planet-legend i{display:inline-block;width:9px;height:9px;border-radius:50%;box-shadow:0 0 6px currentColor}
     .planet-legend b{font-weight:600;color:#e7ecff;letter-spacing:.01em}
     canvas#starfield{position:fixed; inset:0; z-index:0; pointer-events:none; background: radial-gradient(1000px 600px at 50% -20%, #0e1a35 0%, transparent 60%);}
-    nav{margin:6px 0 10px; display:flex; gap:16px; justify-content:center; font-size:14px}
-    nav a{color:#a9c4ff; text-decoration:none} nav a:hover{text-decoration:underline}
+
+    /* Footer navigation (moved from the header) --------------------------- */
+    .site-footer{position:relative;z-index:2;max-width:980px;margin:18px auto 32px;padding:18px 14px 10px;border-top:1px solid #1a2c5a;text-align:center}
+    .site-footer nav{display:flex;gap:22px;justify-content:center;flex-wrap:wrap;font-size:14px}
+    .site-footer nav a{color:#a9c4ff;text-decoration:none;padding:6px 8px;border-radius:8px}
+    .site-footer nav a:hover{text-decoration:underline;color:#e7ecff}
+    .footer-copy{margin-top:8px;color:#7e96c9;font-size:12px}
 
     .reading-type-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:10px}
     .rt-card{display:flex;flex-direction:column;align-items:flex-start;text-align:left;padding:12px;min-height:64px;
@@ -146,11 +151,6 @@
         <div class="sub">Sternenkarte – achtsam, mystisch, erklärbar</div>
       </div>
     </div>
-    <nav>
-      <a href="methoden.html">Methoden</a>
-      <a href="impressum.html">Impressum</a>
-      <a href="datenschutz.html">Datenschutz</a>
-    </nav>
   </header>
 
   <main>
@@ -167,6 +167,24 @@
               <feGaussianBlur stdDeviation="4" result="b"/>
               <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
             </filter>
+            <!-- Inline zodiac line-art glyphs so the ring renders as clean
+                 white strokes on every OS (some browsers/iOS render the
+                 Unicode characters ♈–♓ as colour-emoji with a purple
+                 rounded-square background, which we want to avoid). -->
+            <g id="zg-defs" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <symbol id="zg-aries" viewBox="0 0 24 24"><path d="M4 9c0-3.3 2.7-6 6-6 1.6 0 3 .6 4 1.6"/><path d="M20 9c0-3.3-2.7-6-6-6-1.6 0-3 .6-4 1.6"/><path d="M12 8v10"/></symbol>
+              <symbol id="zg-taurus" viewBox="0 0 24 24"><circle cx="12" cy="13" r="5"/><path d="M7 5c1.2 1.4 3 2.2 5 2.2S15.8 6.4 17 5"/></symbol>
+              <symbol id="zg-gemini" viewBox="0 0 24 24"><path d="M7 5h10M7 19h10M9 7c0 6-.2 8-2 10M15 7c0 6 .2 8 2 10"/></symbol>
+              <symbol id="zg-cancer" viewBox="0 0 24 24"><path d="M9 9a3 3 0 1 1-6 0a3 3 0 0 1 6 0z"/><path d="M21 15a3 3 0 1 1-6 0a3 3 0 0 1 6 0z"/><path d="M6 9c4.5 0 7.5 2 12 6"/></symbol>
+              <symbol id="zg-leo" viewBox="0 0 24 24"><path d="M9 7c0-2.2 1.8-4 4-4 2.5 0 4.5 2.1 4 4.6-.4 1.9-2.1 3.4-4 3.4h-1"/><circle cx="8" cy="16" r="4"/></symbol>
+              <symbol id="zg-virgo" viewBox="0 0 24 24"><path d="M6 6v10c0 1.7 1.3 3 3 3s3-1.3 3-3V6M12 6c1 1 2.4 1.6 4 1.6S19 7 20 6M18 6v11l3-2"/></symbol>
+              <symbol id="zg-libra" viewBox="0 0 24 24"><path d="M3 16h18M4 13h16M7 13c0-2.8 2.2-5 5-5s5 2.2 5 5"/></symbol>
+              <symbol id="zg-scorpio" viewBox="0 0 24 24"><path d="M5 6v10c0 1.7 1.3 3 3 3s3-1.3 3-3V6M11 6c1 1 2.4 1.6 4 1.6S18 7 19 6"/><path d="M19 6v9l2-1.5M21 13v3"/></symbol>
+              <symbol id="zg-sagittarius" viewBox="0 0 24 24"><path d="M5 19l14-14M10 5h9v9"/><path d="M15 6l4-1-1 4"/></symbol>
+              <symbol id="zg-capricorn" viewBox="0 0 24 24"><path d="M5 6v11c0 1.7 1.3 3 3 3s3-1.3 3-3V9"/><path d="M11 13c0 3 2 5 4.5 5S20 16.5 20 14c0-1.7-1.3-3-3-3-1.2 0-2 .6-2.6 1.4"/></symbol>
+              <symbol id="zg-aquarius" viewBox="0 0 24 24"><path d="M4 9l3-2 3 2 3-2 3 2 3-2"/><path d="M4 15l3-2 3 2 3-2 3 2 3-2"/></symbol>
+              <symbol id="zg-pisces" viewBox="0 0 24 24"><path d="M6 5c2 2 3 4 3 7s-1 5-3 7"/><path d="M18 5c-2 2-3 4-3 7s1 5 3 7"/><path d="M4 12h16"/></symbol>
+            </g>
           </defs>
 
           <!-- Faint orbit guide-rings (no fill, no purple background).
@@ -182,20 +200,21 @@
             <circle cx="200" cy="200" r="36"  opacity=".20"/><!-- Mercury -->
           </g>
 
-          <!-- Outer ring: Zodiac (12) — white static glyphs, upright -->
-          <g class="hero-ring" font-family="serif" font-size="22" fill="#ffffff" opacity=".95">
-            <text class="hero-twink-a" x="200" y="32"  text-anchor="middle">♑</text>
-            <text x="288" y="56"  text-anchor="middle">♒</text>
-            <text class="hero-twink-b" x="348" y="122" text-anchor="middle">♓</text>
-            <text x="370" y="209" text-anchor="middle">♈</text>
-            <text class="hero-twink-c" x="348" y="297" text-anchor="middle">♉</text>
-            <text x="288" y="363" text-anchor="middle">♊</text>
-            <text class="hero-twink-a" x="200" y="387" text-anchor="middle">♋</text>
-            <text x="112" y="363" text-anchor="middle">♌</text>
-            <text class="hero-twink-b" x="52"  y="297" text-anchor="middle">♍</text>
-            <text x="30"  y="209" text-anchor="middle">♎</text>
-            <text class="hero-twink-c" x="52"  y="122" text-anchor="middle">♏</text>
-            <text x="112" y="56"  text-anchor="middle">♐</text>
+          <!-- Outer ring: 12 zodiac glyphs as white line-art (24x24 each,
+               centred on the 190px ring). No background, no emoji fallback. -->
+          <g class="hero-ring" style="color:#ffffff" opacity=".95">
+            <use href="#zg-capricorn"   x="188" y="14"  width="24" height="24" class="hero-twink-a"/>
+            <use href="#zg-aquarius"    x="276" y="40"  width="24" height="24"/>
+            <use href="#zg-pisces"      x="336" y="104" width="24" height="24" class="hero-twink-b"/>
+            <use href="#zg-aries"       x="358" y="188" width="24" height="24"/>
+            <use href="#zg-taurus"      x="336" y="276" width="24" height="24" class="hero-twink-c"/>
+            <use href="#zg-gemini"      x="276" y="340" width="24" height="24"/>
+            <use href="#zg-cancer"      x="188" y="362" width="24" height="24" class="hero-twink-a"/>
+            <use href="#zg-leo"         x="100" y="340" width="24" height="24"/>
+            <use href="#zg-virgo"       x="40"  y="276" width="24" height="24" class="hero-twink-b"/>
+            <use href="#zg-libra"       x="18"  y="188" width="24" height="24"/>
+            <use href="#zg-scorpio"     x="40"  y="104" width="24" height="24" class="hero-twink-c"/>
+            <use href="#zg-sagittarius" x="100" y="40"  width="24" height="24"/>
           </g>
 
           <!-- Planets: one group per planet, each rotating around the centre
@@ -359,6 +378,15 @@
         Bei Krisen oder akuter Gefahr: 112 (EU) / lokale Beratungsstellen.</div>
     </section>
   </main>
+
+  <footer class="site-footer">
+    <nav aria-label="Rechtliche Hinweise">
+      <a href="methoden.html">Methoden</a>
+      <a href="impressum.html">Impressum</a>
+      <a href="datenschutz.html">Datenschutz</a>
+    </nav>
+    <div class="footer-copy">© <span id="footer-year">2026</span> horoskop.one · Wolf Hohl · Berlin</div>
+  </footer>
 
   <dialog id="dlg-time">
     <h3 style="margin:0 0 6px">Geburtszeit – wo finde ich sie?</h3>
