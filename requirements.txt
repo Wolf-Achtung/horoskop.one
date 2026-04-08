@@ -6,3 +6,4 @@ python-multipart>=0.0.9
 timezonefinder>=6.0
 openai>=1.40
 pyswisseph<3.12
+slowapi>=0.1.9

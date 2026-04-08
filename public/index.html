@@ -22,6 +22,7 @@
       frame-ancestors 'none';
     ">
     <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/components/enhancements.css">
   </head>
   <body>
     <header class="site-header">
@@ -144,6 +145,10 @@
         <div id="readingOut"></div>
       </section>
 
+      <section class="card">
+        <div id="mixer-root"></div>
+      </section>
+
       <section id="shareCardPreview" class="card" hidden>
         <h3>Share‑Card Vorschau</h3>
         <canvas id="shareCanvas" width="1200" height="630"></canvas>
@@ -169,5 +174,6 @@
       });
     </script>
     <script defer src="__APP_JS__" integrity="__INTEGRITY__" crossorigin="anonymous"></script>
+    <script defer src="/components/enhancements.js"></script>
   </body>
 </html>
