@@ -30,7 +30,15 @@ const PLANETS: Planet[] = [
   { name: 'Neptun',  color: '#9bb4ff', radius: 232, period:200000, size: 4.2, phase: 3.7 }
 ];
 
-const ZODIAC_GLYPHS = ['♑','♒','♓','♈','♉','♊','♋','♌','♍','♎','♏','♐'];
+// Append U+FE0E (variation selector-15) so iOS/macOS render these
+// characters as plain text (line-art) instead of Apple's colour-emoji
+// with a purple rounded-square background.
+const ZODIAC_GLYPHS = [
+  '\u2651\uFE0E', '\u2652\uFE0E', '\u2653\uFE0E',
+  '\u2648\uFE0E', '\u2649\uFE0E', '\u264A\uFE0E',
+  '\u264B\uFE0E', '\u264C\uFE0E', '\u264D\uFE0E',
+  '\u264E\uFE0E', '\u264F\uFE0E', '\u2650\uFE0E'
+];
 
 function ensurePlanetLegend(canvas: HTMLCanvasElement) {
   if (!canvas.parentElement) return;

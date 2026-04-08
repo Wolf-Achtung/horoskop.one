@@ -24,14 +24,58 @@
   }
 
   // ----- Dialog "Geburtszeit finden?" ----------------------------------------
-  bindClick('btn-timehelp', () => { const d = $('dlg-time'); if (d) d.showModal(); });
-  // The dialog's "Okay" button used to use inline onclick — bind it here so
-  // CSP without 'unsafe-inline' can still close it.
-  document.querySelectorAll('#dlg-time button').forEach(b => {
-    if (/okay/i.test(b.textContent || '')) {
-      b.addEventListener('click', () => { const d = $('dlg-time'); if (d) d.close(); });
-    }
+  bindClick('btn-timehelp', () => {
+    const d = $('dlg-time');
+    if (!d) return;
+    d.showModal();
+    // Focus the "Okay" button so Enter closes the dialog immediately.
+    const okay = $('btn-dlg-okay');
+    if (okay) okay.focus();
   });
+  // The dialog's "Okay" button used to use inline onclick — bind it here so
+  // CSP without 'unsafe-inline' can still close it. <dialog>'s native Escape
+  // handling closes it too, so no extra key handler is needed.
+  bindClick('btn-dlg-okay', () => { const d = $('dlg-time'); if (d) d.close(); });
+  // Click on the backdrop closes the dialog.
+  (function bindBackdropClose(){
+    const d = $('dlg-time');
+    if (!d) return;
+    d.addEventListener('click', (e) => {
+      if (e.target === d) d.close();
+    });
+  })();
+
+  // ----- Seed planet-orbit animations with real heliocentric longitudes -----
+  // Each <g class="planet-orbit orbit-X"> has its dot drawn at the top of the
+  // orbit (angle = -90°). By setting a negative `animation-delay` we advance
+  // the CSS rotate() keyframe so every planet starts at its current ecliptic
+  // position — no layout shift, no JS frame loop.
+  (function seedPlanets() {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    // Days since J2000.0 epoch (2000-01-01 12:00 TT).
+    const daysSinceJ2000 = (Date.now() - Date.UTC(2000, 0, 1, 12, 0, 0)) / 86400000;
+    // Simplified mean longitudes (deg) and mean motions (deg/day) — good enough
+    // for a visual "roughly where the planets are today".
+    const planets = {
+      mercury: { period:  22, L0: 252.25, n: 4.09233445 },
+      venus:   { period:  38, L0: 181.98, n: 1.60213034 },
+      earth:   { period:  56, L0: 100.46, n: 0.98560028 },
+      mars:    { period:  72, L0: 355.43, n: 0.52402068 },
+      jupiter: { period:  96, L0:  34.35, n: 0.08308529 },
+      saturn:  { period: 124, L0:  50.08, n: 0.03344414 },
+      uranus:  { period: 160, L0: 314.06, n: 0.01172834 },
+      neptune: { period: 200, L0: 304.35, n: 0.00598103 }
+    };
+    for (const [name, p] of Object.entries(planets)) {
+      const lon = (((p.L0 + p.n * daysSinceJ2000) % 360) + 360) % 360;
+      // Dot starts at angle -90° (12 o'clock). We want ecliptic longitude
+      // lon (0° = Aries = 3 o'clock), so rotate by (lon + 90) degrees.
+      const rot = (lon + 90) % 360;
+      const delay = -(rot / 360) * p.period;
+      const el = document.querySelector('.orbit-' + name);
+      if (el) el.style.animationDelay = delay.toFixed(2) + 's';
+    }
+  })();
 
   // ----- "Heute" shortcut ----------------------------------------------------
   bindClick('btn-heute', () => {
