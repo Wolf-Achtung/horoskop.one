@@ -110,7 +110,6 @@
     }
 
     const input = $('sky-date-input');
-    const btnToday = $('btn-sky-today');
 
     function currentSkyMs() {
       const parsed = input && input.value ? parseYmd(input.value) : null;
@@ -123,12 +122,6 @@
       input.value = toYmd(new Date());
       input.addEventListener('input', () => render(currentSkyMs()));
       input.addEventListener('change', () => render(currentSkyMs()));
-    }
-    if (btnToday) {
-      btnToday.addEventListener('click', () => {
-        if (input) input.value = toYmd(new Date());
-        render(currentSkyMs());
-      });
     }
 
     render(currentSkyMs());
@@ -257,14 +250,6 @@
     });
     input.addEventListener('blur', () => { setTimeout(closeList, 120); });
   })();
-
-  // ----- "Heute" shortcut ----------------------------------------------------
-  bindClick('btn-heute', () => {
-    window.__mixerState.timeframe = 'day';
-    const tf = $('timeFrame'); if (tf) tf.value = 'day';
-    callReading();
-    window.dispatchEvent(new CustomEvent('horoskop:set', { detail: { timeframe: 'day' } }));
-  });
 
   // ----- Helpers --------------------------------------------------------------
   function chipTip(text) {

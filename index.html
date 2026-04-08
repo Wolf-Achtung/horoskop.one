@@ -86,7 +86,6 @@
     .sky-date{text-align:center;font-size:11px;color:#8aa4d6;margin-top:8px;font-style:italic;font-family:'Cormorant Garamond',serif}
     .sky-controls{display:flex;gap:8px;align-items:center;justify-content:center;margin-top:6px;flex-wrap:wrap}
     .sky-controls input[type="date"]{width:auto;padding:6px 10px;font-size:13px;border-radius:8px;background:#0b1530;color:#e7ecff;border:1px solid #24417b;color-scheme:dark}
-    .sky-controls .sky-today-btn{padding:6px 12px;font-size:12px;min-height:unset;line-height:1.2}
 
     /* Nominatim autocomplete dropdown under the Geburtsort field */
     .place-suggest{position:absolute;top:100%;left:0;right:0;z-index:20;max-height:260px;overflow:auto;background:#0b1530;border:1px solid #24417b;border-radius:10px;margin-top:4px;display:none;box-shadow:0 10px 30px #0009}
@@ -123,7 +122,7 @@
     .reading-type-details>summary::-webkit-details-marker{display:none}
     .reading-type-details>summary::before{content:'\25B8';display:inline-block;transition:transform .2s;color:#6bb7ff;font-size:14px}
     .reading-type-details[open]>summary::before{transform:rotate(90deg)}
-    .reading-type-details>summary strong{font-family:'Cinzel Decorative','Caudex',serif;letter-spacing:.02em;font-size:15px}
+    .reading-type-details>summary strong{font-family:inherit;letter-spacing:0;font-size:15px;font-weight:700}
     .reading-type-details .rt-hint{color:#9fb2d9;font-size:12px;font-style:italic}
     .reading-type-details[open] .reading-type-grid{padding:0 14px 14px}
     .reading-type-details .rt-summary-label{color:#cfe0ff;font-size:12px;margin-left:auto;opacity:.85}
@@ -307,7 +306,6 @@
         <div class="sky-date" id="sky-date" aria-live="polite"></div>
         <div class="sky-controls">
           <input type="date" id="sky-date-input" aria-label="Datum der Himmelsansicht"/>
-          <button type="button" id="btn-sky-today" class="btn ghost sky-today-btn">Heute</button>
         </div>
       </div>
 
@@ -405,14 +403,13 @@
       </details>
 
       <div class="row" style="margin-top:10px">
-        <button id="btn-heute" class="btn ghost" type="button">Heute</button>
-        <button id="btn-gold" class="btn brand" type="button">Sterne fragen</button>
+        <button id="btn-gold" class="btn brand" type="button">meine Sterne fragen</button>
       </div>
 
       <div id="ephemeris" class="row" style="margin-top:8px"></div>
       <div id="result" class="reading"></div>
 
-      <div class="disclaimer">Unterhaltung &amp; Selbstreflexion – keine medizinische, rechtliche oder finanzielle Beratung. Krisen: 112 (EU).</div>
+      <div class="disclaimer">Bitte beachten: Keine medizinische, rechtliche oder finanzielle Beratung. Bei Krisen oder akuter Gefahr: 112 (EU) / lokale Beratungsstellen.</div>
     </section>
   </main>
 
@@ -422,7 +419,6 @@
       <a href="impressum.html">Impressum</a>
       <a href="datenschutz.html">Datenschutz</a>
     </nav>
-    <div class="footer-copy">© <span id="footer-year">2026</span> horoskop.one · Wolf Hohl · Berlin</div>
   </footer>
 
   <dialog id="dlg-time">
