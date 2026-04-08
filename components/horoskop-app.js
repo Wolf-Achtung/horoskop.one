@@ -45,16 +45,15 @@
     });
   })();
 
-  // ----- Live heliocentric hero wheel ----------------------------------------
+  // ----- Heliocentric hero wheel ---------------------------------------------
   // Each <g class="planet-orbit orbit-X"> has its dot drawn at angle -90°
-  // (12 o'clock). We compute the current mean ecliptic longitude for every
-  // planet from a simplified Kepler mean-motion model (J2000.0 epoch) and
-  // apply it as a direct rotate() transform on the group. A slow time-lapse
-  // loop then advances the clock at ~1 real day per second, so Mercury
-  // visibly drifts over a few minutes while Neptun is essentially still —
-  // astronomically honest. On every page load the starting positions match
-  // today's real sky.
-  (function liveSky() {
+  // (12 o'clock). We compute the mean ecliptic longitude for every planet
+  // from a simplified Kepler mean-motion model (J2000.0 epoch) and apply
+  // it as a direct rotate() transform on the group. By default the wheel
+  // shows TODAY's real sky and stays still. A small date input beneath the
+  // hero lets the user pick any other day — e.g. their birthday — and the
+  // planets smoothly glide to that configuration (CSS handles the tween).
+  (function skyWheel() {
     // Simplified mean longitudes L0 (deg, J2000.0) and mean motions n (deg/day).
     // Values are standard osculating elements rounded for visual fidelity;
     // accurate to a few degrees, which is all the 380px hero needs.
@@ -73,20 +72,9 @@
 
     // Days since J2000.0 (2000-01-01 12:00 TT, close enough to UTC here).
     const J2000_MS = Date.UTC(2000, 0, 1, 12, 0, 0);
-    // Time-lapse factor: how many simulated days pass per real second of
-    // animation. 1.0 = 1 day/sec → Merkur moves ~4°/min (noticeable),
-    // Neptun ~0.003°/min (still). Gives a gently living wheel.
-    const TIME_LAPSE = 1.0;
 
-    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const pageLoadReal = Date.now();
-
-    function render(nowMs) {
-      // Simulated time = real-now + (elapsed since load) × (TIME_LAPSE − 1)
-      // so that at page load we show the exact current sky, and from there
-      // each real second adds TIME_LAPSE days to the simulated clock.
-      const simMs = nowMs + (nowMs - pageLoadReal) * (TIME_LAPSE * 86400 - 1);
-      const daysSinceJ2000 = (simMs - J2000_MS) / 86400000;
+    function render(dateMs) {
+      const daysSinceJ2000 = (dateMs - J2000_MS) / 86400000;
       for (const p of PLANETS) {
         if (!p.el) continue;
         const lon = (((p.L0 + p.n * daysSinceJ2000) % 360) + 360) % 360;
@@ -97,19 +85,53 @@
       }
       const cap = document.getElementById('sky-date');
       if (cap) {
-        const d = new Date(simMs);
+        const d = new Date(dateMs);
         cap.textContent = 'Himmel am ' + d.toLocaleDateString('de-DE', {
           day: '2-digit', month: 'long', year: 'numeric'
         });
       }
     }
 
-    render(Date.now());
-    if (reduce) return; // respect reduced-motion: keep the static snapshot
-    // Tick once per second; `.planet-orbit { transition: transform 1s linear }`
-    // smooths the drift between ticks, so the motion looks continuous without
-    // a requestAnimationFrame loop burning battery.
-    setInterval(() => render(Date.now()), 1000);
+    // Format a Date as YYYY-MM-DD in the LOCAL timezone (so "today" matches
+    // the user's wall-clock day, not UTC).
+    function toYmd(d) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return y + '-' + m + '-' + dd;
+    }
+    // Parse a YYYY-MM-DD string as noon UTC — noon avoids any timezone edge
+    // where a local-midnight date would flip to the previous/next day and
+    // makes the Kepler longitude deterministic for a whole calendar day.
+    function parseYmd(s) {
+      const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || '');
+      if (!m) return null;
+      return Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 12, 0, 0);
+    }
+
+    const input = $('sky-date-input');
+    const btnToday = $('btn-sky-today');
+
+    function currentSkyMs() {
+      const parsed = input && input.value ? parseYmd(input.value) : null;
+      if (parsed != null) return parsed;
+      // Fallback: today at local noon → noon UTC of today's local date.
+      return parseYmd(toYmd(new Date()));
+    }
+
+    if (input) {
+      input.value = toYmd(new Date());
+      input.addEventListener('input', () => render(currentSkyMs()));
+      input.addEventListener('change', () => render(currentSkyMs()));
+    }
+    if (btnToday) {
+      btnToday.addEventListener('click', () => {
+        if (input) input.value = toYmd(new Date());
+        render(currentSkyMs());
+      });
+    }
+
+    render(currentSkyMs());
   })();
 
   // ----- Birthplace autocomplete (Nominatim) ---------------------------------
