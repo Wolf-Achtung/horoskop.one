@@ -151,11 +151,6 @@
     <div class="row"><button class="btn brand" onclick="document.getElementById('dlg-time').close()">Okay</button></div>
   </dialog>
 
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script type="text/babel" data-presets="react" src="components/horoskop.cdn.jsx"></script>
-
   <script>
     // ---- Starfield using assets/stars.json (from netzstruktur.svg, without lines)
     
@@ -229,19 +224,8 @@
 
   <script>
     const RAILWAY_BASE = "https://horoskopone-production-4739.up.railway.app";
-    window.__mixerState = { mode:'mystic_deep', timeframe:'week', weights:{ astro:34, num:13, tarot:17, iching:14, cn:11, tree:11 } };
-
-    // Mixer mount (React-based, loaded lazily via CDN Babel)
-    const rootEl = document.getElementById('mixer-root');
-    let __mixerRoot = null;
-    function __mountMixer(){
-      if (!(window.React && window.ReactDOM && rootEl)) { return setTimeout(__mountMixer, 80); }
-      if (!__mixerRoot) { __mixerRoot = ReactDOM.createRoot(rootEl); }
-      const Comp = window.KosmischerMixer && (window.KosmischerMixer.default || window.KosmischerMixer);
-      if (Comp) { try { __mixerRoot.render(React.createElement(Comp)); } catch(e){ console.warn('Mixer render failed:', e); } }
-      else { setTimeout(__mountMixer, 120); }
-    }
-    __mountMixer();
+    // Default mixer state — overridden by enhancements.js once the mixer mounts
+    window.__mixerState = { mode:'mystic_coach', timeframe:'week', weights:{ astro:34, num:13, tarot:17, iching:14, cn:11, tree:11 } };
 
     document.getElementById('btn-timehelp').onclick = ()=> document.getElementById('dlg-time').showModal();
     document.getElementById('btn-heute').onclick = ()=>{
@@ -470,8 +454,8 @@ if(moon) chip(moon);
     }
     document.getElementById('btn-share').onclick = async ()=>{ if(!__lastData){ alert('Bitte zuerst ein Gold-Reading erzeugen.'); return; } const canvas = await makeShareCard(__lastData); canvas.toBlob((b)=>{ const url=URL.createObjectURL(b); const a=document.createElement('a'); a.href=url; a.download='horoskop-one-card.png'; a.click(); URL.revokeObjectURL(url); }); };
   </script>
-<link rel="stylesheet" href="components/enhancements-v16.css">
-<script src="components/enhancements-v16.js"></script>
+<link rel="stylesheet" href="components/enhancements.css">
+<script src="components/enhancements.js"></script>
 
 </body>
 </html>

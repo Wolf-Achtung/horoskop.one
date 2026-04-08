@@ -1,0 +1,65 @@
+/* enhancements.css — consolidated badge + mixer + tiny-hex layer
+   replaces enhancements-v15.css and enhancements-v16.css */
+
+/* ---- Birth badges row (under hero, when birth date entered) ---- */
+.badge-row{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 4px}
+.badge{display:inline-flex;align-items:center;background:#0d203fcc;border:1px solid #2a3f79;border-radius:16px;padding:6px 10px;font-size:13px;color:#bdd0ff}
+.badge .desc{opacity:.85;margin-left:6px}
+.chip svg{width:14px;height:14px;opacity:.9;margin-right:6px;vertical-align:-2px}
+.tiny-hex line{stroke:#bdd0ff;stroke-width:1.6;stroke-linecap:round}
+
+/* ---- Hero parallax wrapper (v14) ---- */
+.hero-wrap{display:inline-block;will-change:transform}
+
+/* ---- Kosmischer Mixer (vanilla rewrite) ---- */
+.mixer-card{
+  background:linear-gradient(180deg,#0f1933,#0b1328);
+  border:1px solid #1a2c5a;
+  border-radius:16px;
+  padding:18px;
+  color:#e7ecff;
+  margin-top:14px;
+}
+.mixer-head{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.mixer-head h3{margin:0;font-size:18px;font-weight:600}
+.mixer-head h3 sup{color:#9fb2d9;font-size:12px}
+.mixer-presets{display:flex;flex-wrap:wrap;gap:6px}
+.mixer-presets button{
+  background:#0c1c3e;border:1px solid #1a2c5a;color:#e7ecff;
+  border-radius:10px;padding:6px 12px;font-size:13px;cursor:pointer
+}
+.mixer-presets button:hover{border-color:#3a55a0}
+.mixer-segs{display:grid;grid-template-columns:1fr;gap:10px;margin-top:14px}
+@media(min-width:560px){.mixer-segs{grid-template-columns:1fr 1fr}}
+.mixer-seg-label{font-size:13px;color:#9fb2d9;margin-bottom:4px}
+.mixer-seg{display:inline-flex;border:1px solid #1a2c5a;border-radius:12px;overflow:hidden}
+.mixer-seg button{
+  background:#0c1c3e;border:none;border-left:1px solid #1a2c5a;
+  color:#e7ecff;padding:6px 12px;font-size:13px;cursor:pointer
+}
+.mixer-seg button:first-child{border-left:none}
+.mixer-seg button[aria-pressed="true"]{background:#103061}
+.mixer-body{display:flex;flex-direction:column;gap:18px;margin-top:18px;align-items:center}
+@media(min-width:560px){.mixer-body{flex-direction:row;align-items:flex-start}}
+.mixer-donut{
+  position:relative;width:160px;height:160px;border-radius:50%;flex-shrink:0;
+  transition:background .25s ease-out
+}
+.mixer-donut::after{
+  content:'';position:absolute;top:50%;left:50%;width:108px;height:108px;
+  margin:-54px 0 0 -54px;border-radius:50%;
+  background:rgba(10,16,34,.95);border:1px solid #1a2c5a
+}
+.mixer-list{display:grid;grid-template-columns:1fr;gap:6px;flex:1;width:100%}
+@media(min-width:560px){.mixer-list{grid-template-columns:1fr 1fr}}
+.mixer-row{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  background:#0c1c3e;border:1px solid #1a2c5a;border-radius:10px;padding:8px 12px;
+  font-size:13px
+}
+.mixer-row .swatch{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px}
+.mixer-row .label{flex:1}
+.mixer-row .pct{color:#bdd0ff;font-variant-numeric:tabular-nums}
+.mixer-row input[type=range]{width:100px;accent-color:#9bb4ff}
+.mixer-foot{margin-top:14px;font-size:13px;color:#9fb2d9}
+.mixer-foot b{color:#e7ecff;font-variant-numeric:tabular-nums}
