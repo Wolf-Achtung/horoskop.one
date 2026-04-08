@@ -84,10 +84,11 @@
             </label>
           </div>
 
-          <details class="collapse-panel reading-type-details">
+          <details class="reading-type-details">
             <summary>
               <strong>Was möchtest du erfahren?</strong>
-              <span class="collapse-value" id="rt-summary-value">Klassisches Reading</span>
+              <span class="rt-hint">— wähle dein Reading (optional)</span>
+              <span class="rt-summary-label" id="rt-summary-label">Klassisches Reading</span>
             </summary>
             <div class="reading-type-grid">
               <div class="rt-card rt-selected" data-rt="classic">
@@ -123,13 +124,13 @@
                 <small>Dein einzigartiges Talent &amp; 3-Schritte-Routine</small>
               </div>
             </div>
-            <input type="hidden" id="readingType" value="classic"/>
           </details>
+          <input type="hidden" id="readingType" value="classic"/>
 
           <details class="collapse-panel mixer-details">
             <summary>
               <strong>Kosmischer Mixer</strong>
-              <span class="collapse-hint">— Methoden &amp; Ton vor der Analyse feintunen (optional)</span>
+              <span class="mixer-hint">— Methoden &amp; Ton vor der Analyse feintunen (optional)</span>
             </summary>
             <div id="mixer-root"></div>
           </details>

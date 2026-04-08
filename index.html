@@ -2,6 +2,9 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b1020" />
+  <meta name="description" content="horoskop.one – Dein Moment unter den Sternen. Achtsam, mystisch, erklärbar." />
   <title>horoskop.one – Sternenkarte</title>
 <meta property="og:title" content="horoskop.one – Sternenkarte"/>
 <meta property="og:description" content="Dein Moment unter den Sternen – achtsam, mystisch, erklärbar."/>
@@ -24,8 +27,6 @@
          font-family:'Plus Jakarta Sans', system-ui, Arial, sans-serif; line-height:1.45; overflow-x:hidden}
     header{position:relative; z-index:2; padding:18px 14px 8px; text-align:center}
     .brand{display:flex; gap:10px; align-items:center; justify-content:center}
-    .sigil{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;
-      background:radial-gradient(60% 60% at 50% 40%, #23335f 0%, #111b35 60%); border:1px solid #2a3f79; box-shadow:0 0 12px #2a3f7944}
     h1{font-family:'Cinzel Decorative','Uncial Antiqua',serif; font-weight:700; letter-spacing:.02em; margin:0; font-size:28px}
     .sub{color:var(--muted); font-size:15px; font-family:'Cormorant Garamond', serif; font-style:italic; letter-spacing:.02em}
     main{max-width:980px;margin:0 auto 40px;padding:0 14px; position:relative; z-index:2}
@@ -53,17 +54,21 @@
     .constellation{width:100%;height:34px;margin:10px 0;display:block}
     .constellation svg{width:100%;height:34px;display:block;opacity:.9}
 
-    .hero{display:flex;flex-direction:column;align-items:center;padding:16px 0 4px}
-    .hero svg{width:min(82vw,380px);height:auto;filter:drop-shadow(0 14px 28px #000a)}
-    .hero svg .zglyph,.hero svg .trigram,.hero svg .rings{fill:none;stroke:#e7ecff;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
-    .hero svg .rings-bg{stroke:#334a86;stroke-width:1;fill:none}
-    .hero svg .orbit-path{fill:none;stroke:#2a3f79;stroke-width:1;stroke-dasharray:2 4;opacity:.55}
-    .hero svg g.hero-orbit,.hero svg g.hero-center,.hero svg g.hero-spark{transform-box:view-box;transform-origin:center;will-change:transform}
-    .hero-orbit-merkur{animation:spin-cw 28s linear infinite}
-    .hero-orbit-venus{animation:spin-cw 46s linear infinite}
-    .hero-orbit-mars{animation:spin-ccw 62s linear infinite}
-    .hero-orbit-jupiter{animation:spin-cw 90s linear infinite}
-    .hero-orbit-saturn{animation:spin-ccw 125s linear infinite}
+    .hero{display:flex;flex-direction:column;justify-content:center;align-items:center;padding:12px 0 4px}
+    .hero svg{width:min(86vw,380px);height:auto;filter:drop-shadow(0 14px 28px #000a)}
+    .hero svg g.hero-ring,.hero svg g.hero-center,.hero svg g.hero-spark{transform-box:view-box;transform-origin:center;will-change:transform}
+    /* Individual planet orbit groups – each rotates around the SVG centre */
+    .hero svg g.planet-orbit{transform-box:view-box;transform-origin:200px 200px;will-change:transform}
+    .orbit-mercury{animation:spin-cw  22s linear infinite}
+    .orbit-venus  {animation:spin-cw  38s linear infinite}
+    .orbit-earth  {animation:spin-cw  56s linear infinite}
+    .orbit-mars   {animation:spin-cw  72s linear infinite}
+    .orbit-jupiter{animation:spin-cw  96s linear infinite}
+    .orbit-saturn {animation:spin-cw 124s linear infinite}
+    .orbit-uranus {animation:spin-cw 160s linear infinite}
+    .orbit-neptune{animation:spin-cw 200s linear infinite}
+    .planet-dot{filter:drop-shadow(0 0 5px currentColor)}
+    .planet-dot.pulse{transform-box:fill-box;transform-origin:center;animation:planet-pulse 3.2s ease-in-out infinite}
     .hero-center{animation:hero-pulse 4.8s ease-in-out infinite}
     .hero-spark{animation:hero-twinkle 3.4s ease-in-out infinite}
     .hero-twink-a{animation:hero-twinkle 2.6s ease-in-out infinite}
@@ -71,47 +76,64 @@
     .hero-twink-c{animation:hero-twinkle 3.8s ease-in-out .8s infinite}
     @keyframes spin-cw{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
     @keyframes spin-ccw{from{transform:rotate(0deg)}to{transform:rotate(-360deg)}}
-    @keyframes hero-pulse{0%,100%{opacity:.75;transform:scale(1)}50%{opacity:1;transform:scale(1.07)}}
+    @keyframes hero-pulse{0%,100%{opacity:.72;transform:scale(1)}50%{opacity:1;transform:scale(1.08)}}
     @keyframes hero-twinkle{0%,100%{opacity:.35}50%{opacity:.95}}
-    @media (prefers-reduced-motion:reduce){.hero-orbit-merkur,.hero-orbit-venus,.hero-orbit-mars,.hero-orbit-jupiter,.hero-orbit-saturn,.hero-center,.hero-spark,.hero-twink-a,.hero-twink-b,.hero-twink-c{animation:none}}
+    @keyframes planet-pulse{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.35);opacity:1}}
+    @media (prefers-reduced-motion:reduce){
+      .orbit-mercury,.orbit-venus,.orbit-earth,.orbit-mars,.orbit-jupiter,.orbit-saturn,.orbit-uranus,.orbit-neptune,
+      .hero-center,.hero-spark,.hero-twink-a,.hero-twink-b,.hero-twink-c,.planet-dot.pulse{animation:none}
+    }
 
-    .hero-legend{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 14px;margin:6px 0 4px;padding:0 6px;font-size:11px;color:#9fb2d9}
-    .legend-item{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
-    .legend-dot{display:inline-block;width:9px;height:9px;border-radius:50%;box-shadow:0 0 6px currentColor}
-
+    /* Planet legend under the hero – shows which dot = which planet */
+    .planet-legend{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 10px;margin:6px 4px 0;padding:0;list-style:none;font-size:12px;color:#bdd0ff;max-width:420px}
+    .planet-legend li{display:inline-flex;align-items:center;gap:6px;padding:3px 8px;border:1px solid #24417b;border-radius:999px;background:#0b1530aa}
+    .planet-legend i{display:inline-block;width:9px;height:9px;border-radius:50%;box-shadow:0 0 6px currentColor}
+    .planet-legend b{font-weight:600;color:#e7ecff;letter-spacing:.01em}
     canvas#starfield{position:fixed; inset:0; z-index:0; pointer-events:none; background: radial-gradient(1000px 600px at 50% -20%, #0e1a35 0%, transparent 60%);}
     nav{margin:6px 0 10px; display:flex; gap:16px; justify-content:center; font-size:14px}
     nav a{color:#a9c4ff; text-decoration:none} nav a:hover{text-decoration:underline}
 
-    .reading-type-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:4px 14px 14px}
-    .rt-card{display:flex;flex-direction:column;align-items:center;text-align:center;padding:12px 8px;
+    .reading-type-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:10px}
+    .rt-card{display:flex;flex-direction:column;align-items:flex-start;text-align:left;padding:12px;min-height:64px;
              border:1px solid #24417b;border-radius:12px;background:#0b1530;cursor:pointer;
              transition:border-color .2s,background .2s,box-shadow .2s;min-height:64px;justify-content:center}
     .rt-card:hover{border-color:#6bb7ff;background:#0e2248}
     .rt-card.rt-selected{border-color:var(--gold);background:rgba(241,194,125,.1);box-shadow:0 0 16px rgba(241,194,125,.15)}
     .rt-card strong{font-size:13px;color:#e7ecff;line-height:1.3;font-weight:700}
-    .rt-card small{font-size:11px;color:#9fb2d9;line-height:1.3;margin-top:3px}
+    .rt-card small{font-size:11px;color:#9fb2d9;line-height:1.3;margin-top:4px}
 
-    /* Mobile optimizations */
+    /* Collapsible "Was möchtest du erfahren?" wrapper — mirrors .mixer-details */
+    .reading-type-details{margin-top:14px;border:1px solid var(--bd);border-radius:14px;background:#0b142b}
+    .reading-type-details>summary{cursor:pointer;padding:12px 14px;list-style:none;display:flex;align-items:center;gap:10px;color:#cfe0ff}
+    .reading-type-details>summary::-webkit-details-marker{display:none}
+    .reading-type-details>summary::before{content:'\25B8';display:inline-block;transition:transform .2s;color:#6bb7ff;font-size:14px}
+    .reading-type-details[open]>summary::before{transform:rotate(90deg)}
+    .reading-type-details>summary strong{font-family:'Cinzel Decorative','Caudex',serif;letter-spacing:.02em;font-size:15px}
+    .reading-type-details .rt-hint{color:#9fb2d9;font-size:12px;font-style:italic}
+    .reading-type-details[open] .reading-type-grid{padding:0 14px 14px}
+    .reading-type-details .rt-summary-label{color:#cfe0ff;font-size:12px;margin-left:auto;opacity:.85}
+
+    /* Mobile layout tuning ------------------------------------------------- */
     @media (max-width:720px){
-      main{padding:0 10px}
       h1{font-size:22px}
       .sub{font-size:13px}
-      .hero{padding:10px 0 2px}
-      .hero svg{width:min(88vw,320px)}
-      .hero-legend{font-size:10px;gap:4px 10px}
-      .reading-type-grid{grid-template-columns:repeat(2,1fr);gap:8px;margin:4px 10px 12px}
-      .rt-card{min-height:56px;padding:10px 6px}
+      header{padding:14px 12px 6px}
+      main{padding:0 12px}
+      .section{padding:12px}
+      .reading-type-grid{grid-template-columns:repeat(2,1fr);gap:8px}
+      .rt-card{padding:10px;min-height:56px}
       .rt-card strong{font-size:12px}
       .rt-card small{font-size:10px}
+      .row{gap:10px}
+      .btn{padding:12px 14px;min-height:44px;flex:1 1 auto;justify-content:center}
+      .hero svg{width:min(92vw,320px)}
+      .planet-legend{font-size:11px;gap:5px 8px}
+      label{font-size:13px}
       input[type="text"],input[type="date"],input[type="time"],select{font-size:16px;padding:12px 10px}
-      .btn{padding:12px 16px;min-height:44px}
-      .row{gap:8px}
-      .section{padding:12px 10px}
-      nav{gap:12px;font-size:13px}
     }
-    @media (max-width:400px){
-      .reading-type-grid{grid-template-columns:1fr}
+    @media (max-width:420px){
+      .planet-legend li{padding:2px 7px}
+      .reading-type-grid{grid-template-columns:1fr 1fr}
     }
 </style>
 </head>
@@ -119,10 +141,6 @@
   <canvas id="starfield" aria-hidden="true"></canvas>
   <header>
     <div class="brand">
-      <svg class="sigil" viewBox="0 0 40 40" width="36" height="36" aria-hidden="true">
-        <circle cx="20" cy="20" r="18" fill="none" stroke="#2a3f79" stroke-width="1.2"/>
-        <path d="M26 11a11 11 0 1 0 0 18 9 9 0 0 1 0-18z" fill="#e7ecff" opacity=".85"/>
-      </svg>
       <div>
         <h1>horoskop.one</h1>
         <div class="sub">Sternenkarte – achtsam, mystisch, erklärbar</div>
@@ -138,18 +156,8 @@
   <main>
     <section class="panel section">
       <div class="hero">
-        <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Animiertes Rad aus Sternzeichen, Trigrammen und orbitierenden Planeten">
+        <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Animiertes Sternenrad – Tierkreis mit kreisenden Planeten">
           <defs>
-            <radialGradient id="heroG" cx="50%" cy="45%" r="60%">
-              <stop offset="0%" stop-color="#2b3c6f"/>
-              <stop offset="70%" stop-color="#121b35"/>
-              <stop offset="100%" stop-color="#0a1226"/>
-            </radialGradient>
-            <radialGradient id="heroHalo" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stop-color="#7fb6ff" stop-opacity=".28"/>
-              <stop offset="60%" stop-color="#7fb6ff" stop-opacity=".10"/>
-              <stop offset="100%" stop-color="#7fb6ff" stop-opacity="0"/>
-            </radialGradient>
             <radialGradient id="heroCore" cx="50%" cy="50%" r="50%">
               <stop offset="0%" stop-color="#ffe6b3"/>
               <stop offset="60%" stop-color="#f1c27d"/>
@@ -165,131 +173,64 @@
             </filter>
           </defs>
 
-          <!-- Background halo + outer ring -->
-          <circle cx="200" cy="200" r="192" fill="url(#heroHalo)"/>
-          <circle cx="200" cy="200" r="175" fill="url(#heroG)" stroke="#334a86" stroke-width="1" stroke-dasharray="5 7"/>
-          <circle class="rings-bg" cx="200" cy="200" r="145"/>
-          <circle class="rings-bg" cx="200" cy="200" r="118"/>
-
-          <!-- Orbit paths (dashed) -->
-          <circle class="orbit-path" cx="200" cy="200" r="48"/>
-          <circle class="orbit-path" cx="200" cy="200" r="66"/>
-          <circle class="orbit-path" cx="200" cy="200" r="82"/>
-          <circle class="orbit-path" cx="200" cy="200" r="98"/>
-
-          <!-- Outer ring: 12 Zodiac glyphs as SVG paths (monochrome white) -->
-          <!-- Capricorn 0° top -->
-          <g class="zglyph hero-twink-a" transform="translate(200,45) scale(1.1) translate(-12,-12)">
-            <path d="M5 6v11c0 1.7 1.3 3 3 3s3-1.3 3-3V9"/>
-            <path d="M11 13c0 3 2 5 4.5 5S20 16.5 20 14c0-1.7-1.3-3-3-3-1.2 0-2 .6-2.6 1.4"/>
-          </g>
-          <!-- Aquarius 30° -->
-          <g class="zglyph" transform="translate(278,66) scale(1.1) translate(-12,-12)">
-            <path d="M4 9l3-2 3 2 3-2 3 2 3-2"/>
-            <path d="M4 15l3-2 3 2 3-2 3 2 3-2"/>
-          </g>
-          <!-- Pisces 60° -->
-          <g class="zglyph hero-twink-b" transform="translate(334,123) scale(1.1) translate(-12,-12)">
-            <path d="M6 5c2 2 3 4 3 7s-1 5-3 7"/>
-            <path d="M18 5c-2 2-3 4-3 7s1 5 3 7"/>
-            <path d="M4 12h16"/>
-          </g>
-          <!-- Aries 90° right -->
-          <g class="zglyph" transform="translate(355,200) scale(1.1) translate(-12,-12)">
-            <path d="M4 9c0-3.3 2.7-6 6-6 1.6 0 3 .6 4 1.6"/>
-            <path d="M20 9c0-3.3-2.7-6-6-6-1.6 0-3 .6-4 1.6"/>
-            <path d="M12 8v10"/>
-          </g>
-          <!-- Taurus 120° -->
-          <g class="zglyph hero-twink-c" transform="translate(334,277) scale(1.1) translate(-12,-12)">
-            <circle cx="12" cy="13" r="5"/>
-            <path d="M7 5c1.2 1.4 3 2.2 5 2.2S15.8 6.4 17 5"/>
-          </g>
-          <!-- Gemini 150° -->
-          <g class="zglyph" transform="translate(278,334) scale(1.1) translate(-12,-12)">
-            <path d="M7 5h10M7 19h10M9 7c0 6-.2 8-2 10M15 7c0 6 .2 8 2 10"/>
-          </g>
-          <!-- Cancer 180° bottom -->
-          <g class="zglyph hero-twink-a" transform="translate(200,355) scale(1.1) translate(-12,-12)">
-            <path d="M9 9a3 3 0 1 1-6 0a3 3 0 0 1 6 0z"/>
-            <path d="M21 15a3 3 0 1 1-6 0a3 3 0 0 1 6 0z"/>
-            <path d="M6 9c4.5 0 7.5 2 12 6"/>
-          </g>
-          <!-- Leo 210° -->
-          <g class="zglyph" transform="translate(123,334) scale(1.1) translate(-12,-12)">
-            <path d="M9 7c0-2.2 1.8-4 4-4 2.5 0 4.5 2.1 4 4.6-.4 1.9-2.1 3.4-4 3.4h-1"/>
-            <circle cx="8" cy="16" r="4"/>
-          </g>
-          <!-- Virgo 240° -->
-          <g class="zglyph hero-twink-b" transform="translate(66,277) scale(1.1) translate(-12,-12)">
-            <path d="M6 6v10c0 1.7 1.3 3 3 3s3-1.3 3-3V6M12 6c1 1 2.4 1.6 4 1.6S19 7 20 6M18 6v11l3-2"/>
-          </g>
-          <!-- Libra 270° left -->
-          <g class="zglyph" transform="translate(45,200) scale(1.1) translate(-12,-12)">
-            <path d="M3 16h18M4 13h16M7 13c0-2.8 2.2-5 5-5s5 2.2 5 5"/>
-          </g>
-          <!-- Scorpio 300° -->
-          <g class="zglyph hero-twink-c" transform="translate(66,123) scale(1.1) translate(-12,-12)">
-            <path d="M5 6v10c0 1.7 1.3 3 3 3s3-1.3 3-3V6M11 6c1 1 2.4 1.6 4 1.6S18 7 19 6"/>
-            <path d="M19 6v9l2-1.5M21 13v3"/>
-          </g>
-          <!-- Sagittarius 330° -->
-          <g class="zglyph" transform="translate(123,66) scale(1.1) translate(-12,-12)">
-            <path d="M5 19l14-14M10 5h9v9"/>
-            <path d="M15 6l4-1-1 4"/>
+          <!-- Faint orbit guide-rings (no fill, no purple background).
+               Radii match the planet positions below so every dot rides its ring. -->
+          <g fill="none" stroke="#2a3f79" stroke-width="1">
+            <circle cx="200" cy="200" r="164" opacity=".34" stroke-dasharray="3 6"/><!-- Neptune -->
+            <circle cx="200" cy="200" r="144" opacity=".32"/><!-- Uranus -->
+            <circle cx="200" cy="200" r="124" opacity=".30"/><!-- Saturn -->
+            <circle cx="200" cy="200" r="104" opacity=".28"/><!-- Jupiter -->
+            <circle cx="200" cy="200" r="84"  opacity=".26"/><!-- Mars -->
+            <circle cx="200" cy="200" r="66"  opacity=".24"/><!-- Earth -->
+            <circle cx="200" cy="200" r="50"  opacity=".22"/><!-- Venus -->
+            <circle cx="200" cy="200" r="36"  opacity=".20"/><!-- Mercury -->
           </g>
 
-          <!-- Inner ring: 8 I-Ging Bagua trigrams drawn as horizontal line stacks -->
-          <!-- Each group centered at (cx,cy). Solid line = M-9,y H9. Broken line = M-9,y H-2 + M2,y H9 -->
-          <!-- Qian (heaven) 3 solid, top -->
-          <g class="trigram" transform="translate(200,90)">
-            <path d="M-9 -5H9 M-9 0H9 M-9 5H9"/>
-          </g>
-          <!-- Dui (lake) top broken, others solid, 45° -->
-          <g class="trigram" transform="translate(278,122)">
-            <path d="M-9 -5H-2 M2 -5H9 M-9 0H9 M-9 5H9"/>
-          </g>
-          <!-- Li (fire) middle broken, 90° right -->
-          <g class="trigram" transform="translate(310,200)">
-            <path d="M-9 -5H9 M-9 0H-2 M2 0H9 M-9 5H9"/>
-          </g>
-          <!-- Zhen (thunder) top+middle broken, 135° -->
-          <g class="trigram" transform="translate(278,278)">
-            <path d="M-9 -5H-2 M2 -5H9 M-9 0H-2 M2 0H9 M-9 5H9"/>
-          </g>
-          <!-- Xun (wind) bottom broken, 180° -->
-          <g class="trigram" transform="translate(200,310)">
-            <path d="M-9 -5H9 M-9 0H9 M-9 5H-2 M2 5H9"/>
-          </g>
-          <!-- Kan (water) top+bottom broken, 225° -->
-          <g class="trigram" transform="translate(122,278)">
-            <path d="M-9 -5H-2 M2 -5H9 M-9 0H9 M-9 5H-2 M2 5H9"/>
-          </g>
-          <!-- Gen (mountain) middle+bottom broken, 270° left -->
-          <g class="trigram" transform="translate(90,200)">
-            <path d="M-9 -5H9 M-9 0H-2 M2 0H9 M-9 5H-2 M2 5H9"/>
-          </g>
-          <!-- Kun (earth) all broken, 315° -->
-          <g class="trigram" transform="translate(122,122)">
-            <path d="M-9 -5H-2 M2 -5H9 M-9 0H-2 M2 0H9 M-9 5H-2 M2 5H9"/>
+          <!-- Outer ring: Zodiac (12) — white static glyphs, upright -->
+          <g class="hero-ring" font-family="serif" font-size="22" fill="#ffffff" opacity=".95">
+            <text class="hero-twink-a" x="200" y="32"  text-anchor="middle">♑</text>
+            <text x="288" y="56"  text-anchor="middle">♒</text>
+            <text class="hero-twink-b" x="348" y="122" text-anchor="middle">♓</text>
+            <text x="370" y="209" text-anchor="middle">♈</text>
+            <text class="hero-twink-c" x="348" y="297" text-anchor="middle">♉</text>
+            <text x="288" y="363" text-anchor="middle">♊</text>
+            <text class="hero-twink-a" x="200" y="387" text-anchor="middle">♋</text>
+            <text x="112" y="363" text-anchor="middle">♌</text>
+            <text class="hero-twink-b" x="52"  y="297" text-anchor="middle">♍</text>
+            <text x="30"  y="209" text-anchor="middle">♎</text>
+            <text class="hero-twink-c" x="52"  y="122" text-anchor="middle">♏</text>
+            <text x="112" y="56"  text-anchor="middle">♐</text>
           </g>
 
-          <!-- Orbiting planets (5 of them, each in own rotating group) -->
-          <g class="hero-orbit hero-orbit-merkur">
-            <circle cx="248" cy="200" r="3.5" fill="#8ac4ff" filter="url(#planetGlow)"/>
+          <!-- Planets: one group per planet, each rotating around the centre
+               at its own speed. `cy` places the dot on its guide ring. -->
+          <g class="planet-orbit orbit-mercury" style="color:#a8b5c7">
+            <circle class="planet-dot pulse" cx="200" cy="164" r="3.2" fill="currentColor"/>
           </g>
-          <g class="hero-orbit hero-orbit-venus">
-            <circle cx="266" cy="200" r="4.5" fill="#e7c4dc" filter="url(#planetGlow)"/>
+          <g class="planet-orbit orbit-venus" style="color:#ffd48a">
+            <circle class="planet-dot pulse" cx="200" cy="150" r="3.8" fill="currentColor"/>
           </g>
-          <g class="hero-orbit hero-orbit-mars">
-            <circle cx="282" cy="200" r="4" fill="#ff8e6b" filter="url(#planetGlow)"/>
+          <g class="planet-orbit orbit-earth" style="color:#6bb7ff">
+            <circle class="planet-dot pulse" cx="200" cy="134" r="3.6" fill="currentColor"/>
+            <!-- Moon orbits Earth at a small offset -->
+            <circle class="planet-dot" cx="207" cy="134" r="1.6" fill="#e7ecff"/>
           </g>
-          <g class="hero-orbit hero-orbit-jupiter">
-            <circle cx="298" cy="200" r="5" fill="#ffd48a" filter="url(#planetGlow)"/>
+          <g class="planet-orbit orbit-mars" style="color:#ff7a5a">
+            <circle class="planet-dot pulse" cx="200" cy="116" r="3.4" fill="currentColor"/>
           </g>
-          <g class="hero-orbit hero-orbit-saturn">
-            <circle cx="200" cy="82" r="4" fill="#d9b97a" filter="url(#planetGlow)"/>
-            <circle cx="200" cy="82" r="6.5" fill="none" stroke="#d9b97a" stroke-width="0.8" opacity=".7"/>
+          <g class="planet-orbit orbit-jupiter" style="color:#e7c48a">
+            <circle class="planet-dot pulse" cx="200" cy="96" r="5.4" fill="currentColor"/>
+          </g>
+          <g class="planet-orbit orbit-saturn" style="color:#f1c27d">
+            <circle class="planet-dot pulse" cx="200" cy="76" r="4.8" fill="currentColor"/>
+            <!-- Ring hint: thin ellipse around Saturn's dot -->
+            <ellipse cx="200" cy="76" rx="9" ry="2.2" fill="none" stroke="currentColor" stroke-width="1" opacity=".75"/>
+          </g>
+          <g class="planet-orbit orbit-uranus" style="color:#8ef3ff">
+            <circle class="planet-dot pulse" cx="200" cy="56" r="3.8" fill="currentColor"/>
+          </g>
+          <g class="planet-orbit orbit-neptune" style="color:#9bb4ff">
+            <circle class="planet-dot pulse" cx="200" cy="36" r="3.8" fill="currentColor"/>
           </g>
 
           <!-- Twinkle sparks in corners -->
@@ -300,20 +241,24 @@
             <circle cx="360" cy="360" r="1.4"/>
           </g>
 
-          <!-- Center: glowing sun core -->
+          <!-- Centre: glowing Sun -->
           <g class="hero-center">
-            <circle cx="200" cy="200" r="22" fill="url(#heroCore)" opacity=".55"/>
-            <circle cx="200" cy="200" r="6.5" fill="#f1c27d" filter="url(#heroGlow)"/>
+            <circle cx="200" cy="200" r="28" fill="url(#heroCore)" opacity=".55"/>
+            <circle cx="200" cy="200" r="8"  fill="#f1c27d" filter="url(#heroGlow)"/>
           </g>
         </svg>
-        <div class="hero-legend" aria-hidden="true">
-          <span class="legend-item"><span class="legend-dot" style="color:#f1c27d;background:#f1c27d"></span>Sonne</span>
-          <span class="legend-item"><span class="legend-dot" style="color:#8ac4ff;background:#8ac4ff"></span>Merkur</span>
-          <span class="legend-item"><span class="legend-dot" style="color:#e7c4dc;background:#e7c4dc"></span>Venus</span>
-          <span class="legend-item"><span class="legend-dot" style="color:#ff8e6b;background:#ff8e6b"></span>Mars</span>
-          <span class="legend-item"><span class="legend-dot" style="color:#ffd48a;background:#ffd48a"></span>Jupiter</span>
-          <span class="legend-item"><span class="legend-dot" style="color:#d9b97a;background:#d9b97a"></span>Saturn</span>
-        </div>
+
+        <ul class="planet-legend" aria-label="Legende der Planeten">
+          <li><i style="color:#f1c27d;background:#f1c27d"></i><b>Sonne</b></li>
+          <li><i style="color:#a8b5c7;background:#a8b5c7"></i><b>Merkur</b></li>
+          <li><i style="color:#ffd48a;background:#ffd48a"></i><b>Venus</b></li>
+          <li><i style="color:#6bb7ff;background:#6bb7ff"></i><b>Erde</b></li>
+          <li><i style="color:#ff7a5a;background:#ff7a5a"></i><b>Mars</b></li>
+          <li><i style="color:#e7c48a;background:#e7c48a"></i><b>Jupiter</b></li>
+          <li><i style="color:#f1c27d;background:#f1c27d"></i><b>Saturn</b></li>
+          <li><i style="color:#8ef3ff;background:#8ef3ff"></i><b>Uranus</b></li>
+          <li><i style="color:#9bb4ff;background:#9bb4ff"></i><b>Neptun</b></li>
+        </ul>
       </div>
 
       <h2 style="margin:0 0 8px;font-family:'EB Garamond',serif">Dein Moment unter den Sternen</h2>
@@ -352,10 +297,11 @@
         <option value="month">Monat</option>
       </select>
 
-      <details class="collapse-panel reading-type-details">
+      <details class="reading-type-details">
         <summary>
           <strong>Was möchtest du erfahren?</strong>
-          <span class="collapse-value" id="rt-summary-value">Klassisches Reading</span>
+          <span class="rt-hint">— wähle dein Reading (optional)</span>
+          <span class="rt-summary-label" id="rt-summary-label">Klassisches Reading</span>
         </summary>
         <div class="reading-type-grid" id="reading-type-grid">
           <div class="rt-card rt-selected" data-rt="classic">
@@ -391,20 +337,20 @@
             <small>Einzigartiges Talent</small>
           </div>
         </div>
-        <input type="hidden" id="readingType" value="classic"/>
       </details>
+      <input type="hidden" id="readingType" value="classic"/>
 
-      <details class="collapse-panel mixer-details">
+      <details class="mixer-details">
         <summary>
           <strong>Kosmischer Mixer</strong>
-          <span class="collapse-hint">— Methoden &amp; Ton vor der Analyse feintunen (optional)</span>
+          <span class="mixer-hint">— Methoden &amp; Ton vor der Analyse feintunen (optional)</span>
         </summary>
         <div id="mixer-root"></div>
       </details>
 
-      <div class="row" style="margin-top:8px">
-        <button id="btn-heute" class="btn ghost">Heute</button>
-        <button id="btn-gold" class="btn brand">Sterne fragen</button>
+      <div class="row" style="margin-top:10px">
+        <button id="btn-heute" class="btn ghost" type="button">Heute</button>
+        <button id="btn-gold" class="btn brand" type="button">Sterne fragen</button>
       </div>
 
       <div id="ephemeris" class="row" style="margin-top:8px"></div>

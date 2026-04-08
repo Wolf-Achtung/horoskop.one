@@ -12,13 +12,30 @@ button:hover,.ghost:hover{border-color:var(--accent)}.status{color:var(--muted);
 #readingOut{display:grid;gap:12px}.reading-block{padding:12px;border:1px solid rgba(255,255,255,.06);border-radius:10px;background:rgba(255,255,255,.02)}
 .autocomplete-list{position:absolute;z-index:20;background:var(--card);border:1px solid rgba(255,255,255,.1);border-radius:8px;margin-top:4px;width:min(520px,92%);max-height:260px;overflow:auto;display:none}
 .autocomplete-list.open{display:block}.autocomplete-item{padding:8px 10px;cursor:pointer}.autocomplete-item:hover,.autocomplete-item.active{background:rgba(255,255,255,.08)}.autocomplete-muted{font-size:12px;color:var(--muted)}
-/* Reading type selector grid (now lives inside a .collapse-panel) */
-.reading-type-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:4px 14px 14px}
-.rt-card{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:12px 8px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:rgba(255,255,255,.02);cursor:pointer;transition:border-color .2s,background .2s,box-shadow .2s;min-height:64px}
+/* Reading type selector (collapsible) */
+.reading-type-details{margin:16px 0 0;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:rgba(255,255,255,.02)}
+.reading-type-details>summary{cursor:pointer;padding:12px 14px;list-style:none;display:flex;align-items:center;gap:10px;color:var(--brand)}
+.reading-type-details>summary::-webkit-details-marker{display:none}
+.reading-type-details>summary::before{content:'\25B8';display:inline-block;transition:transform .2s;color:var(--accent);font-size:14px}
+.reading-type-details[open]>summary::before{transform:rotate(90deg)}
+.reading-type-details>summary strong{font-size:14px;font-weight:600}
+.reading-type-details .rt-hint{color:var(--muted);font-size:12px;font-style:italic}
+.reading-type-details .rt-summary-label{color:var(--accent);font-size:12px;margin-left:auto;opacity:.9}
+.reading-type-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:0 14px 14px}
+.rt-card{display:flex;flex-direction:column;align-items:flex-start;text-align:left;padding:12px;min-height:56px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:rgba(255,255,255,.02);cursor:pointer;transition:border-color .2s,background .2s,box-shadow .2s}
 .rt-card:hover{border-color:rgba(225,192,122,.4);background:rgba(255,255,255,.04)}
 .rt-card.rt-selected{border-color:var(--accent);background:rgba(225,192,122,.08);box-shadow:0 0 12px rgba(225,192,122,.15)}
-.rt-card strong{font-size:12px;color:var(--fg);line-height:1.3}
-.rt-card small{font-size:10px;color:var(--muted);line-height:1.3;margin-top:2px}
+.rt-card strong{font-size:13px;color:var(--fg);line-height:1.3}
+.rt-card small{font-size:11px;color:var(--muted);line-height:1.3;margin-top:4px}
+
+/* Collapsible Kosmischer Mixer wrapper */
+.mixer-details{margin-top:14px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:rgba(255,255,255,.02)}
+.mixer-details>summary{cursor:pointer;padding:12px 14px;list-style:none;display:flex;align-items:center;gap:10px;color:var(--brand)}
+.mixer-details>summary::-webkit-details-marker{display:none}
+.mixer-details>summary::before{content:'\25B8';display:inline-block;transition:transform .2s;color:var(--accent);font-size:14px}
+.mixer-details[open]>summary::before{transform:rotate(90deg)}
+.mixer-details>summary strong{font-size:14px;font-weight:600}
+.mixer-details .mixer-hint{color:var(--muted);font-size:12px;font-style:italic}
 
 /* Reading result enhancements */
 .reading-type-badge{display:inline-block;padding:4px 12px;border-radius:999px;background:rgba(225,192,122,.12);border:1px solid rgba(225,192,122,.3);color:var(--accent);font-size:12px;font-weight:600;margin-bottom:10px}
@@ -27,19 +44,26 @@ button:hover,.ghost:hover{border-color:var(--accent)}.status{color:var(--muted);
 .reading-disclaimer{font-size:11px;color:var(--muted);text-align:center;margin-top:12px;padding:8px;border-top:1px solid rgba(255,255,255,.06)}
 .nav a{color:var(--muted);text-decoration:none;font-size:13px}.nav a:hover{color:var(--fg);text-decoration:underline}.nav{display:flex;gap:14px}
 
+/* Planet legend under the hero */
+.planet-legend{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 10px;margin:8px auto 0;padding:0;list-style:none;font-size:12px;color:var(--muted);max-width:520px}
+.planet-legend li{display:inline-flex;align-items:center;gap:6px;padding:3px 8px;border:1px solid rgba(255,255,255,.08);border-radius:999px;background:rgba(255,255,255,.02)}
+.planet-legend i{display:inline-block;width:9px;height:9px;border-radius:50%;box-shadow:0 0 6px currentColor}
+.planet-legend b{font-weight:600;color:var(--fg)}
+
 @media (max-width:720px){
-  .container{padding:0 10px}
-  .site-header,.site-footer{padding:14px 10px}
-  .card{padding:14px}
   .grid{grid-template-columns:1fr}
   .autocomplete-list{width:100%}
-  .reading-type-grid{grid-template-columns:repeat(2,1fr);margin:4px 10px 12px}
-  .rt-card{min-height:56px;padding:10px 6px}
-  .grid input,.grid select{font-size:16px;padding:12px 10px}
-  button,.ghost{min-height:44px;padding:12px 16px}
+  .reading-type-grid{grid-template-columns:repeat(2,1fr)}
+  .site-header{flex-direction:column;gap:8px;align-items:flex-start;padding:14px 16px}
+  .brand{flex-wrap:wrap}
+  .brand .tagline{display:block;margin-left:0;margin-top:2px}
+  .card{padding:14px}
   .actions{flex-wrap:wrap}
-  #zodiac-canvas{max-width:88vw;height:auto}
+  button,.ghost{min-height:44px;padding:12px 14px;flex:1 1 140px}
+  #zodiac-canvas{width:100%;max-width:360px;height:auto}
+  .planet-legend{font-size:11px}
 }
-@media (max-width:400px){
-  .reading-type-grid{grid-template-columns:1fr}
+@media (max-width:420px){
+  .reading-type-grid{grid-template-columns:1fr 1fr}
+  .grid label{font-size:13px}
 }
