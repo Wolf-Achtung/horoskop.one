@@ -27,7 +27,7 @@
   <body>
     <header class="site-header">
       <div class="brand">
-        <span class="logo">✷</span> <strong>HOROSKOP.ONE</strong>
+        <strong>HOROSKOP.ONE</strong>
         <span class="tagline">Sternen­kunst — achtsam, poetisch, erklärbar</span>
       </div>
       <nav class="nav">
@@ -84,56 +84,52 @@
             </label>
           </div>
 
-          <fieldset class="reading-type-fieldset">
-            <legend>Was möchtest du erfahren?</legend>
+          <details class="reading-type-details">
+            <summary>
+              <strong>Was möchtest du erfahren?</strong>
+              <span class="rt-hint">— wähle dein Reading (optional)</span>
+              <span class="rt-summary-label" id="rt-summary-label">Klassisches Reading</span>
+            </summary>
             <div class="reading-type-grid">
               <div class="rt-card rt-selected" data-rt="classic">
-                <span class="rt-icon">✷</span>
                 <strong>Klassisches Reading</strong>
                 <small>Fokus, Beruf, Liebe &amp; Energie</small>
               </div>
               <div class="rt-card" data-rt="blueprint">
-                <span class="rt-icon">🧬</span>
                 <strong>Lebensplan-Decoder</strong>
                 <small>Persönlichkeit, Stärken, Schwächen &amp; Lebensaufgabe</small>
               </div>
               <div class="rt-card" data-rt="soul_purpose">
-                <span class="rt-icon">🔮</span>
                 <strong>Seelenaufgabe</strong>
                 <small>Kernmission, Lektionen &amp; Alltagsimpulse</small>
               </div>
               <div class="rt-card" data-rt="career">
-                <span class="rt-icon">🚀</span>
                 <strong>Berufung &amp; Karriere</strong>
                 <small>3 ideale Pfade &amp; ein Feld zum Meiden</small>
               </div>
               <div class="rt-card" data-rt="relationship">
-                <span class="rt-icon">💫</span>
                 <strong>Beziehungs-Landkarte</strong>
                 <small>Kompatibilität, Liebeslektionen &amp; idealer Partner</small>
               </div>
               <div class="rt-card" data-rt="wealth">
-                <span class="rt-icon">✦</span>
                 <strong>Fülle &amp; Wohlstand</strong>
                 <small>Geld-Persönlichkeit &amp; Wohlstandsstrategie</small>
               </div>
               <div class="rt-card" data-rt="timeline">
-                <span class="rt-icon">⏳</span>
                 <strong>Zukunfts-Zeitstrahl</strong>
                 <small>Wendepunkte &amp; 5-Jahres-Roadmap</small>
               </div>
               <div class="rt-card" data-rt="genius">
-                <span class="rt-icon">⚡</span>
                 <strong>Inneres Genie</strong>
                 <small>Dein einzigartiges Talent &amp; 3-Schritte-Routine</small>
               </div>
             </div>
-            <input type="hidden" id="readingType" value="classic"/>
-          </fieldset>
+          </details>
+          <input type="hidden" id="readingType" value="classic"/>
 
           <details class="mixer-details">
             <summary>
-              <strong>⚖ Kosmischer Mixer</strong>
+              <strong>Kosmischer Mixer</strong>
               <span class="mixer-hint">— Methoden &amp; Ton vor der Analyse feintunen (optional)</span>
             </summary>
             <div id="mixer-root"></div>
