@@ -110,7 +110,6 @@
     }
 
     const input = $('sky-date-input');
-    const btnToday = $('btn-sky-today');
 
     function currentSkyMs() {
       const parsed = input && input.value ? parseYmd(input.value) : null;
@@ -123,12 +122,6 @@
       input.value = toYmd(new Date());
       input.addEventListener('input', () => render(currentSkyMs()));
       input.addEventListener('change', () => render(currentSkyMs()));
-    }
-    if (btnToday) {
-      btnToday.addEventListener('click', () => {
-        if (input) input.value = toYmd(new Date());
-        render(currentSkyMs());
-      });
     }
 
     render(currentSkyMs());
@@ -258,14 +251,6 @@
     input.addEventListener('blur', () => { setTimeout(closeList, 120); });
   })();
 
-  // ----- "Heute" shortcut ----------------------------------------------------
-  bindClick('btn-heute', () => {
-    window.__mixerState.timeframe = 'day';
-    const tf = $('timeFrame'); if (tf) tf.value = 'day';
-    callReading();
-    window.dispatchEvent(new CustomEvent('horoskop:set', { detail: { timeframe: 'day' } }));
-  });
-
   // ----- Helpers --------------------------------------------------------------
   function chipTip(text) {
     const LEX = {
@@ -315,7 +300,6 @@
     });
   }
 
-  let __lastData = null;
   function escapeHtml(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
       '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
@@ -364,7 +348,6 @@
 
   // ----- Render reading -------------------------------------------------------
   function renderReadingUI(data) {
-    __lastData = data;
     const box = $('result');
     box.innerHTML = "";
     setEphemeris(data?.meta);
@@ -442,8 +425,6 @@
       dc.textContent = data.disclaimer;
       box.appendChild(dc);
     }
-
-    const sr = $('shareRow'); if (sr) sr.style.display = 'flex';
   }
 
   // ----- /reading call --------------------------------------------------------
@@ -530,110 +511,4 @@
       btn.style.setProperty('--y', y + '%');
     });
   }, { passive: true });
-
-  // ----- Share-Card -----------------------------------------------------------
-  function drawWrappedText(ctx, text, x, y, maxWidth, lineHeight, maxLines) {
-    const words = (text || '').split(' ');
-    let line = '';
-    const lines = [];
-    for (let n = 0; n < words.length; n++) {
-      const test = line + words[n] + ' ';
-      const w = ctx.measureText(test).width;
-      if (w > maxWidth && n > 0) {
-        lines.push(line.trim());
-        line = words[n] + ' ';
-        if (lines.length >= maxLines) break;
-      } else {
-        line = test;
-      }
-    }
-    if (lines.length < maxLines) lines.push(line.trim());
-    lines.forEach((ln, i) => ctx.fillText(ln, x, y + i * lineHeight));
-  }
-
-  async function makeShareCard(data) {
-    const tf = (data?.meta?.timeframe || '').toString();
-    const moon = (data?.meta?.ephemeris?.moon_phase_name || '').toString();
-    const place = (data?.meta?.profile?.place || '').toString();
-    const c = document.createElement('canvas');
-    c.width = 1200; c.height = 630;
-    const ctx = c.getContext('2d');
-    const g = ctx.createLinearGradient(0, 0, 1200, 630);
-    g.addColorStop(0, '#0b1020'); g.addColorStop(1, '#0f1630');
-    ctx.fillStyle = g; ctx.fillRect(0, 0, 1200, 630);
-    ctx.globalAlpha = 0.08; ctx.beginPath();
-    for (let i = 0; i < 12; i++) {
-      ctx.save();
-      ctx.translate(600, 315);
-      ctx.rotate((i / 12) * Math.PI * 2);
-      ctx.arc(0, 0, 180, 0, Math.PI * 2);
-      ctx.restore();
-    }
-    ctx.globalAlpha = 1.0;
-    ctx.fillStyle = 'rgba(255,255,255,.25)';
-    for (let i = 0; i < 180; i++) {
-      const x = Math.random() * 1200, y = Math.random() * 630;
-      ctx.fillRect(x, y, 1, 1);
-    }
-    ctx.fillStyle = '#e7ecff';
-    ctx.font = '700 44px system-ui, Arial';
-    ctx.fillText('horoskop.one', 56, 86);
-    ctx.font = '16px system-ui, Arial';
-    ctx.fillStyle = '#9fb2d9';
-    ctx.fillText('Sternenkarte – achtsam, mystisch, erklärbar', 56, 110);
-    ctx.font = '18px system-ui, Arial';
-    ctx.fillStyle = '#a9c4ff';
-    let cx = 56, cy = 140;
-    function chip(txt) {
-      const pad = 10;
-      const w = ctx.measureText(txt).width + pad * 2;
-      const h = 28;
-      ctx.fillStyle = '#0d203f';
-      ctx.strokeStyle = '#2a3f79';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.roundRect(cx, cy, w, h, 14);
-      ctx.fill();
-      ctx.stroke();
-      ctx.fillStyle = '#bdd0ff';
-      ctx.fillText(txt, cx + pad, cy + 20);
-      cx += w + 10;
-    }
-    if (place) chip(place);
-    if (tf) chip(tf === 'day' ? 'Heute' : tf === 'week' ? 'Woche' : 'Monat');
-    if (moon) chip(moon);
-    const hl = (data.highlights || []).slice(0, 3);
-    ctx.fillStyle = '#e7ecff';
-    ctx.font = '600 26px system-ui, Arial';
-    ctx.fillText('Deine 3 Highlights', 56, 190);
-    ctx.font = '20px system-ui, Arial';
-    let y = 220;
-    hl.forEach((h, i) => {
-      ctx.fillStyle = '#a6b9e6';
-      ctx.fillText(String(i + 1) + '.', 56, y);
-      ctx.fillStyle = '#e7ecff';
-      drawWrappedText(ctx, (h.title || '').toString(), 90, y, 1000, 26, 2);
-      y += 56;
-      ctx.fillStyle = '#9fb2d9';
-      drawWrappedText(ctx, (h.action || '').toString(), 90, y - 6, 1000, 24, 1);
-      y += 34;
-    });
-    ctx.fillStyle = '#7e96c9';
-    ctx.font = '14px system-ui, Arial';
-    ctx.fillText('Zeitraum: ' + (data?.meta?.timeframe || '-') + '  ·  Modus: ' + (data?.meta?.mode || '-'), 56, 600);
-    return c;
-  }
-
-  bindClick('btn-share', async () => {
-    if (!__lastData) { alert('Bitte zuerst ein Reading erzeugen.'); return; }
-    const canvas = await makeShareCard(__lastData);
-    canvas.toBlob((b) => {
-      const url = URL.createObjectURL(b);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'horoskop-one-card.png';
-      a.click();
-      URL.revokeObjectURL(url);
-    });
-  });
 })();
