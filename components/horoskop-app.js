@@ -46,11 +46,16 @@
     const LEX = {
       "Sternzeichen": "Tierkreis aus Geburtsdatum – Grundstimmung.",
       "Lebenszahl": "Numerologie (Quersumme) – Lernfelder.",
+      "Persönliches Jahr": "Rollierender 1–9-Zyklus aus Geburtsmonat + -tag + aktuellem Jahr.",
       "Zeitfenster": "Uhrzeit/Zeit-Bucket – prägt Tagesenergie.",
       "Ort": "Geburtsort → Zeitzone, Hemisphäre, Licht.",
       "Tag/Nacht": "Aus Sunrise/Sunset am Ort.",
       "Saison": "Meteorologische Jahreszeit der Hemisphäre.",
       "Mondphase": "Mondzyklus am Datum.",
+      "I-Ging": "Hexagramm aus Datum – Grundlage der Deutung.",
+      "Tarot": "Große Arkana, deterministisch aus Datum + Zeitraum gezogen.",
+      "Chinesisch": "Chinesisches Tierkreiszeichen aus Geburtsjahr.",
+      "Baumkreis": "Keltischer Baumkreis-Zyklus aus Datum.",
       "Sunrise/Sunset": "Auf-/Untergangszeiten vor Ort."
     };
     for (const k in LEX) { if (text.includes(k)) return LEX[k]; }
@@ -71,6 +76,11 @@
     if (mini.moonPhase) chips.push([mini.moonPhase, 'Mondphase']);
     if (mini.sunSignApprox) chips.push([mini.sunSignApprox, 'Sternzeichen']);
     if (mini.lifePath != null) chips.push(['Lebenszahl ' + mini.lifePath, 'Lebenszahl']);
+    if (mini.personalYear != null) chips.push(['P-Jahr ' + mini.personalYear, 'Persönliches Jahr']);
+    if (mini.iChingName) chips.push(['I-Ging: ' + mini.iChingName, 'I-Ging']);
+    if (mini.tarot && mini.tarot.name) chips.push(['Tarot: ' + mini.tarot.name, 'Tarot']);
+    if (mini.chinese) chips.push([mini.chinese, 'Chinesisch']);
+    if (mini.tree) chips.push([mini.tree, 'Baumkreis']);
     chips.forEach(([t, label]) => {
       const el = document.createElement('span');
       el.className = 'chip';
@@ -227,12 +237,15 @@
 
     const m = window.__mixerState || {};
     const mixer = m.weights || null;
+    const rtEl = $('readingType');
+    const readingType = (rtEl && rtEl.value) ? rtEl.value : 'classic';
 
     const payload = {
       birthDate: d,
       birthPlace: p,
       period: tf,
       approxDaypart: approx,
+      readingType,
       ...(t && /^\d{1,2}:\d{2}$/.test(t) ? { birthTime: t } : {}),
       ...(mixer ? { mixer } : {}),
       tone: (m && m.mode) ? m.mode : 'mystic_coach',

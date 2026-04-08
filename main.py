@@ -104,10 +104,63 @@ def chinese_animal(year:int)->str:
     animals=["Ratte","Büffel","Tiger","Hase","Drache","Schlange","Pferd","Ziege","Affe","Hahn","Hund","Schwein"]
     return animals[((year-1900)%12+12)%12]
 
-def life_path_number(d:dt.date)->int:
-    s=f"{d.year:04d}{d.month:02d}{d.day:02d}"; n=sum(int(c) for c in s)
-    while n>9 and n not in (11,22,33): n=sum(int(c) for c in str(n))
+# ---------------------------------------------------------------------------
+# Numerology
+# ---------------------------------------------------------------------------
+# Numerology keeps its "Meisterzahlen" 11 / 22 / 33 unreduced — they carry
+# extra meaning in the tradition. The single-digit description is stored as
+# a lookup so the LLM can be pointed at concrete archetypes.
+
+def _reduce_to_digit(n: int, keep_master: bool = True) -> int:
+    """Iteratively sum digits until the number is < 10 (unless a master)."""
+    while n > 9 and (not keep_master or n not in (11, 22, 33)):
+        n = sum(int(c) for c in str(abs(n)))
     return n
+
+def life_path_number(d: dt.date) -> int:
+    """Lebenszahl — sum of all digits in YYYYMMDD, master numbers preserved."""
+    s = f"{d.year:04d}{d.month:02d}{d.day:02d}"
+    return _reduce_to_digit(sum(int(c) for c in s))
+
+def birthday_number(d: dt.date) -> int:
+    """Geburtstagszahl — the day of birth, reduced (11/22 preserved)."""
+    return _reduce_to_digit(d.day)
+
+def personal_year_number(bdate: dt.date, ref: Optional[dt.date] = None) -> int:
+    """Persönliche Jahreszahl — a rolling 1–9 cycle that changes each year.
+    Calculated from the birth month + birth day + CURRENT year (not birth year).
+    """
+    ref = ref or dt.date.today()
+    return _reduce_to_digit(bdate.month + bdate.day + ref.year, keep_master=False)
+
+def personal_month_number(bdate: dt.date, ref: Optional[dt.date] = None) -> int:
+    """Persönliche Monatszahl — personal year + current calendar month."""
+    ref = ref or dt.date.today()
+    return _reduce_to_digit(personal_year_number(bdate, ref) + ref.month, keep_master=False)
+
+def personal_day_number(bdate: dt.date, ref: Optional[dt.date] = None) -> int:
+    """Persönliche Tageszahl — personal month + current day of month."""
+    ref = ref or dt.date.today()
+    return _reduce_to_digit(personal_month_number(bdate, ref) + ref.day, keep_master=False)
+
+# Short, sober archetype descriptions for the nine single digits plus masters.
+_LIFEPATH_ARCHETYPES: Dict[int, str] = {
+    1: "Pionier — Initiative, Autonomie, Führung. Aufgabe: Unabhängigkeit ohne Einsamkeit.",
+    2: "Vermittler — Diplomatie, Sensibilität, Paardynamik. Aufgabe: Grenzen setzen statt verschmelzen.",
+    3: "Ausdruck — Kreativität, Sprache, Leichtigkeit. Aufgabe: Tiefe statt Zerstreuung.",
+    4: "Bauer — Struktur, Ausdauer, Verlässlichkeit. Aufgabe: Flexibilität statt Sturheit.",
+    5: "Wandler — Freiheit, Neugier, Wandel. Aufgabe: Verbindlichkeit ohne Enge.",
+    6: "Hüter — Verantwortung, Fürsorge, Harmonie. Aufgabe: Eigenbedürfnis vor Helfersyndrom.",
+    7: "Sucher — Analyse, Rückzug, Tiefe. Aufgabe: Vertrauen ins Außen, nicht nur ins Innen.",
+    8: "Manifestierer — Macht, Struktur, Material. Aufgabe: Ethik statt Kontrolle.",
+    9: "Vollender — Weisheit, Loslassen, Universelles. Aufgabe: Mitgefühl ohne Selbstaufgabe.",
+    11: "Meisterzahl — Visionär, Inspirator; 2× 1, hohe Empfindsamkeit, Nervensystem schonen.",
+    22: "Meisterzahl — Baumeister; visionärer Macher, große Strukturen, Burn-out-Risiko.",
+    33: "Meisterzahl — Lehrer der Liebe; dient bedingungslos, Grenzen notwendig.",
+}
+
+def lifepath_archetype(n: int) -> str:
+    return _LIFEPATH_ARCHETYPES.get(n, "")
 
 def moon_phase_fraction(day:dt.date)->float:
     ref=dt.datetime(2000,1,6,18,14,tzinfo=dt.timezone.utc); current=dt.datetime(day.year,day.month,day.day,tzinfo=dt.timezone.utc)
@@ -129,9 +182,156 @@ def season_from_date_hemisphere(d:dt.date, lat:Optional[float])->str:
     return (["Winter","Winter","Frühling","Frühling","Frühling","Sommer","Sommer","Sommer","Herbst","Herbst","Herbst","Winter"] if north
             else ["Sommer","Sommer","Herbst","Herbst","Herbst","Winter","Winter","Winter","Frühling","Frühling","Frühling","Sommer"])[m-1]
 
-def iching_index(d:dt.date)->int:
-    daynum=(d-dt.date(d.year,1,1)).days+1; idx=(daynum+d.year)%64
-    return idx if idx!=0 else 1
+# ---------------------------------------------------------------------------
+# I-Ging — all 64 hexagrams with German name + one-line core meaning.
+# Index matches the classical King-Wen order (1–64).
+# ---------------------------------------------------------------------------
+ICHING_HEXAGRAMS: List[Dict[str, str]] = [
+    {},  # 0 placeholder so ICHING_HEXAGRAMS[1] == hexagram 1
+    {"name": "Das Schöpferische", "core": "Starke, klare Initiative. Handle direkt und aus innerer Überzeugung."},
+    {"name": "Das Empfangende", "core": "Hingabe und Annehmen. Folge, beobachte, reagiere statt zu forcieren."},
+    {"name": "Die Anfangsschwierigkeit", "core": "Mühsamer Start. Kleine Schritte, nicht alles auf einmal."},
+    {"name": "Die Jugendtorheit", "core": "Lernphase — frage Erfahrene, bleibe offen für Korrektur."},
+    {"name": "Das Warten", "core": "Geduld. Der richtige Moment ist noch nicht gekommen."},
+    {"name": "Der Streit", "core": "Konflikt sichtbar. Eine Lösung erfordert einen kühlen Kopf und klare Grenzen."},
+    {"name": "Das Heer", "core": "Disziplin und Führung. Kollektive Aufgabe — Struktur geht vor Spontanität."},
+    {"name": "Das Zusammenhalten", "core": "Verbünde dich mit den Richtigen. Loyalität wird belohnt."},
+    {"name": "Des Kleinen Zähmungskraft", "core": "Kleine, sanfte Einflussnahme. Sei subtil, nicht laut."},
+    {"name": "Das Auftreten", "core": "Benimm dich würdig in schwieriger Umgebung. Keine Provokation."},
+    {"name": "Der Friede", "core": "Harmonie und Gleichgewicht. Nutze die Phase für Aufbau."},
+    {"name": "Die Stockung", "core": "Blockade und Stillstand. Rückzug und Sammlung statt Durchbruchsversuche."},
+    {"name": "Gemeinschaft mit Menschen", "core": "Gemeinsame Sache, gemeinsames Ziel. Offenheit über Klüfte hinweg."},
+    {"name": "Der Besitz von Großem", "core": "Fülle und Verantwortung. Teile, statt zu horten."},
+    {"name": "Die Bescheidenheit", "core": "Wahre Größe versteckt sich nicht, aber prahlt auch nicht."},
+    {"name": "Die Begeisterung", "core": "Aufbruchsstimmung nutzen — aber mit Bodenhaftung."},
+    {"name": "Die Nachfolge", "core": "Folge dem richtigen Impuls. Anpassen ist hier kein Schwäche-Zeichen."},
+    {"name": "Die Arbeit am Verdorbenen", "core": "Altlasten aufräumen. Mut zur Reparatur, nicht zur Flucht."},
+    {"name": "Die Annäherung", "core": "Vorsichtige Kontaktaufnahme. Freundlich, aber aufmerksam."},
+    {"name": "Die Betrachtung", "core": "Überblick verschaffen. Erst sehen, dann urteilen."},
+    {"name": "Das Durchbeißen", "core": "Hindernis direkt angehen. Entschlossen, aber gerecht."},
+    {"name": "Die Anmut", "core": "Form zählt jetzt — Ästhetik, Stil, respektvoller Umgang."},
+    {"name": "Die Zersplitterung", "core": "Zerfall sichtbar. Nicht kämpfen, sondern stabilisieren und abwarten."},
+    {"name": "Die Wiederkehr", "core": "Wendepunkt. Das Alte kehrt in neuer Form zurück."},
+    {"name": "Die Unschuld", "core": "Natürlichkeit und Aufrichtigkeit. Keine Berechnung."},
+    {"name": "Des Großen Zähmungskraft", "core": "Große Kraft bändigen. Ressourcen bündeln, bevor du losstürmst."},
+    {"name": "Die Ernährung", "core": "Achte darauf, womit du dich nährst — Gedanken, Worte, Beziehungen."},
+    {"name": "Des Großen Übergewicht", "core": "Überlastung. Erleichtere das System, bevor es bricht."},
+    {"name": "Das Abgründige", "core": "Gefahrenzone — bleib wachsam, aber fließe wie Wasser."},
+    {"name": "Das Haftende (Feuer)", "core": "Klarheit und Leuchtkraft. Halte dich an klare Prinzipien."},
+    {"name": "Die Einwirkung", "core": "Anziehung, Begegnung, Impuls. Ein neues Band entsteht."},
+    {"name": "Die Dauer", "core": "Beständigkeit zählt. Rituale und Treue zu einer Richtung."},
+    {"name": "Der Rückzug", "core": "Strategischer Rückzug ist keine Niederlage — er bewahrt die Kraft."},
+    {"name": "Des Großen Macht", "core": "Große Kraft — nur gerecht eingesetzt, sonst zerstört sie."},
+    {"name": "Der Fortschritt", "core": "Stetes Wachstum. Sonne geht auf, zeige dich."},
+    {"name": "Die Verfinsterung des Lichts", "core": "Lichter Geist in dunkler Zeit. Nach innen arbeiten, nicht kämpfen."},
+    {"name": "Die Sippe", "core": "Familie und enger Kreis tragen jetzt. Dort liegt die Kraft."},
+    {"name": "Der Gegensatz", "core": "Anders-Denken begegnet. Suche nicht den Ausgleich um jeden Preis."},
+    {"name": "Das Hemmnis", "core": "Hindernis. Stehenbleiben und die Lage neu bewerten."},
+    {"name": "Die Befreiung", "core": "Die Last löst sich. Nutze den Moment für einen klaren Schnitt."},
+    {"name": "Die Minderung", "core": "Weniger ist mehr. Abstriche machen, um Kernhaltung zu sichern."},
+    {"name": "Die Mehrung", "core": "Zufluss und Wachstum. Teilen verstärkt die Wirkung."},
+    {"name": "Der Durchbruch", "core": "Entschlossene Klarstellung. Ehrlich und direkt, ohne Kälte."},
+    {"name": "Das Entgegenkommen", "core": "Begegnung mit dem Unerwarteten. Prüfe, bevor du zustimmst."},
+    {"name": "Die Sammlung", "core": "Menschen kommen zusammen. Eine gemeinsame Mitte braucht es jetzt."},
+    {"name": "Das Empordringen", "core": "Langsames, stetiges Aufsteigen. Kein Durchbruch, aber sichere Bewegung."},
+    {"name": "Die Bedrängnis", "core": "Erschöpfung, Knappheit. Würde und innere Haltung bewahren."},
+    {"name": "Der Brunnen", "core": "Die Quelle ist da, aber verschüttet — frei räumen, nicht neu graben."},
+    {"name": "Die Umwälzung", "core": "Revolution, Häutung. Das Alte muss ganz gehen."},
+    {"name": "Der Tiegel", "core": "Transformation durch Reife. Was jetzt entsteht, hält."},
+    {"name": "Das Erregende (Donner)", "core": "Schock und Erschütterung — wirken lassen, nicht verdrängen."},
+    {"name": "Das Stillehalten (Berg)", "core": "Innehalten, Meditation, Rückzug in die eigene Mitte."},
+    {"name": "Die Entwicklung", "core": "Organisches Reifen. Nichts erzwingen, alles entfalten."},
+    {"name": "Die heiratende Jüngste", "core": "Eine untergeordnete Rolle annehmen. Demut zahlt sich aus."},
+    {"name": "Die Fülle", "core": "Gipfel der Kraft. Nutze sie, bevor das Licht wieder abnimmt."},
+    {"name": "Der Wanderer", "core": "Fremde Umgebung. Sei höflich, zurückhaltend, beobachtend."},
+    {"name": "Das Sanfte (Wind)", "core": "Beständig sanfter Druck bewirkt mehr als ein Sturm."},
+    {"name": "Das Heitere (See)", "core": "Freude, Austausch, Verbundenheit. Vorsicht vor Oberflächlichkeit."},
+    {"name": "Die Auflösung", "core": "Starre löst sich auf. Gefühle wieder fließen lassen."},
+    {"name": "Die Beschränkung", "core": "Grenzen akzeptieren. Zu viel Freiheit lähmt."},
+    {"name": "Innere Wahrheit", "core": "Aufrichtigkeit durchdringt jede Wand. Rede, was wirklich ist."},
+    {"name": "Des Kleinen Übergewicht", "core": "Kleine Dinge sorgfältig tun. Jetzt keine große Geste."},
+    {"name": "Nach der Vollendung", "core": "Ziel erreicht — nicht nachlässig werden, sonst zerfällt es."},
+    {"name": "Vor der Vollendung", "core": "Kurz vor dem Durchbruch — letzte Ordnung, letzte Sorgfalt."},
+]
+
+def iching_index(d: dt.date) -> int:
+    """Deterministic hexagram index (1..64) derived from the date."""
+    daynum = (d - dt.date(d.year, 1, 1)).days + 1
+    idx = (daynum + d.year) % 64
+    return idx if idx != 0 else 1
+
+def iching_lookup(idx: int) -> Dict[str, str]:
+    """Return {'name', 'core'} for a hexagram index (1..64)."""
+    if 1 <= idx <= 64:
+        return ICHING_HEXAGRAMS[idx]
+    return {"name": "", "core": ""}
+
+# ---------------------------------------------------------------------------
+# Tarot — 22 Major Arcana with deterministic draw from birth date + period + seed.
+# This is deliberately NOT randomized: we want two people with identical inputs
+# to get the same card (and the same person to get the same card for the same
+# period), so the reading is reproducible and cache-friendly.
+# ---------------------------------------------------------------------------
+TAROT_MAJOR: List[Dict[str, str]] = [
+    {"name": "Der Narr",          "core": "Aufbruch ohne Plan, reiner Anfang, Vertrauen."},
+    {"name": "Der Magier",        "core": "Willen, Werkzeuge, Fähigkeit zur Manifestation."},
+    {"name": "Die Hohepriesterin","core": "Innere Weisheit, Intuition, das Ungesagte."},
+    {"name": "Die Herrscherin",   "core": "Fülle, Natur, schöpferische Weiblichkeit."},
+    {"name": "Der Herrscher",     "core": "Struktur, Autorität, klare Ordnung."},
+    {"name": "Der Hierophant",    "core": "Tradition, Lehre, verbindende Werte."},
+    {"name": "Die Liebenden",     "core": "Entscheidung für eine Verbindung, Wahl aus dem Herzen."},
+    {"name": "Der Wagen",         "core": "Wille und Richtung. Disziplin siegt."},
+    {"name": "Die Kraft",         "core": "Sanfte Stärke, Umgang mit den eigenen Trieben."},
+    {"name": "Der Eremit",        "core": "Rückzug, Selbstkenntnis, innerer Kompass."},
+    {"name": "Das Rad des Schicksals", "core": "Glückswelle und Wendepunkt — bleibe handlungsfähig."},
+    {"name": "Gerechtigkeit",     "core": "Klares Urteil, Wahrheit, Konsequenz."},
+    {"name": "Der Gehängte",      "core": "Perspektivwechsel, Hingabe, Warten."},
+    {"name": "Der Tod",           "core": "Ende und Wandlung, damit Neues entstehen kann."},
+    {"name": "Die Mäßigkeit",     "core": "Balance, Geduld, Verschmelzung der Gegensätze."},
+    {"name": "Der Teufel",        "core": "Abhängigkeit, Schatten, ungelöste Bindung."},
+    {"name": "Der Turm",          "core": "Schock, Befreiung durch Zusammenbruch des Illusorischen."},
+    {"name": "Der Stern",         "core": "Hoffnung, Inspiration, Heilung."},
+    {"name": "Der Mond",          "core": "Unbewusstes, Träume, Unsicherheit."},
+    {"name": "Die Sonne",         "core": "Lebensfreude, Klarheit, sichtbarer Erfolg."},
+    {"name": "Das Gericht",       "core": "Ruf, Berufung, bewusste Entscheidung."},
+    {"name": "Die Welt",          "core": "Abschluss, Ganzheit, neue Ebene."},
+]
+
+def _det_hash(*parts: Any) -> int:
+    """Deterministic non-cryptographic 32-bit hash for card draws and cache keys.
+    Uses Python's string hashing via a stable digest so the result does not
+    depend on PYTHONHASHSEED."""
+    import hashlib
+    h = hashlib.sha1("|".join(str(p) for p in parts).encode("utf-8")).hexdigest()
+    return int(h[:8], 16)
+
+def tarot_draw(bdate: dt.date, period: str = "day", seed: Optional[int] = None,
+               ref: Optional[dt.date] = None) -> Dict[str, Any]:
+    """Deterministically draw one Major Arcana card.
+
+    The draw is stable across calls with identical inputs and changes with
+    the period bucket (today / ISO week / year-month) so a "Heute" reading
+    gets a different card than a "Monat" reading.
+    """
+    ref = ref or dt.date.today()
+    bucket = _period_bucket(period, ref)
+    idx = _det_hash(bdate.isoformat(), period, bucket, seed if seed is not None else "") % len(TAROT_MAJOR)
+    card = TAROT_MAJOR[idx]
+    return {"index": idx, "name": card["name"], "core": card["core"]}
+
+def _period_bucket(period: str, ref: Optional[dt.date] = None) -> str:
+    """Stable cache bucket for a period:
+    - day   → ISO date string (changes daily)
+    - week  → ISO year-week string (changes weekly)
+    - month → YYYY-MM (changes monthly)"""
+    ref = ref or dt.date.today()
+    p = (period or "day").lower()
+    if p == "week":
+        iso_year, iso_week, _ = ref.isocalendar()
+        return f"{iso_year}-W{iso_week:02d}"
+    if p == "month":
+        return f"{ref.year}-{ref.month:02d}"
+    return ref.isoformat()
 
 def celtic_tree(d:dt.date)->str:
     ranges=[("Birke",(12,24),(1,20)),("Eberesche",(1,21),(2,17)),("Esche",(2,18),(3,17)),("Erle",(3,18),(4,14)),("Weide",(4,15),(5,12)),
@@ -438,11 +638,18 @@ Geburtsdaten:
 Astrologisches Profil:
 - Sternzeichen (Sonne): {ctx['sun_sign']}
 - Mondphase: {ctx['moon']} (Zyklus: {ctx['moon_frac']:.1%})
-- Lebenszahl (Numerologie): {ctx['lifepath']}
+{ctx['swe_line']}
+
+Numerologie:
+- Lebenszahl: {ctx['lifepath']} — {ctx.get('lifepath_arch','')}
+- Geburtstagszahl: {ctx.get('bday_num','–')}
+- Aktueller Zyklus: Persönliches Jahr {ctx.get('personal_year','–')} · Monat {ctx.get('personal_month','–')} · Tag {ctx.get('personal_day','–')}
+
+Symbolische Karten:
 - Chinesisches Tierzeichen: {ctx['cn_animal']} (Jahr {ctx['birth_year']})
 - Keltischer Baum: {ctx['tree']}
-- I-Ging Hexagramm: {ctx['hex_idx']}
-{ctx['swe_line']}
+- I-Ging Hexagramm {ctx['hex_idx']} — **{ctx.get('hex_name','')}**: {ctx.get('hex_core','')}
+- Tarot (deterministisch gezogen): **{ctx.get('tarot_name','')}** — {ctx.get('tarot_core','')}
 """
 
     instructions = {
@@ -652,8 +859,71 @@ def reading_types():
     """Return available reading types for the frontend."""
     return [{"id": k, **v} for k, v in DEEP_READING_TYPES.items()]
 
+# ---------------------------------------------------------------------------
+# Response cache — simple in-memory TTL cache keyed by the full input set.
+#
+# The cache intentionally buckets by period (today / iso-week / year-month)
+# so that two calls with identical inputs within the same bucket return the
+# same reading instantly, while a new day/week/month produces a fresh one.
+# This cuts Railway + OpenAI cost dramatically for users who click through
+# Heute → Woche → Monat or refresh the page repeatedly.
+# ---------------------------------------------------------------------------
+import time
+
+_READING_CACHE: Dict[str, tuple] = {}
+_READING_CACHE_TTL = int(os.getenv("READING_CACHE_TTL", "86400"))  # 24 h default
+_READING_CACHE_MAX = int(os.getenv("READING_CACHE_MAX", "512"))
+
+def _cache_key(req: "ReadingRequest") -> str:
+    mixer_items = tuple(sorted((req.mixer or {}).items()))
+    return "|".join([
+        (req.birthDate or "").strip(),
+        (req.birthPlace or "").strip().lower(),
+        (req.birthTime or "").strip(),
+        (req.approxDaypart or "").strip().lower(),
+        (req.period or "day").strip().lower(),
+        (req.tone or "").strip().lower(),
+        (req.readingType or "classic").strip().lower(),
+        str(req.seed or ""),
+        repr(mixer_items),
+        _period_bucket(req.period),
+    ])
+
+def _cache_get(key: str):
+    entry = _READING_CACHE.get(key)
+    if not entry:
+        return None
+    ts, resp = entry
+    if (time.time() - ts) > _READING_CACHE_TTL:
+        _READING_CACHE.pop(key, None)
+        return None
+    return resp
+
+def _cache_put(key: str, resp) -> None:
+    # Evict oldest entry if we reach the cap.
+    if len(_READING_CACHE) >= _READING_CACHE_MAX:
+        oldest_key = min(_READING_CACHE.items(), key=lambda kv: kv[1][0])[0]
+        _READING_CACHE.pop(oldest_key, None)
+    _READING_CACHE[key] = (time.time(), resp)
+
+def _cache_stats() -> Dict[str, Any]:
+    return {"size": len(_READING_CACHE), "max": _READING_CACHE_MAX, "ttl_s": _READING_CACHE_TTL}
+
+@app.get("/cache-stats")
+def cache_stats():
+    return _cache_stats()
+
 async def _reading_impl(req: ReadingRequest):
   try:
+    # Cache short-circuit — identical inputs within the same period bucket
+    # get the same response without hitting OpenAI or Nominatim.
+    ckey = _cache_key(req)
+    cached = _cache_get(ckey)
+    if cached is not None:
+        meta = dict(cached.meta)
+        meta["cacheHit"] = True
+        return ReadingResponse(meta=meta, sections=cached.sections, chips=cached.chips, disclaimer=cached.disclaimer)
+
     bdate=parse_birth_date(req.birthDate) or dt.date.today()
     btime=parse_birth_time(req.birthTime)
     dpart=(req.approxDaypart or daypart_from_time(btime)).lower()
@@ -669,6 +939,18 @@ async def _reading_impl(req: ReadingRequest):
     sun_sign=zodiac_from_date(bdate); cn_animal=chinese_animal(bdate.year)
     lifepath=life_path_number(bdate); tree=celtic_tree(bdate)
     hex_idx=iching_index(bdate); mf=moon_phase_fraction(bdate); moon=moon_phase_name(mf)
+
+    # New in v6.1: proper I-Ging, extended numerology, deterministic tarot draw.
+    today = dt.date.today()
+    hex_info = iching_lookup(hex_idx)
+    hex_name = hex_info.get("name", "")
+    hex_core = hex_info.get("core", "")
+    lifepath_arch = lifepath_archetype(lifepath)
+    bday_num = birthday_number(bdate)
+    personal_year = personal_year_number(bdate, today)
+    personal_month = personal_month_number(bdate, today)
+    personal_day = personal_day_number(bdate, today)
+    tarot = tarot_draw(bdate, req.period, req.seed, today)
 
     swe_data=swe_compute(bdate,btime,lat,lon,tzname)
 
@@ -703,9 +985,22 @@ async def _reading_impl(req: ReadingRequest):
         "birthDate": req.birthDate, "birthPlace": req.birthPlace, "birthTime": req.birthTime,
         "approxDaypart": dpart, "geo": {"lat":lat,"lon":lon,"tz":tzname},
         "season": season, "hemisphere": "Nord" if (lat is None or lat>=0) else "Süd",
-        "mini": {"sunSignApprox": zodiac_from_date(bdate), "moonPhase": moon, "moonFrac": round(mf,3),
-                 "iChing": iching_index(bdate), "lifePath": life_path_number(bdate),
-                 "chinese": chinese_animal(bdate.year), "tree": celtic_tree(bdate)},
+        "mini": {
+            "sunSignApprox": sun_sign,
+            "moonPhase": moon, "moonFrac": round(mf,3),
+            "iChing": hex_idx,
+            "iChingName": hex_name,
+            "iChingCore": hex_core,
+            "lifePath": lifepath,
+            "lifePathArchetype": lifepath_arch,
+            "birthdayNumber": bday_num,
+            "personalYear": personal_year,
+            "personalMonth": personal_month,
+            "personalDay": personal_day,
+            "chinese": cn_animal,
+            "tree": tree,
+            "tarot": tarot,
+        },
         "swiss": swe_data,
     }
 
@@ -726,7 +1021,14 @@ Rahmendaten:
 - Ort: {req.birthPlace} → lat={lat}, lon={lon}, Zeitzone={tzname}
 - Datum: {bdate.strftime('%d.%m.%Y')} · Tagesabschnitt: {dpart}
 - Saison/Hemisphäre: {season} / {hemisphere}
-- Mini-Ephemeriden: Sonne≈{sun_sign}, Mondphase={moon}, I-Ging={hex_idx}, Lebenszahl={lifepath}, Chinesisch={cn_animal}, Baum={tree}
+
+Symbole der Traditionen (nutze nur, was laut Mixer hoch gewichtet ist):
+- Astrologie: Sonne≈{sun_sign}, Mondphase {moon}, {swe_line}
+- Numerologie: Lebenszahl {lifepath} ({lifepath_arch}); Persönliche Jahres-/Monats-/Tageszahl {personal_year}/{personal_month}/{personal_day}; Geburtstagszahl {bday_num}
+- Tarot (deterministisch gezogen): **{tarot['name']}** — {tarot['core']}
+- I-Ging: Hexagramm {hex_idx} — **{hex_name}**: {hex_core}
+- Chinesisches Tierkreiszeichen: {cn_animal}
+- Keltischer Baumkreis: {tree}
 
 {mixer_block}
 
@@ -735,6 +1037,7 @@ Ton-Vorgabe: {tone_block}
 Regeln:
 - Pro Bereich 3–4 Stichpunkte, direkt aus den Rahmendaten abgeleitet.
 - Die Traditions-Gewichtung oben entscheidet, welche Symbolsprache dominiert.
+  Nenne hoch gewichtete Symbole BEIM NAMEN (z. B. „Hexagramm 42 – Die Mehrung", „Der Eremit").
 - Letzter Stichpunkt = ultra-kurze Mini-Aktion (imperativ, 1 Satz) ohne „Aktion:"-Prefix.
 - Keine medizinisch/juristisch/finanziell heiklen Ratschläge.
 """
@@ -756,7 +1059,11 @@ Integriere die Mini-Aktion organisch in den Absatz. Keine Bullet-Listen.
 Kontext (nur nutzen, nicht erneut aufzählen):
 - Zeitraum: {req.period} · Ort: {req.birthPlace} (Zeitzone {tzname})
 - Saison/Hemisphäre: {season} / {hemisphere}
-- Sonne≈{sun_sign}, Mondphase {moon}, I-Ging {hex_idx}, Lebenszahl {lifepath}, Chinesisch {cn_animal}, Baum {tree}, Tagesabschnitt {dpart}.
+- Sonne≈{sun_sign}, Mondphase {moon}, Tagesabschnitt {dpart}.
+- Numerologie: Lebenszahl {lifepath} ({lifepath_arch}); Persönliche Jahreszahl {personal_year}, Monat {personal_month}, Tag {personal_day}.
+- Tarot: **{tarot['name']}** — {tarot['core']}.
+- I-Ging: Hexagramm {hex_idx} — **{hex_name}**: {hex_core}.
+- Chinesisch {cn_animal}, Keltischer Baum {tree}.
 - Swiss-Ephemeris: {swe_line}.
 
 OUTLINE:
@@ -777,18 +1084,32 @@ Gib nur JSON:
         except Exception as e:
             data={"fokus":"","beruf":"","liebe":"","energie":"","error":str(e)}
 
-        # Add the two highest-weighted traditions as chips on the first section
-        # so users can see the mixer actually shaped the output.
-        top_traditions = sorted(active_mixer.items(), key=lambda kv: kv[1], reverse=True)[:2]
-        mixer_chips = [f"{_MIXER_LABELS[k]} {v}%" for k, v in top_traditions if v > 0]
+        # Distribute mixer chips across sections (#8): each section gets the
+        # dominant tradition's chip plus one section-specific signal. The two
+        # top traditions also appear on the header via the meta.activeMixer
+        # rendering, so the user sees both a global and per-section view.
+        sorted_mix = sorted(active_mixer.items(), key=lambda kv: kv[1], reverse=True)
+        top1 = sorted_mix[0] if sorted_mix else None
+        top2 = sorted_mix[1] if len(sorted_mix) > 1 else None
+        top1_chip = f"{_MIXER_LABELS[top1[0]]} {top1[1]}%" if top1 and top1[1] > 0 else None
+        top2_chip = f"{_MIXER_LABELS[top2[0]]} {top2[1]}%" if top2 and top2[1] > 0 else None
+
+        def _sec_chips(base: List[str]) -> List[str]:
+            return [c for c in base + [top1_chip] if c]
 
         sections=[
-            Section(title="Fokus",  text=(data.get("fokus")  or "").strip(), chips=[why_chips[0],why_chips[1],f"Saison: {season}"] + mixer_chips),
-            Section(title="Beruf",  text=(data.get("beruf")  or "").strip(), chips=[f"Lebenszahl {life_path_number(bdate)}"]),
-            Section(title="Liebe",  text=(data.get("liebe")  or "").strip(), chips=[f"Mondphase: {moon}"]),
-            Section(title="Energie",text=(data.get("energie") or "").strip(), chips=[f"Tag/Nacht: {dpart}"]),
+            Section(title="Fokus",  text=(data.get("fokus")  or "").strip(),
+                    chips=_sec_chips([why_chips[0], why_chips[1], f"Saison: {season}"])),
+            Section(title="Beruf",  text=(data.get("beruf")  or "").strip(),
+                    chips=_sec_chips([f"Lebenszahl {lifepath}", f"P-Jahr {personal_year}"])),
+            Section(title="Liebe",  text=(data.get("liebe")  or "").strip(),
+                    chips=_sec_chips([f"Mondphase: {moon}", f"Tarot: {tarot['name']}"] + ([top2_chip] if top2_chip else []))),
+            Section(title="Energie",text=(data.get("energie") or "").strip(),
+                    chips=_sec_chips([f"Tag/Nacht: {dpart}", f"I-Ging: {hex_name}" if hex_name else ""])),
         ]
-        return ReadingResponse(meta=meta, sections=sections, chips=why_chips, disclaimer=disclaimer)
+        resp = ReadingResponse(meta=meta, sections=sections, chips=why_chips, disclaimer=disclaimer)
+        _cache_put(ckey, resp)
+        return resp
 
     # --- Deep readings (7 specialized types) ---
     ctx = {
@@ -798,9 +1119,17 @@ Gib nur JSON:
         "lat": lat, "lon": lon, "tzname": tzname,
         "season": season, "hemisphere": hemisphere,
         "sun_sign": sun_sign, "moon": moon, "moon_frac": mf,
-        "lifepath": lifepath, "cn_animal": cn_animal,
+        "lifepath": lifepath,
+        "lifepath_arch": lifepath_arch,
+        "personal_year": personal_year,
+        "personal_month": personal_month,
+        "personal_day": personal_day,
+        "bday_num": bday_num,
+        "cn_animal": cn_animal,
         "birth_year": bdate.year,
-        "tree": tree, "hex_idx": hex_idx,
+        "tree": tree,
+        "hex_idx": hex_idx, "hex_name": hex_name, "hex_core": hex_core,
+        "tarot_name": tarot["name"], "tarot_core": tarot["core"],
         "swe_line": (f"- Swiss-Ephemeris: {swe_line}" if swe_data
                      else "- (Keine exakte Geburtszeit → keine Häuser/Aszendent-Berechnung)"),
     }
@@ -825,7 +1154,30 @@ Gib nur JSON:
 
     sections = [Section(**s) for s in _extract_sections(rtype, data, why_chips)]
 
-    return ReadingResponse(meta=meta, sections=sections, chips=why_chips, disclaimer=disclaimer)
+    # Add mixer + per-section enrichment chips so the UI shows which
+    # tradition coloured each section (deep readings previously had only
+    # a single generic chip per section).
+    sorted_mix = sorted(active_mixer.items(), key=lambda kv: kv[1], reverse=True)
+    top1 = sorted_mix[0] if sorted_mix else None
+    top1_chip = f"{_MIXER_LABELS[top1[0]]} {top1[1]}%" if top1 and top1[1] > 0 else None
+    extras = [why_chips[0] if why_chips else None, f"Mondphase: {moon}", f"P-Jahr {personal_year}"]
+    if hex_name:
+        extras.append(f"I-Ging: {hex_name}")
+    if tarot.get("name"):
+        extras.append(f"Tarot: {tarot['name']}")
+    for i, s in enumerate(sections):
+        # Avoid duplicating chips that already exist on the section.
+        have = set(s.chips)
+        add = [top1_chip] if top1_chip else []
+        add.append(extras[i % len(extras)])
+        for c in add:
+            if c and c not in have:
+                s.chips.append(c)
+                have.add(c)
+
+    resp = ReadingResponse(meta=meta, sections=sections, chips=why_chips, disclaimer=disclaimer)
+    _cache_put(ckey, resp)
+    return resp
   except Exception as exc:
     # Never return 500 — always give the frontend a usable response
     import traceback; traceback.print_exc()
