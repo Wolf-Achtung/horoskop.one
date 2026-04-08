@@ -228,19 +228,20 @@
   </script>
 
   <script>
-    const RAILWAY_BASE = "https://horoskopone-production.up.railway.app";
+    const RAILWAY_BASE = "https://horoskopone-production-4739.up.railway.app";
     window.__mixerState = { mode:'mystic_deep', timeframe:'week', weights:{ astro:34, num:13, tarot:17, iching:14, cn:11, tree:11 } };
 
-    // Mixer mount
+    // Mixer mount (React-based, loaded lazily via CDN Babel)
     const rootEl = document.getElementById('mixer-root');
-    const node = ReactDOM.createRoot(rootEl);
-    function __mountMixer(){ if(window.KosmischerMixer){ function __mountMixer(){
-  if (!(window.React && window.ReactDOM && node)) { return setTimeout(__mountMixer, 60); }
-  const Comp = window.KosmischerMixer && (window.KosmischerMixer.default || window.KosmischerMixer);
-  if (Comp) { node.render(React.createElement(Comp)); }
-  else { setTimeout(__mountMixer, 60); }
-}
-__mountMixer(); } else { setTimeout(__mountMixer, 60); } } __mountMixer();
+    let __mixerRoot = null;
+    function __mountMixer(){
+      if (!(window.React && window.ReactDOM && rootEl)) { return setTimeout(__mountMixer, 80); }
+      if (!__mixerRoot) { __mixerRoot = ReactDOM.createRoot(rootEl); }
+      const Comp = window.KosmischerMixer && (window.KosmischerMixer.default || window.KosmischerMixer);
+      if (Comp) { try { __mixerRoot.render(React.createElement(Comp)); } catch(e){ console.warn('Mixer render failed:', e); } }
+      else { setTimeout(__mountMixer, 120); }
+    }
+    __mountMixer();
 
     document.getElementById('btn-timehelp').onclick = ()=> document.getElementById('dlg-time').showModal();
     document.getElementById('btn-heute').onclick = ()=>{
@@ -273,96 +274,125 @@ __mountMixer(); } else { setTimeout(__mountMixer, 60); } } __mountMixer();
     function fmtTime(s){ if(!s) return ''; try{const t=s.includes('T')?s.split('T')[1]:s; const [hh,mm]=t.split(':'); return `${hh}:${mm}`;}catch(e){return '';} }
     function setEphemeris(meta){
       const bar = document.getElementById('ephemeris'); bar.innerHTML='';
-      const p = meta?.profile || {}; const e = meta?.ephemeris || {};
+      if(!meta) return;
+      // Backend schema (main.py): meta = { birthPlace, geo:{tz}, season, hemisphere, mini:{moonPhase, sunSignApprox, ...} }
+      const mini = meta.mini || {};
+      const geo = meta.geo || {};
       const chips = [];
-      if(p.place) chips.push(['', p.place, 'Ort']);
-      if(p.timezone) chips.push(['', p.timezone, 'Zeitzone']);
-      if(typeof e.birth_is_day === 'boolean') chips.push(['', e.birth_is_day?'Taggeburt':'Nachtgeburt', 'Tag/Nacht']);
-      if(e.season) chips.push(['', e.season==='summer'?'Sommer': e.season==='spring'?'Frühling': e.season==='autumn'?'Herbst':'Winter', 'Saison']);
-      if(e.moon_phase_name) chips.push(['', e.moon_phase_name, 'Mondphase']);
-      if(e.sunrise || e.sunset) chips.push(['', `SR ${fmtTime(e.sunrise)} · SS ${fmtTime(e.sunset)}`, 'Sunrise/Sunset']);
-      chips.forEach(([i,t,label])=>{ const el=document.createElement('span'); el.className='chip'; el.title=chipTip(label); el.innerHTML=`<span>${i}</span><span>${t}</span>`; bar.appendChild(el); });
+      if(meta.birthPlace) chips.push([meta.birthPlace, 'Ort']);
+      if(geo.tz) chips.push([geo.tz, 'Zeitzone']);
+      if(meta.season) chips.push([meta.season + (meta.hemisphere? ' ('+meta.hemisphere+')':''), 'Saison']);
+      if(mini.moonPhase) chips.push([mini.moonPhase, 'Mondphase']);
+      if(mini.sunSignApprox) chips.push([mini.sunSignApprox, 'Sternzeichen']);
+      if(mini.lifePath != null) chips.push(['Lebenszahl '+mini.lifePath, 'Lebenszahl']);
+      chips.forEach(([t,label])=>{ const el=document.createElement('span'); el.className='chip'; el.title=chipTip(label); el.textContent=t; bar.appendChild(el); });
     }
 
     let __lastData = null;
+    function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
     function renderReadingUI(data){
-      __lastData = data; const box=document.getElementById('result'); box.innerHTML=""; setEphemeris(data.meta);
-      const head=document.createElement('div'); head.className='card'; _reveal(head); head.innerHTML=`<div class="small">Modus: <b>${data?.meta?.mode||'-'}</b> · Zeitraum: <b>${data?.meta?.timeframe||'-'}</b> · Seed: <code>${data?.meta?.seed||'-'}</code></div>`; box.appendChild(head);
-      box.insertAdjacentHTML('beforeend', makeSep(data?.meta?.seed));
-      if(Array.isArray(data.highlights) && data.highlights.length){
-        const wrap=document.createElement('div'); wrap.className='card'; _reveal(wrap); wrap.innerHTML=`<h3 style="margin:0 0 8px 0;font-family:'EB Garamond',serif">Deine 3 Sternzeichen</h3>`;
-        data.highlights.slice(0,3).forEach(h=>{
-          const row=document.createElement('div'); row.className='row'; row.style.margin='8px 0';
-          row.innerHTML=`<div style="flex:1"><b>${h.title||'Highlight'}</b><div class="small">${h.action||''}</div></div>`;
-          const why=document.createElement('div'); why.className='row';
-          (h.why||[]).forEach(w=>{ const chip=document.createElement('span'); chip.className='chip'; chip.textContent=w; chip.title=chipTip(w); why.appendChild(chip) });
-          wrap.appendChild(row); wrap.appendChild(why);
-        }); box.appendChild(wrap);
-      box.insertAdjacentHTML('beforeend', makeSep(data?.meta?.seed+':hl'));
+      __lastData = data;
+      const box=document.getElementById('result'); box.innerHTML="";
+      setEphemeris(data?.meta);
+
+      // Surface backend error gracefully (backend returns meta.error on fallback)
+      if(data?.meta?.error){
+        const err=document.createElement('div'); err.className='card'; err.style.borderColor='#6b2a2a';
+        err.innerHTML = `<b>Es gab ein Problem bei der Berechnung:</b><div class="small">${escapeHtml(data.meta.error)}</div>`;
+        box.appendChild(err);
       }
-      (data.sections||[]).forEach((s,i)=>{
-        const area = s.area && s.area!=='undefined' ? s.area : (["Fokus","Beruf","Liebe","Energie","Soziales"][i%5]);
-        const det=document.createElement('details'); det.open=true; _reveal(det); const summary=document.createElement('summary'); summary.textContent=area; det.appendChild(summary);
+
+      // Header card (use backend meta: tone, period, readingLabel)
+      const tone = data?.meta?.tone || '-';
+      const period = data?.meta?.period || '-';
+      const label = data?.meta?.readingLabel || data?.meta?.readingType || 'Reading';
+      const seedKey = (data?.meta?.birthDate||'') + '|' + (data?.meta?.birthPlace||'') + '|' + period;
+      const head=document.createElement('div'); head.className='card'; _reveal(head);
+      head.innerHTML=`<div class="small">${escapeHtml(label)} · Modus: <b>${escapeHtml(tone)}</b> · Zeitraum: <b>${escapeHtml(period)}</b></div>`;
+      box.appendChild(head);
+      box.insertAdjacentHTML('beforeend', makeSep(seedKey));
+
+      // Render sections from backend schema: {title, text, chips}
+      const sections = Array.isArray(data?.sections) ? data.sections : [];
+      if(!sections.length){
+        const empty=document.createElement('div'); empty.className='card'; empty.textContent='Keine Sektionen erhalten.'; box.appendChild(empty);
+      }
+      sections.forEach((s,i)=>{
+        const area = s?.title || (["Fokus","Beruf","Liebe","Energie","Soziales"][i%5]);
+        const det=document.createElement('details'); det.open=true; _reveal(det);
+        const summary=document.createElement('summary'); summary.textContent=area; det.appendChild(summary);
         const inner=document.createElement('div'); inner.style.padding='0 14px 12px 14px';
-        inner.innerHTML = `<div style='margin-bottom:6px'>${(s.text||'') + (s.action? ' ' + (s.action.replace(/^\s*Aktion:\s*/i,'').replace(/\.$/,'') + '.') : '')}</div>`;
-        const sc=document.createElement('div'); sc.style.display='none';
-        inner.appendChild(sc); det.appendChild(inner);
-        const why=document.createElement('div'); why.className='row'; (s.why||[]).forEach(w=>{ const chip=document.createElement('span'); chip.className='chip'; chip.textContent=w; chip.title=chipTip(w); why.appendChild(chip) });
+        inner.innerHTML = `<div style='margin-bottom:6px'>${escapeHtml(s?.text || '')}</div>`;
+        det.appendChild(inner);
+        const why=document.createElement('div'); why.className='row';
+        (Array.isArray(s?.chips)?s.chips:[]).forEach(w=>{ const chip=document.createElement('span'); chip.className='chip'; chip.textContent=w; chip.title=chipTip(w); why.appendChild(chip); });
         det.appendChild(why); box.appendChild(det);
-        box.insertAdjacentHTML('beforeend', makeSep(data?.meta?.seed+':'+i));
+        box.insertAdjacentHTML('beforeend', makeSep(seedKey+':'+i));
       });
+
+      // Disclaimer from backend
+      if(data?.disclaimer){
+        const dc=document.createElement('div'); dc.className='disclaimer'; dc.textContent=data.disclaimer; box.appendChild(dc);
+      }
+
       document.getElementById('shareRow').style.display='flex';
     }
 
     async function callReading(){
-  const d = document.getElementById('birthDate').value;          // "YYYY-MM-DD" from <input type="date">
-  const p = document.getElementById('birthPlace').value.trim();  // place
-  const t = document.getElementById('birthTime').value;          // "HH:MM" or ""
-  const a = document.getElementById('timeApprox').value || "";   // "morning"|"noon"|"evening"|"night"|""
-  const tf = document.getElementById('timeFrame').value;         // "day"|"week"|"month"
-  if(!d || !p){
-    document.getElementById('result').textContent = 'Bitte Datum und Ort angeben.';
-    return;
-  }
-  const mapDaypart = { "morning":"morgens", "noon":"mittags", "evening":"abends", "night":"nachts", "":"unbekannt" };
-  const approx = mapDaypart[a] ?? "unbekannt";
+      const d = document.getElementById('birthDate').value;          // "YYYY-MM-DD" from <input type="date">
+      const p = document.getElementById('birthPlace').value.trim();  // place
+      const t = document.getElementById('birthTime').value;          // "HH:MM" or ""
+      const a = document.getElementById('timeApprox').value || "";   // "morning"|"noon"|"evening"|"night"|""
+      const tf = document.getElementById('timeFrame').value;         // "day"|"week"|"month"
+      if(!d || !p){
+        document.getElementById('result').textContent = 'Bitte Datum und Ort angeben.';
+        return;
+      }
+      const mapDaypart = { "morning":"morgens", "noon":"mittags", "evening":"abends", "night":"nachts", "":"unbekannt" };
+      const approx = mapDaypart[a] ?? "unbekannt";
 
-  // Mixer (optional)
-  const m = window.__mixerState || {};
-  const mixer = m.weights || null;
+      // Mixer (optional)
+      const m = window.__mixerState || {};
+      const mixer = m.weights || null;
 
-  const payload = {
-    birthDate: d,                 // Backend akzeptiert ISO (YYYY-MM-DD) und DD.MM.YYYY
-    birthPlace: p,
-    period: tf,                   // "day" | "week" | "month"
-    approxDaypart: approx,        // deutsch-normalisiert
-    ...(t && /^\d{1,2}:\d{2}$/.test(t) ? { birthTime: t } : {}),
-    ...(mixer ? { mixer } : {}),
-    ...(m && m.mode ? { tone: m.mode } : {}),
-    ...(m && typeof m.seed !== 'undefined' ? { seed: m.seed } : {})
-  };
+      const payload = {
+        birthDate: d,                 // Backend akzeptiert ISO (YYYY-MM-DD) und DD.MM.YYYY
+        birthPlace: p,
+        period: tf,                   // "day" | "week" | "month"
+        approxDaypart: approx,        // deutsch-normalisiert
+        ...(t && /^\d{1,2}:\d{2}$/.test(t) ? { birthTime: t } : {}),
+        ...(mixer ? { mixer } : {}),
+        tone: (m && m.mode) ? m.mode : 'mystic_deep',
+        ...(m && typeof m.seed !== 'undefined' ? { seed: m.seed } : {})
+      };
 
-  (async () => {
-    document.getElementById('result').textContent = '⏳ Berechnung läuft …';
-    const res = await fetch(RAILWAY_BASE.replace(/\/$/,'') + '/reading', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    if (!res.ok) {
-      let errText = 'HTTP ' + res.status;
-      try { const ej = await res.json(); if (Array.isArray(ej?.detail)) errText += ' – ' + ej.detail.map(d=> (d.loc||[]).join('.')+': '+d.msg).join(' | '); } catch {}
-      throw new Error(errText);
+      document.getElementById('result').innerHTML = '<div class="card">⏳ Berechnung läuft – bitte warten (kann bis zu 60 s dauern) …</div>';
+
+      // 90s timeout so the UI does not hang forever
+      const ctrl = new AbortController();
+      const timer = setTimeout(()=>ctrl.abort(), 90000);
+      try {
+        const res = await fetch(RAILWAY_BASE.replace(/\/$/,'') + '/reading', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          signal: ctrl.signal
+        });
+        if (!res.ok) {
+          let errText = 'HTTP ' + res.status;
+          try { const ej = await res.json(); if (Array.isArray(ej?.detail)) errText += ' – ' + ej.detail.map(d=> (d.loc||[]).join('.')+': '+d.msg).join(' | '); } catch {}
+          throw new Error(errText);
+        }
+        const data = await res.json();
+        renderReadingUI(data);
+      } catch(e) {
+        const msg = (e && e.name === 'AbortError') ? 'Zeitüberschreitung – bitte erneut versuchen.' : (e?.message || String(e));
+        document.getElementById('result').innerHTML = '<div class="card">Fehler: '+escapeHtml(msg)+'</div>';
+      } finally {
+        clearTimeout(timer);
+      }
     }
-    const data = await res.json();
-    if (data?.error) throw new Error(String(data.error));
-    renderReadingUI(data);
-  })().catch(e=>{
-    const box = document.getElementById('errorBox') || document.getElementById('result');
-box.textContent = 'Fehler: ' + (e?.message || e);
-  });
-}
-    document.getElementById('btn-gold').onclick = ()=>{ document.getElementById('result').innerHTML='Berechne …'; callReading().catch(e=>{ document.getElementById('result').textContent='Fehler: '+(e?.message||e); }); };
+    document.getElementById('btn-gold').onclick = ()=>{ callReading(); };
 
     
     // --- Constellation Separator (inline SVG) ---
@@ -442,23 +472,6 @@ if(moon) chip(moon);
   </script>
 <link rel="stylesheet" href="components/enhancements-v16.css">
 <script src="components/enhancements-v16.js"></script>
-
-<script src="/frontend/reading-client.js"></script>
-<script>
-  async function onSterneFragen() {
-    const reading = await HoroskopOne.callReading({
-      birthDate: document.querySelector('#geburtsdatum').value,
-      birthPlace: document.querySelector('#geburtsort').value,
-      birthTime: document.querySelector('#geburtszeit')?.value || null,
-      approxDaypartUI: document.querySelector('#ungefähr')?.value || 'unbekannt',
-      periodUI: document.querySelector('#zeitraum')?.value || 'Heute',
-      seed: undefined,
-      mixer: {}
-    });
-    console.log(reading);
-    // TODO: ins UI rendern
-  }
-</script>
 
 </body>
 </html>

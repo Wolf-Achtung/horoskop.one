@@ -19,7 +19,13 @@
   document.head.appendChild(style);
 
   // --- 1) Remove "Heute" + "Sofort-Analyse (offline)" buttons; rename AI button
-  function textOf(el){ return (el.textContent||'').trim().toLowerCase(); }
+  // Normalize: strip leading/trailing non-letters (emoji, whitespace) for robust matching
+  function textOf(el){
+    return (el.textContent||'')
+      .replace(/[^\p{L}\p{N}()\- ]/gu, '')
+      .trim()
+      .toLowerCase();
+  }
   document.querySelectorAll('button, .btn').forEach(b=>{
     const t = textOf(b);
     if(t === 'heute' || t === 'sofort-analyse (offline)'){ b.remove(); }
