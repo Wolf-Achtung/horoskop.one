@@ -57,38 +57,46 @@
     .hero{display:flex;flex-direction:column;justify-content:center;align-items:center;padding:12px 0 4px}
     .hero svg{width:min(86vw,380px);height:auto;aspect-ratio:1/1;filter:drop-shadow(0 14px 28px #000a)}
     .hero svg g.hero-ring,.hero svg g.hero-center,.hero svg g.hero-spark{transform-box:view-box;transform-origin:center;will-change:transform}
-    /* Individual planet orbit groups – each rotates around the SVG centre */
-    .hero svg g.planet-orbit{transform-box:view-box;transform-origin:200px 200px;will-change:transform}
-    .orbit-mercury{animation:spin-cw  22s linear infinite}
-    .orbit-venus  {animation:spin-cw  38s linear infinite}
-    .orbit-earth  {animation:spin-cw  56s linear infinite}
-    .orbit-mars   {animation:spin-cw  72s linear infinite}
-    .orbit-jupiter{animation:spin-cw  96s linear infinite}
-    .orbit-saturn {animation:spin-cw 124s linear infinite}
-    .orbit-uranus {animation:spin-cw 160s linear infinite}
-    .orbit-neptune{animation:spin-cw 200s linear infinite}
-    .planet-dot{filter:drop-shadow(0 0 5px currentColor)}
+    /* Planet orbit groups – JS sets a real rotation derived from today's
+       ecliptic longitude, so each planet starts where it actually is in the
+       sky. A slow time-lapse drift then shows how they move (1 real minute
+       ≈ 1 day of motion). */
+    .hero svg g.planet-orbit{transform-box:view-box;transform-origin:200px 200px;transition:transform 1s linear;will-change:transform}
+    .planet-dot{filter:drop-shadow(0 0 6px currentColor)}
     .planet-dot.pulse{transform-box:fill-box;transform-origin:center;animation:planet-pulse 3.2s ease-in-out infinite}
-    .hero-center{animation:hero-pulse 4.8s ease-in-out infinite}
+    .hero-center{transform-box:view-box;transform-origin:200px 200px;animation:hero-pulse 4.8s ease-in-out infinite}
     .hero-spark{animation:hero-twinkle 3.4s ease-in-out infinite}
     .hero-twink-a{animation:hero-twinkle 2.6s ease-in-out infinite}
     .hero-twink-b{animation:hero-twinkle 3.1s ease-in-out .4s infinite}
     .hero-twink-c{animation:hero-twinkle 3.8s ease-in-out .8s infinite}
-    @keyframes spin-cw{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-    @keyframes spin-ccw{from{transform:rotate(0deg)}to{transform:rotate(-360deg)}}
-    @keyframes hero-pulse{0%,100%{opacity:.72;transform:scale(1)}50%{opacity:1;transform:scale(1.08)}}
+    @keyframes hero-pulse{0%,100%{opacity:.78}50%{opacity:1}}
     @keyframes hero-twinkle{0%,100%{opacity:.35}50%{opacity:.95}}
-    @keyframes planet-pulse{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.35);opacity:1}}
+    @keyframes planet-pulse{0%,100%{transform:scale(1);opacity:.88}50%{transform:scale(1.35);opacity:1}}
+    /* Jupiter gets a subtle banded overlay so it reads like a gas giant */
+    .planet-jupiter-bands{mix-blend-mode:screen;opacity:.55}
     @media (prefers-reduced-motion:reduce){
-      .orbit-mercury,.orbit-venus,.orbit-earth,.orbit-mars,.orbit-jupiter,.orbit-saturn,.orbit-uranus,.orbit-neptune,
       .hero-center,.hero-spark,.hero-twink-a,.hero-twink-b,.hero-twink-c,.planet-dot.pulse{animation:none}
+      .planet-orbit{transition:none}
     }
 
     /* Planet legend under the hero – shows which dot = which planet */
-    .planet-legend{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 10px;margin:6px 4px 0;padding:0;list-style:none;font-size:12px;color:#bdd0ff;max-width:420px}
-    .planet-legend li{display:inline-flex;align-items:center;gap:6px;padding:3px 8px;border:1px solid #24417b;border-radius:999px;background:#0b1530aa}
-    .planet-legend i{display:inline-block;width:9px;height:9px;border-radius:50%;box-shadow:0 0 6px currentColor}
+    .planet-legend{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 10px;margin:8px 4px 0;padding:0;list-style:none;font-size:12px;color:#bdd0ff;max-width:440px}
+    .planet-legend li{display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border:1px solid #24417b;border-radius:999px;background:#0b1530aa}
+    .planet-legend i{display:inline-block;border-radius:50%;box-shadow:0 0 6px currentColor;flex-shrink:0}
     .planet-legend b{font-weight:600;color:#e7ecff;letter-spacing:.01em}
+    .sky-date{text-align:center;font-size:11px;color:#8aa4d6;margin-top:8px;font-style:italic;font-family:'Cormorant Garamond',serif}
+
+    /* Nominatim autocomplete dropdown under the Geburtsort field */
+    .place-suggest{position:absolute;top:100%;left:0;right:0;z-index:20;max-height:260px;overflow:auto;background:#0b1530;border:1px solid #24417b;border-radius:10px;margin-top:4px;display:none;box-shadow:0 10px 30px #0009}
+    .place-suggest.open{display:block}
+    .place-suggest .ps-item{padding:9px 12px;cursor:pointer;font-size:13px;color:#e7ecff;border-bottom:1px solid #12224466}
+    .place-suggest .ps-item:last-child{border-bottom:none}
+    .place-suggest .ps-item:hover,.place-suggest .ps-item.active{background:#0e2248}
+    .place-suggest .ps-country{color:#9fb2d9;font-size:11px;margin-left:6px}
+    .place-status{font-size:12px;margin:6px 2px 0;min-height:16px;color:#9fb2d9}
+    .place-status.ok{color:#7bd3a4}
+    .place-status.warn{color:#f1c27d}
+    .place-status.err{color:#ff8a6b}
     canvas#starfield{position:fixed; inset:0; z-index:0; pointer-events:none; background: radial-gradient(1000px 600px at 50% -20%, #0e1a35 0%, transparent 60%);}
 
     /* Footer navigation (moved from the header) --------------------------- */
@@ -221,35 +229,45 @@
             <use href="#zg-sagittarius" x="100" y="40"  width="24" height="24"/>
           </g>
 
-          <!-- Planets: one group per planet, each rotating around the centre
-               at its own speed. `cy` places the dot on its guide ring. -->
-          <g class="planet-orbit orbit-mercury" style="color:#a8b5c7">
-            <circle class="planet-dot pulse" cx="200" cy="164" r="3.2" fill="currentColor"/>
+          <!-- Planets: each group lives on its orbit ring with the dot at the
+               top (cy = 200 - radius). JS sets transform=rotate(θ, 200 200)
+               on the group so the dot travels to today's real ecliptic
+               position. Sizes and colours are exaggerated for legibility
+               (Jupiter & Saturn clearly the largest; Merkur the smallest). -->
+          <g class="planet-orbit orbit-mercury" style="color:#c8ccd4">
+            <circle class="planet-dot pulse" cx="200" cy="164" r="2.6" fill="currentColor"/>
           </g>
-          <g class="planet-orbit orbit-venus" style="color:#ffd48a">
-            <circle class="planet-dot pulse" cx="200" cy="150" r="3.8" fill="currentColor"/>
+          <g class="planet-orbit orbit-venus" style="color:#fff1b8">
+            <circle class="planet-dot pulse" cx="200" cy="150" r="4.2" fill="currentColor"/>
           </g>
-          <g class="planet-orbit orbit-earth" style="color:#6bb7ff">
-            <circle class="planet-dot pulse" cx="200" cy="134" r="3.6" fill="currentColor"/>
-            <!-- Moon orbits Earth at a small offset -->
-            <circle class="planet-dot" cx="207" cy="134" r="1.6" fill="#e7ecff"/>
+          <g class="planet-orbit orbit-earth" style="color:#3d9cff">
+            <circle class="planet-dot pulse" cx="200" cy="134" r="4.0" fill="currentColor"/>
+            <!-- Moon – small white companion right next to Earth -->
+            <circle cx="208" cy="134" r="1.4" fill="#e7ecff" opacity=".9"/>
           </g>
-          <g class="planet-orbit orbit-mars" style="color:#ff7a5a">
-            <circle class="planet-dot pulse" cx="200" cy="116" r="3.4" fill="currentColor"/>
+          <g class="planet-orbit orbit-mars" style="color:#d9432a">
+            <circle class="planet-dot pulse" cx="200" cy="116" r="3.2" fill="currentColor"/>
           </g>
-          <g class="planet-orbit orbit-jupiter" style="color:#e7c48a">
-            <circle class="planet-dot pulse" cx="200" cy="96" r="5.4" fill="currentColor"/>
+          <g class="planet-orbit orbit-jupiter" style="color:#d99347">
+            <!-- Jupiter is the biggest visible body; add two subtle horizontal
+                 bands so it reads as a gas giant instead of yet another dot. -->
+            <circle class="planet-dot pulse" cx="200" cy="96" r="8.4" fill="currentColor"/>
+            <g class="planet-jupiter-bands">
+              <ellipse cx="200" cy="94" rx="8" ry="1.1" fill="#f3c58a"/>
+              <ellipse cx="200" cy="98" rx="8" ry="0.9" fill="#a85a1c"/>
+            </g>
           </g>
-          <g class="planet-orbit orbit-saturn" style="color:#f1c27d">
-            <circle class="planet-dot pulse" cx="200" cy="76" r="4.8" fill="currentColor"/>
-            <!-- Ring hint: thin ellipse around Saturn's dot -->
-            <ellipse cx="200" cy="76" rx="9" ry="2.2" fill="none" stroke="currentColor" stroke-width="1" opacity=".75"/>
+          <g class="planet-orbit orbit-saturn" style="color:#e8d9a3">
+            <circle class="planet-dot pulse" cx="200" cy="76" r="6.4" fill="currentColor"/>
+            <!-- Saturn's ring: a stronger ellipse that clearly identifies it -->
+            <ellipse cx="200" cy="76" rx="13" ry="3.2" fill="none" stroke="#c9a05a" stroke-width="1.4" opacity=".9"/>
+            <ellipse cx="200" cy="76" rx="13" ry="3.2" fill="none" stroke="#fff2c4" stroke-width=".4" opacity=".6"/>
           </g>
-          <g class="planet-orbit orbit-uranus" style="color:#8ef3ff">
-            <circle class="planet-dot pulse" cx="200" cy="56" r="3.8" fill="currentColor"/>
+          <g class="planet-orbit orbit-uranus" style="color:#7fead4">
+            <circle class="planet-dot pulse" cx="200" cy="56" r="5.0" fill="currentColor"/>
           </g>
-          <g class="planet-orbit orbit-neptune" style="color:#9bb4ff">
-            <circle class="planet-dot pulse" cx="200" cy="36" r="3.8" fill="currentColor"/>
+          <g class="planet-orbit orbit-neptune" style="color:#3b5bd4">
+            <circle class="planet-dot pulse" cx="200" cy="36" r="4.8" fill="currentColor"/>
           </g>
 
           <!-- Twinkle sparks in corners -->
@@ -268,16 +286,17 @@
         </svg>
 
         <ul class="planet-legend" aria-label="Legende der Planeten">
-          <li><i style="color:#f1c27d;background:#f1c27d"></i><b>Sonne</b></li>
-          <li><i style="color:#a8b5c7;background:#a8b5c7"></i><b>Merkur</b></li>
-          <li><i style="color:#ffd48a;background:#ffd48a"></i><b>Venus</b></li>
-          <li><i style="color:#6bb7ff;background:#6bb7ff"></i><b>Erde</b></li>
-          <li><i style="color:#ff7a5a;background:#ff7a5a"></i><b>Mars</b></li>
-          <li><i style="color:#e7c48a;background:#e7c48a"></i><b>Jupiter</b></li>
-          <li><i style="color:#f1c27d;background:#f1c27d"></i><b>Saturn</b></li>
-          <li><i style="color:#8ef3ff;background:#8ef3ff"></i><b>Uranus</b></li>
-          <li><i style="color:#9bb4ff;background:#9bb4ff"></i><b>Neptun</b></li>
+          <li><i style="width:12px;height:12px;color:#f1c27d;background:#f1c27d"></i><b>Sonne</b></li>
+          <li><i style="width:6px;height:6px;color:#c8ccd4;background:#c8ccd4"></i><b>Merkur</b></li>
+          <li><i style="width:9px;height:9px;color:#fff1b8;background:#fff1b8"></i><b>Venus</b></li>
+          <li><i style="width:9px;height:9px;color:#3d9cff;background:#3d9cff"></i><b>Erde</b></li>
+          <li><i style="width:7px;height:7px;color:#d9432a;background:#d9432a"></i><b>Mars</b></li>
+          <li><i style="width:14px;height:14px;color:#d99347;background:#d99347"></i><b>Jupiter</b></li>
+          <li><i style="width:12px;height:12px;color:#e8d9a3;background:#e8d9a3"></i><b>Saturn<sup style="font-weight:400;opacity:.7"> ◯</sup></b></li>
+          <li><i style="width:10px;height:10px;color:#7fead4;background:#7fead4"></i><b>Uranus</b></li>
+          <li><i style="width:10px;height:10px;color:#3b5bd4;background:#3b5bd4"></i><b>Neptun</b></li>
         </ul>
+        <div class="sky-date" id="sky-date" aria-live="polite"></div>
       </div>
 
       <h2 style="margin:0 0 8px;font-family:'EB Garamond',serif">Dein Moment unter den Sternen</h2>
@@ -287,10 +306,16 @@
       <input type="date" id="birthDate" />
 
       <label for="birthPlace">Geburtsort</label>
-      <div class="row">
-        <input style="flex:1" type="text" id="birthPlace" placeholder="z. B. Berlin"/>
+      <div class="row" style="position:relative">
+        <div style="flex:1;position:relative">
+          <input style="width:100%" type="text" id="birthPlace" placeholder="Ort, evtl. mit PLZ oder Land (z. B. „Bad Saulgau" oder „72172")" autocomplete="off"/>
+          <input type="hidden" id="birthLat"/>
+          <input type="hidden" id="birthLon"/>
+          <div id="place-suggest" class="place-suggest" role="listbox" aria-label="Ortsvorschläge"></div>
+        </div>
         <button id="btn-timehelp" class="btn ghost" type="button">Geburtszeit finden?</button>
       </div>
+      <div id="place-status" class="place-status" aria-live="polite"></div>
 
       <div class="row">
         <div style="flex:1 1 220px">
