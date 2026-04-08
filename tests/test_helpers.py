@@ -212,6 +212,147 @@ class TestMixerDirective:
         assert "**I-Ging**" in block
 
 
+class TestNumerologyExtensions:
+    def test_master_number_preserved(self):
+        # 27.07.1966 → 1+9+6+6+7+2+7 = 38 → 11 (Meisterzahl) — must not reduce to 2
+        assert main.life_path_number(dt.date(1966, 7, 27)) == 11
+
+    def test_birthday_number_reduces(self):
+        assert main.birthday_number(dt.date(1966, 7, 27)) == 9   # 2+7
+        assert main.birthday_number(dt.date(1990, 1, 11)) == 11  # master preserved
+
+    def test_personal_year_changes_with_year(self):
+        bd = dt.date(1966, 7, 27)
+        y2025 = main.personal_year_number(bd, dt.date(2025, 1, 1))
+        y2026 = main.personal_year_number(bd, dt.date(2026, 1, 1))
+        assert y2025 != y2026
+        assert 1 <= y2025 <= 9 and 1 <= y2026 <= 9
+
+    def test_personal_month_changes_with_month(self):
+        bd = dt.date(1966, 7, 27)
+        m1 = main.personal_month_number(bd, dt.date(2026, 1, 1))
+        m6 = main.personal_month_number(bd, dt.date(2026, 6, 1))
+        assert m1 != m6
+
+    def test_personal_day_deterministic(self):
+        bd = dt.date(1966, 7, 27)
+        ref = dt.date(2026, 4, 8)
+        assert main.personal_day_number(bd, ref) == main.personal_day_number(bd, ref)
+
+    def test_lifepath_archetype_exists_for_common_numbers(self):
+        for n in (1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 22, 33):
+            assert len(main.lifepath_archetype(n)) > 10
+
+
+class TestIChingTable:
+    def test_table_has_all_64_hexagrams(self):
+        # Index 0 is a placeholder, 1..64 are the real hexagrams
+        assert len(main.ICHING_HEXAGRAMS) == 65
+        for i in range(1, 65):
+            h = main.ICHING_HEXAGRAMS[i]
+            assert h.get("name"), f"Hexagram {i} missing name"
+            assert h.get("core"), f"Hexagram {i} missing core"
+
+    def test_iching_index_always_in_range(self):
+        # Sample a year's worth of dates
+        d = dt.date(2026, 1, 1)
+        for i in range(366):
+            idx = main.iching_index(d + dt.timedelta(days=i))
+            assert 1 <= idx <= 64
+
+    def test_iching_lookup_returns_name_and_core(self):
+        info = main.iching_lookup(1)
+        assert info["name"] == "Das Schöpferische"
+        assert info["core"]
+
+    def test_iching_lookup_out_of_range_returns_empty(self):
+        assert main.iching_lookup(0)["name"] == ""
+        assert main.iching_lookup(65)["name"] == ""
+
+
+class TestTarotDraw:
+    def test_major_arcana_has_22_cards(self):
+        assert len(main.TAROT_MAJOR) == 22
+
+    def test_draw_is_deterministic(self):
+        bd = dt.date(1966, 7, 27)
+        ref = dt.date(2026, 4, 8)
+        a = main.tarot_draw(bd, "day", None, ref)
+        b = main.tarot_draw(bd, "day", None, ref)
+        assert a == b
+
+    def test_draw_differs_by_period(self):
+        bd = dt.date(1966, 7, 27)
+        ref = dt.date(2026, 4, 8)
+        day = main.tarot_draw(bd, "day", None, ref)
+        week = main.tarot_draw(bd, "week", None, ref)
+        month = main.tarot_draw(bd, "month", None, ref)
+        # Not a hard requirement that all three differ, but at least two should,
+        # otherwise the bucket hashing is broken.
+        assert len({day["index"], week["index"], month["index"]}) >= 2
+
+    def test_draw_differs_by_birthdate(self):
+        ref = dt.date(2026, 4, 8)
+        a = main.tarot_draw(dt.date(1966, 7, 27), "day", None, ref)
+        b = main.tarot_draw(dt.date(1990, 1, 15), "day", None, ref)
+        assert a["index"] != b["index"]
+
+    def test_draw_has_required_fields(self):
+        card = main.tarot_draw(dt.date(1966, 7, 27), "day", None, dt.date(2026, 4, 8))
+        assert "name" in card and card["name"]
+        assert "core" in card and card["core"]
+        assert 0 <= card["index"] < 22
+
+
+class TestPeriodBucket:
+    def test_day_bucket_is_iso_date(self):
+        assert main._period_bucket("day", dt.date(2026, 4, 8)) == "2026-04-08"
+
+    def test_week_bucket_is_iso_week(self):
+        b = main._period_bucket("week", dt.date(2026, 4, 8))
+        # "2026-W15" or similar — prefix + zero-padded 2-digit week
+        assert b.startswith("2026-W")
+        week_part = b.split("W")[1]
+        assert week_part.isdigit() and len(week_part) == 2
+
+    def test_month_bucket_is_yyyy_mm(self):
+        assert main._period_bucket("month", dt.date(2026, 4, 8)) == "2026-04"
+
+    def test_unknown_period_falls_back_to_day(self):
+        assert main._period_bucket("foo", dt.date(2026, 4, 8)) == "2026-04-08"
+
+
+class TestCacheLayer:
+    def test_cache_miss_returns_none(self):
+        main._READING_CACHE.clear()
+        assert main._cache_get("missing") is None
+
+    def test_cache_roundtrip(self):
+        main._READING_CACHE.clear()
+        dummy = main.ReadingResponse(
+            meta={"x": 1}, sections=[], chips=[], disclaimer=""
+        )
+        main._cache_put("k1", dummy)
+        assert main._cache_get("k1") is dummy
+
+    def test_cache_key_differs_by_period(self):
+        a = main.ReadingRequest(birthDate="27.07.1966", birthPlace="Berlin", period="day")
+        b = main.ReadingRequest(birthDate="27.07.1966", birthPlace="Berlin", period="week")
+        assert main._cache_key(a) != main._cache_key(b)
+
+    def test_cache_key_differs_by_mixer(self):
+        a = main.ReadingRequest(birthDate="27.07.1966", birthPlace="Berlin",
+                                mixer={"astro": 50, "num": 50})
+        b = main.ReadingRequest(birthDate="27.07.1966", birthPlace="Berlin",
+                                mixer={"astro": 10, "num": 90})
+        assert main._cache_key(a) != main._cache_key(b)
+
+    def test_cache_key_case_insensitive_place(self):
+        a = main.ReadingRequest(birthDate="27.07.1966", birthPlace="Berlin")
+        b = main.ReadingRequest(birthDate="27.07.1966", birthPlace="BERLIN")
+        assert main._cache_key(a) == main._cache_key(b)
+
+
 class TestRoutes:
     def test_reading_route_registered(self):
         paths = {getattr(r, "path", None) for r in main.app.routes}

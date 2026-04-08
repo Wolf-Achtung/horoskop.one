@@ -186,6 +186,55 @@ def test_deep_readings_return_expected_sections(mock_openai, rtype, expected_sec
         assert isinstance(s["text"], str)
 
 
+def test_second_identical_request_is_served_from_cache(mock_openai):
+    """Two consecutive calls with identical inputs must hit the cache on the
+    second call — cache-hit meta must flip to True and OpenAI must not be
+    called a second time."""
+    main._READING_CACHE.clear()
+    call_count = {"n": 0}
+
+    class _CountingCompletions:
+        def create(self, **kwargs):
+            call_count["n"] += 1
+            return _MockResp(json.dumps({"fokus": "f", "beruf": "b", "liebe": "l", "energie": "e"}))
+
+    import pytest
+    # Install a counting mock
+    main.client = type("C", (), {"chat": type("X", (), {"completions": _CountingCompletions()})()})()
+
+    req = main.ReadingRequest(
+        birthDate="27.07.1966", birthPlace="Bad Saulgau",
+        period="day", readingType="classic",
+    )
+    r1 = _run(main._reading_impl(req)).model_dump()
+    first_calls = call_count["n"]
+    r2 = _run(main._reading_impl(req)).model_dump()
+    # The second request must not increment the OpenAI call count at all.
+    assert call_count["n"] == first_calls, "cache hit must skip OpenAI entirely"
+    assert first_calls >= 1  # sanity: the first request did hit OpenAI
+    assert r2["meta"].get("cacheHit") is True
+    # Same content on both
+    assert r1["sections"][0]["text"] == r2["sections"][0]["text"]
+
+
+def test_classic_meta_includes_enriched_symbols(mock_openai):
+    """The enriched meta.mini must carry the new symbols (I-Ging name,
+    Tarot card, personal year etc.) so the UI can render rich chips."""
+    mock_openai(json.dumps({"fokus": "f", "beruf": "b", "liebe": "l", "energie": "e"}))
+    main._READING_CACHE.clear()
+    req = main.ReadingRequest(
+        birthDate="27.07.1966", birthPlace="Bad Saulgau",
+        period="week", readingType="classic",
+    )
+    data = _run(main._reading_impl(req)).model_dump()
+    mini = data["meta"]["mini"]
+    assert mini["iChingName"]            # hexagram has a German name
+    assert mini["iChingCore"]
+    assert mini["lifePathArchetype"]     # numerology archetype present
+    assert "personalYear" in mini
+    assert "tarot" in mini and mini["tarot"].get("name")
+
+
 def test_fallback_on_exception(monkeypatch):
     """If OpenAI raises, the endpoint must still return a valid
     ReadingResponse with meta.error set instead of a 500."""
