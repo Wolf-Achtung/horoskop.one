@@ -267,6 +267,112 @@ DEEP_READING_TYPES = {
     },
 }
 
+# ---------------------------------------------------------------------------
+# Tone & Mixer directives — these turn the UI Kosmischer Mixer into actual
+# prompt signals, so slider positions and tone mode really influence the
+# generated reading (instead of being ignored).
+# ---------------------------------------------------------------------------
+
+# Labels shown in the response for each mixer key.
+_MIXER_LABELS: Dict[str, str] = {
+    "astro": "Astrologie / Transite",
+    "num":   "Numerologie",
+    "tarot": "Tarot-Archetypen",
+    "iching": "I-Ging",
+    "cn":    "Chinesisches Tierkreiszeichen",
+    "tree":  "Keltischer Baumkreis",
+}
+
+_TONE_DIRECTIVES: Dict[str, str] = {
+    "mystic_coach": (
+        "Schreibe in einer ausbalancierten Stimme: warm, achtsam, zugleich klar "
+        "und handlungsorientiert. Eine Prise Mystik ist erlaubt, darf aber nie "
+        "die Konkretheit überlagern. Nutze ruhige Bilder, bleib aber alltagsnah."
+    ),
+    "mystisch": (
+        "Schreibe in einer poetisch-mystischen Stimme: Bilder aus Natur, Mond, "
+        "Jahreszeiten und Archetypen sind willkommen. Bleibe trotzdem verständlich, "
+        "gib am Ende jedes Abschnitts einen greifbaren Impuls."
+    ),
+    "coach": (
+        "Schreibe wie ein pragmatischer Coach: klar, direkt, umsetzbar. "
+        "Keine Esoterik, keine Metaphern. Jede Aussage mündet in einen "
+        "konkreten, überprüfbaren nächsten Schritt."
+    ),
+    "skeptisch": (
+        "Schreibe aus einer reflektiert-skeptischen Perspektive: die Symbole "
+        "werden als archetypische Bilder interpretiert (nicht als Vorhersage). "
+        "Rationaler Ton, Psychologie statt Prophetie, viele 'vielleicht', "
+        "'eine Möglichkeit wäre', 'Einladung zur Selbstreflexion'."
+    ),
+}
+
+# Mapping tone → human-readable label for the frontend meta.
+_TONE_LABELS: Dict[str, str] = {
+    "mystic_coach": "Mystic Coach (balanciert)",
+    "mystisch":     "Mystisch",
+    "coach":        "Coach (rational)",
+    "skeptisch":    "Skeptisch / reflektiert",
+    # Legacy keys (older clients).
+    "mystic_deep":  "Mystic Coach (balanciert)",
+}
+
+def _tone_directive(tone: Optional[str]) -> str:
+    """Return a short system-prompt-sized stylistic instruction for the tone."""
+    key = (tone or "mystic_coach").strip().lower()
+    return _TONE_DIRECTIVES.get(key) or _TONE_DIRECTIVES["mystic_coach"]
+
+def _normalize_mixer(raw: Optional[Dict[str, Any]]) -> Dict[str, int]:
+    """Clamp negative values, coerce to int, rescale so the total equals 100.
+
+    If the input is empty or all-zero, return a balanced default.
+    """
+    default = {"astro": 34, "num": 13, "tarot": 17, "iching": 14, "cn": 11, "tree": 11}
+    if not raw:
+        return default
+    cleaned: Dict[str, int] = {}
+    for k in _MIXER_LABELS.keys():
+        try:
+            v = int(round(float(raw.get(k, 0))))
+        except (TypeError, ValueError):
+            v = 0
+        cleaned[k] = max(0, v)
+    total = sum(cleaned.values())
+    if total <= 0:
+        return default
+    # Rescale to exactly 100 using largest-remainder so rounding errors don't drift.
+    scaled = {k: (v * 100) / total for k, v in cleaned.items()}
+    floored = {k: int(v) for k, v in scaled.items()}
+    diff = 100 - sum(floored.values())
+    # Distribute the remainder to the keys with the largest fractional parts.
+    order = sorted(scaled.items(), key=lambda kv: kv[1] - int(kv[1]), reverse=True)
+    i = 0
+    while diff > 0 and order:
+        floored[order[i % len(order)][0]] += 1
+        diff -= 1
+        i += 1
+    return floored
+
+def _mixer_directive(mixer: Dict[str, int]) -> str:
+    """Render the normalized mixer as a structured prompt block.
+
+    The LLM sees an ordered list of traditions by weight and an explicit
+    instruction on how to let the weights colour the text.
+    """
+    ordered = sorted(mixer.items(), key=lambda kv: kv[1], reverse=True)
+    lines = [f"- {_MIXER_LABELS[k]}: {v}%" for k, v in ordered if v > 0]
+    if not lines:
+        return ""
+    lead = _MIXER_LABELS[ordered[0][0]]
+    return (
+        "Gewichtung der Traditionen (Kosmischer Mixer):\n"
+        + "\n".join(lines)
+        + f"\n\nInstruktion: Baue die Deutung sichtbar um die am stärksten gewichtete "
+        f"Tradition (**{lead}**). Niedrig gewichtete Traditionen dürfen nur als "
+        f"kurze Randbemerkung erscheinen oder ganz weggelassen werden. "
+        f"Stimme deine Bildsprache, Fachbegriffe und Beispiele an die Gewichte an."
+    )
+
 def _deep_system_prompt(rtype: str) -> str:
     """Return the system prompt for a given reading type."""
     base = (
@@ -566,7 +672,10 @@ async def _reading_impl(req: ReadingRequest):
 
     swe_data=swe_compute(bdate,btime,lat,lon,tzname)
 
-    mixer=req.mixer or {}; mixer_list=[f"{k}:{v}%" for k,v in mixer.items()]
+    active_mixer = _normalize_mixer(req.mixer)
+    mixer_block = _mixer_directive(active_mixer)
+    tone_block = _tone_directive(req.tone)
+    mixer_list=[f"{k}:{v}%" for k,v in active_mixer.items()]
     why_chips=[f"Sternzeichen {sun_sign}", f"Ort {req.birthPlace or 'unbekannt'}",
                f"Saison: {season} ({hemisphere}-Halbkugel)", f"Mondphase: {moon}"]
     if swe_data:
@@ -585,7 +694,11 @@ async def _reading_impl(req: ReadingRequest):
                 "Bei Krisen oder akuter Gefahr: 112 (EU) / lokale Beratungsstellen.")
 
     meta={
-        "period": req.period, "tone": req.tone, "readingType": rtype,
+        "period": req.period, "tone": req.tone,
+        "toneLabel": _TONE_LABELS.get((req.tone or "").lower(), _TONE_LABELS["mystic_coach"]),
+        "activeMixer": active_mixer,
+        "mixerLabels": _MIXER_LABELS,
+        "readingType": rtype,
         "readingLabel": DEEP_READING_TYPES[rtype]["label"],
         "birthDate": req.birthDate, "birthPlace": req.birthPlace, "birthTime": req.birthTime,
         "approxDaypart": dpart, "geo": {"lat":lat,"lon":lon,"tz":tzname},
@@ -614,11 +727,14 @@ Rahmendaten:
 - Datum: {bdate.strftime('%d.%m.%Y')} · Tagesabschnitt: {dpart}
 - Saison/Hemisphäre: {season} / {hemisphere}
 - Mini-Ephemeriden: Sonne≈{sun_sign}, Mondphase={moon}, I-Ging={hex_idx}, Lebenszahl={lifepath}, Chinesisch={cn_animal}, Baum={tree}
-- Mixer: {', '.join(mixer_list) if mixer_list else 'Standard'}
+
+{mixer_block}
+
+Ton-Vorgabe: {tone_block}
 
 Regeln:
 - Pro Bereich 3–4 Stichpunkte, direkt aus den Rahmendaten abgeleitet.
-- Klar, konkret, alltagsnah formulieren — keine esoterischen Floskeln, keine blumigen Metaphern.
+- Die Traditions-Gewichtung oben entscheidet, welche Symbolsprache dominiert.
 - Letzter Stichpunkt = ultra-kurze Mini-Aktion (imperativ, 1 Satz) ohne „Aktion:"-Prefix.
 - Keine medizinisch/juristisch/finanziell heiklen Ratschläge.
 """
@@ -630,9 +746,12 @@ Regeln:
 
         writing_prompt=f"""
 Formuliere aus der OUTLINE ein Horoskop mit 3–4 Sätzen je Sektion.
-Ton: klar, sachlich, freundlich, alltagsnah — wie ein guter Freund, der dir einen nüchternen Rat gibt.
-NICHT: esoterisch, blumig, pathetisch, mystisch. Keine „strahlende Energie", kein „kosmischer Fluss".
+
+Ton-Vorgabe: {tone_block}
+
 Integriere die Mini-Aktion organisch in den Absatz. Keine Bullet-Listen.
+
+{mixer_block}
 
 Kontext (nur nutzen, nicht erneut aufzählen):
 - Zeitraum: {req.period} · Ort: {req.birthPlace} (Zeitzone {tzname})
@@ -658,8 +777,13 @@ Gib nur JSON:
         except Exception as e:
             data={"fokus":"","beruf":"","liebe":"","energie":"","error":str(e)}
 
+        # Add the two highest-weighted traditions as chips on the first section
+        # so users can see the mixer actually shaped the output.
+        top_traditions = sorted(active_mixer.items(), key=lambda kv: kv[1], reverse=True)[:2]
+        mixer_chips = [f"{_MIXER_LABELS[k]} {v}%" for k, v in top_traditions if v > 0]
+
         sections=[
-            Section(title="Fokus",  text=(data.get("fokus")  or "").strip(), chips=[why_chips[0],why_chips[1],f"Saison: {season}"]),
+            Section(title="Fokus",  text=(data.get("fokus")  or "").strip(), chips=[why_chips[0],why_chips[1],f"Saison: {season}"] + mixer_chips),
             Section(title="Beruf",  text=(data.get("beruf")  or "").strip(), chips=[f"Lebenszahl {life_path_number(bdate)}"]),
             Section(title="Liebe",  text=(data.get("liebe")  or "").strip(), chips=[f"Mondphase: {moon}"]),
             Section(title="Energie",text=(data.get("energie") or "").strip(), chips=[f"Tag/Nacht: {dpart}"]),
@@ -681,8 +805,10 @@ Gib nur JSON:
                      else "- (Keine exakte Geburtszeit → keine Häuser/Aszendent-Berechnung)"),
     }
 
-    system_prompt = _deep_system_prompt(rtype)
+    system_prompt = _deep_system_prompt(rtype) + "\n\nTon-Vorgabe: " + tone_block
     user_prompt = _deep_user_prompt(rtype, ctx)
+    if mixer_block:
+        user_prompt = mixer_block + "\n\n" + user_prompt
 
     try:
         raw = client.chat.completions.create(

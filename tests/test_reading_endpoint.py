@@ -84,10 +84,51 @@ def test_classic_reading_returns_expected_schema(mock_openai):
     assert "mini" in data["meta"]
     assert data["meta"]["mini"]["sunSignApprox"] == "Löwe"
 
+    # Mixer + tone surfacing: the meta must carry the normalized mixer and a
+    # human-readable tone label so the UI can show them.
+    assert "activeMixer" in data["meta"]
+    assert sum(data["meta"]["activeMixer"].values()) == 100
+    assert data["meta"]["toneLabel"]
+
     titles = [s["title"] for s in data["sections"]]
     assert titles == ["Fokus", "Beruf", "Liebe", "Energie"]
     assert all(s["chips"] for s in data["sections"])
     assert "Unterhaltung" in data["disclaimer"]
+
+
+def test_mixer_weights_propagate_to_prompt(mock_openai, monkeypatch):
+    """The raw mixer input must influence the prompt sent to OpenAI.
+
+    We capture the prompt the mock client receives and assert that the
+    dominant tradition is referenced as such.
+    """
+    seen = {"messages": None, "prompt": None}
+
+    class _Capture:
+        def create(self, **kwargs):
+            # Classic reading uses oa_text() which passes `prompt=...`.
+            seen["prompt"] = kwargs.get("prompt") or (kwargs.get("messages") or [{}])[-1].get("content", "")
+            seen["messages"] = kwargs.get("messages")
+            return _MockResp(json.dumps({"fokus": "f", "beruf": "b", "liebe": "l", "energie": "e"}))
+
+    monkeypatch.setattr(main, "client", type("C", (), {"chat": type("X", (), {"completions": _Capture()})()})())
+
+    req = main.ReadingRequest(
+        birthDate="27.07.1966",
+        birthPlace="Bad Saulgau",
+        period="week",
+        readingType="classic",
+        tone="mystisch",
+        mixer={"astro": 5, "num": 5, "tarot": 5, "iching": 80, "cn": 3, "tree": 2},
+    )
+    resp = _run(main._reading_impl(req))
+    data = resp.model_dump()
+
+    # I-Ging must dominate after normalization, and the prompt must reflect it.
+    assert data["meta"]["activeMixer"]["iching"] >= 75
+    combined = (seen["prompt"] or "") + json.dumps(seen["messages"] or [])
+    assert "I-Ging" in combined
+    assert "poetisch-mystisch" in combined or "mystisch" in combined.lower()
 
 
 @pytest.mark.parametrize("rtype,expected_section_count", [
