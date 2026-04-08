@@ -147,6 +147,71 @@ class TestIChing:
 # FastAPI routes exist
 # ---------------------------------------------------------------------------
 
+class TestMixerNormalization:
+    def test_none_returns_balanced_default(self):
+        m = main._normalize_mixer(None)
+        assert sum(m.values()) == 100
+        assert set(m.keys()) == {"astro", "num", "tarot", "iching", "cn", "tree"}
+
+    def test_empty_dict_returns_default(self):
+        assert sum(main._normalize_mixer({}).values()) == 100
+
+    def test_already_summing_to_100_unchanged(self):
+        src = {"astro": 60, "num": 10, "tarot": 5, "iching": 15, "cn": 5, "tree": 5}
+        assert main._normalize_mixer(src) == src
+
+    def test_oversum_is_rescaled_to_100(self):
+        # 34+13+17+62+11+11 = 148 → rescale to 100
+        out = main._normalize_mixer({"astro": 34, "num": 13, "tarot": 17, "iching": 62, "cn": 11, "tree": 11})
+        assert sum(out.values()) == 100
+        # I-Ging should still be the dominant weight after rescaling
+        assert max(out.items(), key=lambda kv: kv[1])[0] == "iching"
+
+    def test_negative_values_clamped(self):
+        out = main._normalize_mixer({"astro": 100, "num": -50, "tarot": 0, "iching": 0, "cn": 0, "tree": 0})
+        assert sum(out.values()) == 100
+        assert out["num"] == 0
+        assert out["astro"] == 100
+
+    def test_all_zero_returns_default(self):
+        out = main._normalize_mixer({"astro": 0, "num": 0, "tarot": 0, "iching": 0, "cn": 0, "tree": 0})
+        assert sum(out.values()) == 100
+        assert out["astro"] == 34  # default balanced weighting
+
+    def test_garbage_values_coerced(self):
+        out = main._normalize_mixer({"astro": "sixty", "num": None, "tarot": 50, "iching": 50, "cn": 0, "tree": 0})
+        assert sum(out.values()) == 100
+
+
+class TestToneDirective:
+    def test_all_known_tones_return_nonempty(self):
+        for tone in ("mystic_coach", "mystisch", "coach", "skeptisch"):
+            assert len(main._tone_directive(tone)) > 20
+
+    def test_unknown_tone_falls_back_to_default(self):
+        assert main._tone_directive("quatsch") == main._tone_directive("mystic_coach")
+
+    def test_none_falls_back_to_default(self):
+        assert main._tone_directive(None) == main._tone_directive("mystic_coach")
+
+    def test_tones_are_distinct(self):
+        assert main._tone_directive("mystisch") != main._tone_directive("coach")
+        assert main._tone_directive("skeptisch") != main._tone_directive("coach")
+
+
+class TestMixerDirective:
+    def test_empty_mixer_returns_empty(self):
+        assert main._mixer_directive({}) == ""
+
+    def test_mixer_orders_by_weight_descending(self):
+        m = main._normalize_mixer({"astro": 5, "num": 5, "tarot": 5, "iching": 80, "cn": 3, "tree": 2})
+        block = main._mixer_directive(m)
+        # I-Ging must be the first tradition mentioned and be marked as dominant
+        first_line = [l for l in block.split("\n") if l.startswith("- ")][0]
+        assert "I-Ging" in first_line
+        assert "**I-Ging**" in block
+
+
 class TestRoutes:
     def test_reading_route_registered(self):
         paths = {getattr(r, "path", None) for r in main.app.routes}

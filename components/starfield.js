@@ -43,6 +43,38 @@
     mouseY = (e.clientY / innerHeight - 0.5);
   }, { passive: true });
 
+  // --- Global "Zucken" — the whole star field briefly flickers at irregular
+  //     intervals, like a camera flash or distant lightning. Two- to three-pulse
+  //     bursts mimic a real electrical flicker instead of a smooth pulse.
+  let flickerStart = 0;
+  let flickerDur = 0;
+  let flickerAmp = 0;
+  let nextFlickerAt = performance.now() + 2500 + Math.random() * 6000;
+
+  function scheduleNextFlicker(now) {
+    // 3–14 s between flickers, sometimes a cluster (two in quick succession).
+    const cluster = Math.random() < 0.35;
+    nextFlickerAt = now + (cluster ? 120 + Math.random() * 260 : 3000 + Math.random() * 11000);
+  }
+
+  function flickerMultiplier(now) {
+    if (flickerStart === 0) {
+      if (now >= nextFlickerAt) {
+        flickerStart = now;
+        flickerDur = 90 + Math.random() * 170;         // 90–260 ms
+        flickerAmp = 0.55 + Math.random() * 0.45;      // 0.55–1.0 extra brightness
+        scheduleNextFlicker(now);
+      }
+      return 0;
+    }
+    const phase = (now - flickerStart) / flickerDur;
+    if (phase >= 1) { flickerStart = 0; return 0; }
+    // Multi-peak envelope: sin^2 with a jittered secondary pulse near the end.
+    const primary = Math.sin(phase * Math.PI);
+    const jitter = phase > 0.55 ? Math.sin((phase - 0.55) * Math.PI * 3.2) * 0.35 : 0;
+    return Math.max(0, (primary + jitter)) * flickerAmp;
+  }
+
   function draw(t) {
     ctx.clearRect(0, 0, W, H);
     ctx.globalCompositeOperation = 'lighter';
@@ -50,6 +82,7 @@
     const parX = (scrollY * 0.02) * DPR;
     const tiltX = mouseX * 6 * DPR;
     const tiltY = mouseY * 4 * DPR;
+    const zucken = flickerMultiplier(performance.now());
 
     for (const s of stars) {
       const twinkle = (Math.sin(t * 0.001 + s.p) * 0.5 + 0.5) * s.tw + 0.2;
@@ -68,10 +101,11 @@
       const driftY = Math.cos(t * 0.00005 + s.p) * s.d * 8;
       const x = s.x * W + driftX + parX * (0.2 + s.d * 0.15) + tiltX;
       const y = s.y * H + driftY + parY * (0.25 + s.d * 0.2) + tiltY;
-      const rad = s.r * DPR * (0.8 + twinkle * 0.9 + flare);
+      const rad = s.r * DPR * (0.8 + twinkle * 0.9 + flare + zucken * 0.9);
       const grd = ctx.createRadialGradient(x, y, 0, x, y, rad);
-      grd.addColorStop(0, 'rgba(245,248,255,0.98)');
-      grd.addColorStop(0.45, 'rgba(190,210,255,0.55)');
+      const core = Math.min(1, 0.98 + zucken * 0.05);
+      grd.addColorStop(0, `rgba(245,248,255,${core.toFixed(3)})`);
+      grd.addColorStop(0.45, `rgba(190,210,255,${(0.55 + zucken * 0.3).toFixed(3)})`);
       grd.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = grd;
       ctx.beginPath();

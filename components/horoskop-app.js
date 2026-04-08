@@ -41,23 +41,6 @@
     window.dispatchEvent(new CustomEvent('horoskop:set', { detail: { timeframe: 'day' } }));
   });
 
-  // ----- Offline shortcut ----------------------------------------------------
-  bindClick('btn-offline', () => {
-    const d = $('birthDate').value;
-    const p = $('birthPlace').value.trim();
-    const t = $('birthTime').value;
-    const a = $('timeApprox').value || 'unbekannt';
-    if (!d || !p) {
-      $('result').textContent = 'Bitte Datum und Ort angeben.';
-      return;
-    }
-    $('result').innerHTML =
-      '<div class="card"><b>Kurzkompass (offline)</b><br>'
-      + 'Datum: ' + escapeHtml(d) + ' · Ort: ' + escapeHtml(p) + ' · '
-      + (t ? ('Uhrzeit ' + escapeHtml(t)) : ('Zeit ungefähr: ' + escapeHtml(a)))
-      + '.<br><span class="small">Für die volle Analyse bitte „Sterne fragen“ nutzen.</span></div>';
-  });
-
   // ----- Helpers --------------------------------------------------------------
   function chipTip(text) {
     const LEX = {
@@ -159,14 +142,29 @@
       box.appendChild(err);
     }
 
-    const tone = data?.meta?.tone || '-';
+    const toneLabel = data?.meta?.toneLabel || data?.meta?.tone || '-';
     const period = data?.meta?.period || '-';
     const label = data?.meta?.readingLabel || data?.meta?.readingType || 'Reading';
     const seedKey = (data?.meta?.birthDate || '') + '|' + (data?.meta?.birthPlace || '') + '|' + period;
+    const periodLabel = period === 'day' ? 'Heute' : period === 'week' ? 'Woche' : period === 'month' ? 'Monat' : period;
     const head = document.createElement('div');
     head.className = 'card';
     _reveal(head);
-    head.innerHTML = `<div class="small">${escapeHtml(label)} · Modus: <b>${escapeHtml(tone)}</b> · Zeitraum: <b>${escapeHtml(period)}</b></div>`;
+    // Show the mixer top-3 so the user sees the traditions that actually
+    // shaped the reading.
+    const mx = data?.meta?.activeMixer || {};
+    const mxLabels = data?.meta?.mixerLabels || {};
+    const mxEntries = Object.entries(mx)
+      .filter(([, v]) => v > 0)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([k, v]) => `${escapeHtml(mxLabels[k] || k)} ${v}%`);
+    const mxLine = mxEntries.length
+      ? `<div class="small" style="margin-top:4px">Mixer: ${mxEntries.join(' · ')}</div>`
+      : '';
+    head.innerHTML =
+      `<div class="small">${escapeHtml(label)} · Ton: <b>${escapeHtml(toneLabel)}</b> · Zeitraum: <b>${escapeHtml(periodLabel)}</b></div>`
+      + mxLine;
     box.appendChild(head);
     box.insertAdjacentHTML('beforeend', makeSep(seedKey));
 
