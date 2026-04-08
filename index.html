@@ -57,11 +57,10 @@
     .hero{display:flex;flex-direction:column;justify-content:center;align-items:center;padding:12px 0 4px}
     .hero svg{width:min(86vw,380px);height:auto;aspect-ratio:1/1;filter:drop-shadow(0 14px 28px #000a)}
     .hero svg g.hero-ring,.hero svg g.hero-center,.hero svg g.hero-spark{transform-box:view-box;transform-origin:center;will-change:transform}
-    /* Planet orbit groups – JS sets a real rotation derived from today's
-       ecliptic longitude, so each planet starts where it actually is in the
-       sky. A slow time-lapse drift then shows how they move (1 real minute
-       ≈ 1 day of motion). */
-    .hero svg g.planet-orbit{transform-box:view-box;transform-origin:200px 200px;transition:transform 1s linear;will-change:transform}
+    /* Planet orbit groups – JS sets a rotation derived from the selected
+       date's mean ecliptic longitude. The transition smoothly tweens the
+       planets when the user picks a different day in the date input. */
+    .hero svg g.planet-orbit{transform-box:view-box;transform-origin:200px 200px;transition:transform .8s cubic-bezier(.4,0,.2,1);will-change:transform}
     .planet-dot{filter:drop-shadow(0 0 6px currentColor)}
     .planet-dot.pulse{transform-box:fill-box;transform-origin:center;animation:planet-pulse 3.2s ease-in-out infinite}
     .hero-center{transform-box:view-box;transform-origin:200px 200px;animation:hero-pulse 4.8s ease-in-out infinite}
@@ -85,6 +84,9 @@
     .planet-legend i{display:inline-block;border-radius:50%;box-shadow:0 0 6px currentColor;flex-shrink:0}
     .planet-legend b{font-weight:600;color:#e7ecff;letter-spacing:.01em}
     .sky-date{text-align:center;font-size:11px;color:#8aa4d6;margin-top:8px;font-style:italic;font-family:'Cormorant Garamond',serif}
+    .sky-controls{display:flex;gap:8px;align-items:center;justify-content:center;margin-top:6px;flex-wrap:wrap}
+    .sky-controls input[type="date"]{width:auto;padding:6px 10px;font-size:13px;border-radius:8px;background:#0b1530;color:#e7ecff;border:1px solid #24417b;color-scheme:dark}
+    .sky-controls .sky-today-btn{padding:6px 12px;font-size:12px;min-height:unset;line-height:1.2}
 
     /* Nominatim autocomplete dropdown under the Geburtsort field */
     .place-suggest{position:absolute;top:100%;left:0;right:0;z-index:20;max-height:260px;overflow:auto;background:#0b1530;border:1px solid #24417b;border-radius:10px;margin-top:4px;display:none;box-shadow:0 10px 30px #0009}
@@ -213,8 +215,14 @@
           </g>
 
           <!-- Outer ring: 12 zodiac glyphs as white line-art (24x24 each,
-               centred on the 190px ring). No background, no emoji fallback. -->
-          <g class="hero-ring" style="color:#ffffff" opacity=".95">
+               centred on the 190px ring). No background, no emoji fallback.
+               stroke/fill attributes live here (not on the <g id="zg-defs">
+               wrapper above) because <use>-instantiated symbols inherit
+               presentation attributes from the <use>'s parent chain, not
+               from the <g> that happens to wrap the <symbol> in <defs>. -->
+          <g class="hero-ring" style="color:#ffffff" opacity=".95"
+             fill="none" stroke="currentColor" stroke-width="1.6"
+             stroke-linecap="round" stroke-linejoin="round">
             <use href="#zg-capricorn"   x="188" y="14"  width="24" height="24" class="hero-twink-a"/>
             <use href="#zg-aquarius"    x="276" y="40"  width="24" height="24"/>
             <use href="#zg-pisces"      x="336" y="104" width="24" height="24" class="hero-twink-b"/>
@@ -297,6 +305,10 @@
           <li><i style="width:10px;height:10px;color:#3b5bd4;background:#3b5bd4"></i><b>Neptun</b></li>
         </ul>
         <div class="sky-date" id="sky-date" aria-live="polite"></div>
+        <div class="sky-controls">
+          <input type="date" id="sky-date-input" aria-label="Datum der Himmelsansicht"/>
+          <button type="button" id="btn-sky-today" class="btn ghost sky-today-btn">Heute</button>
+        </div>
       </div>
 
       <h2 style="margin:0 0 8px;font-family:'EB Garamond',serif">Dein Moment unter den Sternen</h2>
