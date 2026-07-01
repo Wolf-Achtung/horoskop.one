@@ -1,5 +1,5 @@
 # ---------- Stage 1: Frontend build ----------
-FROM node:20-alpine AS webbuild
+FROM node:22-alpine AS webbuild
 WORKDIR /app
 COPY package.json ./
 RUN npm set fund false && npm set audit false

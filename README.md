@@ -1,19 +1,30 @@
-# Main Service (Option C)
+# Main Service
 
-**Ziel:** Moderner API-Service (Python 3.12) ohne lokale Swiss-Ephemeris-Dependency.
-Optional ruft er einen separaten SWE-Worker (Python 3.11) auf.
+**Ziel:** API-Service (Python 3.11, siehe `Dockerfile`) mit gebündeltem
+`pyswisseph` — Aszendent/Häuser werden direkt in `main.py` berechnet
+(`swe_compute()`), es ist **kein** separater Aufruf nötig.
 
-## Deploy (Railway/Nixpacks)
+**Produktionsplattform:** Railway (Docker-Build via `Dockerfile`). Dieses
+Repo ist zusätzlich an eine Netlify-Integration angebunden, die
+PR-Deploy-Previews erzeugt — das ist ein reines Vorschau-Feature ohne
+Bezug zur Produktion (kein `netlify.toml`/`_redirects` vorhanden) und kann
+in den Netlify-Projekteinstellungen entfernt werden, falls nicht mehr
+gebraucht.
 
-1. Dieses Verzeichnis als neues Railway-Projekt deployen.
-2. `requirements.txt` enthält **kein** pyswisseph – Build läuft mit Python 3.12.
-3. Env-Variablen setzen (Project → Variables):
+`swe_worker/` ist ein historischer, separat deploybarer Ephemeris-Worker
+(Python 3.11 + pyswisseph), den `main.py` aktuell **nicht** aufruft (keine
+`SWE_URL`-Nutzung im Code). Falls davon noch eine zweite Railway-Instanz
+läuft, kann sie ohne Auswirkung auf den Hauptservice gestoppt werden.
+
+## Deploy (Railway/Docker)
+
+1. Dieses Verzeichnis als Railway-Projekt deployen (baut über `Dockerfile`).
+2. Env-Variablen setzen (Project → Variables):
    - `OPENAI_API_KEY`
-   - `OPENAI_MODEL` (optional, Default gpt-4o-mini)
-   - `CORS_ALLOW_ORIGINS` (optional)
-   - `SWE_URL` (optional; erst setzen, wenn der Worker live ist)
+   - `OPENAI_MODEL` (optional, Default `gpt-5-mini`)
+   - `CORS_ALLOW_ORIGINS` (optional, komma-separierte feste Origin-Liste)
    - `HOUSE_SYSTEM` (optional, Default P)
-4. Start-Command: `uvicorn main:app --host 0.0.0.0 --port $PORT` (über `Procfile` gesetzt)
+3. Start-Command: `uvicorn main:app --host 0.0.0.0 --port $PORT` (über `Procfile` gesetzt)
 
 **Healthcheck:** `GET /health`
 
