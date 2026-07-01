@@ -24,7 +24,7 @@ except ImportError:
 
 from openai import OpenAI
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+MODEL = os.getenv("OPENAI_MODEL", "gpt-5-mini")
 
 app = FastAPI(title="horoskop.one API", version="v6.0-deep-reading")
 
@@ -47,6 +47,32 @@ app.add_middleware(
     allow_origins=origins, allow_credentials=("*" not in origins),
     allow_methods=["*"], allow_headers=["*"],
 )
+
+# Security headers — mirrors `_headers` (a Netlify-only convention that Railway/
+# uvicorn never reads). Applied here as real HTTP response headers so they take
+# effect regardless of which platform actually serves production traffic.
+_SECURITY_HEADERS = {
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "Referrer-Policy": "strict-origin-when-cross-origin",
+    "Permissions-Policy": "geolocation=(self), camera=(), microphone=()",
+    "Strict-Transport-Security": "max-age=63072000; includeSubDomains; preload",
+    "Content-Security-Policy": (
+        "default-src 'self'; script-src 'self'; "
+        "connect-src 'self' https://horoskopone-production-4739.up.railway.app "
+        "https://horoskopone-production.up.railway.app https://nominatim.openstreetmap.org; "
+        "img-src 'self' data: blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+        "font-src 'self' https://fonts.gstatic.com; base-uri 'self'; frame-ancestors 'none'; "
+        "form-action 'self'"
+    ),
+}
+
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    for name, value in _SECURITY_HEADERS.items():
+        response.headers.setdefault(name, value)
+    return response
 
 # Rate limiting (optional) — schützt den OpenAI-Key vor Missbrauch.
 if _HAS_SLOWAPI:
@@ -969,12 +995,6 @@ def _cache_put(key: str, resp) -> None:
         _READING_CACHE.pop(oldest_key, None)
     _READING_CACHE[key] = (time.time(), resp)
 
-def _cache_stats() -> Dict[str, Any]:
-    return {"size": len(_READING_CACHE), "max": _READING_CACHE_MAX, "ttl_s": _READING_CACHE_TTL}
-
-@app.get("/cache-stats")
-def cache_stats():
-    return _cache_stats()
 
 async def _reading_impl(req: ReadingRequest):
   try:
