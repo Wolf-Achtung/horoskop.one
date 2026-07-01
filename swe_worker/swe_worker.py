@@ -18,10 +18,13 @@ app = FastAPI(title="SWE Worker", version="v1.0")
 raw_origins = os.getenv("CORS_ALLOW_ORIGINS", "*")
 origins = [o.strip() for o in raw_origins.split(",") if o.strip()] or ["*"]
 
+# A wildcard origin combined with allow_credentials=True lets any site on the
+# same platform (e.g. *.railway.app) send credentialed cross-origin requests.
+# Disable credentials automatically if a wildcard is configured.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-    allow_credentials=True,
+    allow_credentials=("*" not in origins),
     allow_methods=["*"],
     allow_headers=["*"],
 )

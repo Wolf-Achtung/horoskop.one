@@ -39,9 +39,12 @@ DEFAULT_ORIGINS = [
 ]
 raw_origins = os.getenv("CORS_ALLOW_ORIGINS", "")
 origins = [o.strip() for o in raw_origins.split(",") if o.strip()] or DEFAULT_ORIGINS
+# A wildcard origin combined with allow_credentials=True lets any site on the
+# same platform (e.g. *.railway.app) send credentialed cross-origin requests.
+# Disable credentials automatically if a wildcard is ever configured.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins, allow_credentials=True,
+    allow_origins=origins, allow_credentials=("*" not in origins),
     allow_methods=["*"], allow_headers=["*"],
 )
 
@@ -263,8 +266,7 @@ ICHING_HEXAGRAMS: List[Dict[str, str]] = [
 def iching_index(d: dt.date) -> int:
     """Deterministic hexagram index (1..64) derived from the date."""
     daynum = (d - dt.date(d.year, 1, 1)).days + 1
-    idx = (daynum + d.year) % 64
-    return idx if idx != 0 else 1
+    return ((daynum + d.year - 1) % 64) + 1
 
 def iching_lookup(idx: int) -> Dict[str, str]:
     """Return {'name', 'core'} for a hexagram index (1..64)."""
