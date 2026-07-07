@@ -7,6 +7,9 @@ function isoToGerman(input:string){if(!/^\d{4}-\d{2}-\d{2}$/.test(input))return 
 function approxMap(v:string){const map:Record<string,string>={morning:'morgens',noon:'mittags',evening:'abends',night:'nachts','':'unbekannt'};return map[v]??'unbekannt'}
 function setStatus(m:string){byId('status').textContent=m}function setDebug(o:any){const b=byId('debug');const p=byId('debugPre');b.hidden=false;p.textContent=JSON.stringify(o,null,2)}
 function stableSeed(s:string){let h=2166136261>>>0;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
+const ESCAPE_MAP:Record<string,string>={'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'};
+function esc(s:string){return String(s).replace(/[&<>"']/g,c=>ESCAPE_MAP[c])}
+function escNl(s:string){return esc(s).replace(/\n/g,'<br>')}
 function readForm(){const dRaw=(byId('birthDate').value||'').trim();const p=(byId('birthPlace').value||'').trim();const lat=(byId('birthLat').value||'').trim();const lon=(byId('birthLon').value||'').trim();const t=(byId('birthTime').value||'').trim();const a=(byId('timeApprox').value||'').trim();const tf=(byId('timeFrame').value||'week').trim();const mode=(byId('mode').value||'balanced').trim();const readingType=(byId('readingType')?.value||'classic').trim();if(!dRaw||!p)throw new Error('Bitte Datum und Ort angeben.');const birthDate=/^\d{4}-\d{2}-\d{2}$/.test(dRaw)?isoToGerman(dRaw):dRaw;const period=tf==='today'?'day':tf;const payload:any={birthDate,birthPlace:p,period,approxDaypart:approxMap(a),mode,readingType};if(t&&/^\d{1,2}:\d{2}$/.test(t))payload.birthTime=t;if(lat&&lon)payload.coords={lat:Number(lat),lon:Number(lon)};const seed=stableSeed((dRaw||'')+'|'+(p||''));payload.seed=seed;payload.tone=mode;
   // Merge Kosmischer Mixer state if mounted
   const mx=(window as any).__mixerState;
@@ -20,9 +23,9 @@ async function onSubmit(e){e.preventDefault();const btn=byId('btnAsk');try{btn.d
 function renderReading(data:any){const out=byId('readingOut');out.innerHTML='';
   // Show reading type label if available
   if(data?.meta?.readingLabel){const h=document.createElement('div');h.className='reading-type-badge';h.textContent=data.meta.readingLabel;out.appendChild(h)}
-  const make=(t:string,x:string,chips?:string[])=>{const b=document.createElement('div');b.className='reading-block';let html=`<strong>${t}</strong><div>${x}</div>`;if(chips?.length){html+='<div class="reading-chips">'+chips.map(c=>`<span class="reading-chip">${c}</span>`).join('')+'</div>'}b.innerHTML=html;out.appendChild(b)};
+  const make=(t:string,x:string,chips?:string[])=>{const b=document.createElement('div');b.className='reading-block';let html=`<strong>${esc(t)}</strong><div>${escNl(x)}</div>`;if(chips?.length){html+='<div class="reading-chips">'+chips.map(c=>`<span class="reading-chip">${esc(c)}</span>`).join('')+'</div>'}b.innerHTML=html;out.appendChild(b)};
   if(data?.summary)make('Zusammenfassung',data.summary);
-  if(data?.highlights?.length)make('Highlights',data.highlights.slice(0,5).map((s:string)=>'• '+s).join('<br>'));
+  if(data?.highlights?.length)make('Highlights',data.highlights.slice(0,5).map((s:string)=>'• '+s).join('\n'));
   if(data?.sections?.length)for(const s of data.sections)make(s.title||'Abschnitt',s.text||'',s.chips);
   if(data?.disclaimer){const d=document.createElement('div');d.className='reading-disclaimer';d.textContent=data.disclaimer;out.appendChild(d)}
   if(!out.children.length)make('Antwort',typeof data==='string'?data:JSON.stringify(data))}
