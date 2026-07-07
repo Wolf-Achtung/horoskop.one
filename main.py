@@ -37,14 +37,21 @@ DEFAULT_ORIGINS = [
     "https://horoskopone-production-4739.up.railway.app",
     "https://horoskopone-production.up.railway.app",
 ]
-raw_origins = os.getenv("CORS_ALLOW_ORIGINS", "")
-origins = [o.strip() for o in raw_origins.split(",") if o.strip()] or DEFAULT_ORIGINS
-# A wildcard origin combined with allow_credentials=True lets any site on the
-# same platform (e.g. *.railway.app) send credentialed cross-origin requests.
-# Disable credentials automatically if a wildcard is ever configured.
+def _resolve_cors(raw_origins: str, defaults: List[str]):
+    """Parse CORS_ALLOW_ORIGINS and decide whether credentials are safe.
+
+    A wildcard origin combined with allow_credentials=True lets any site on
+    the same platform (e.g. *.railway.app) send credentialed cross-origin
+    requests, so credentials are disabled automatically whenever a wildcard
+    is configured (explicit or via a default that includes "*").
+    """
+    origins = [o.strip() for o in raw_origins.split(",") if o.strip()] or defaults
+    return origins, ("*" not in origins)
+
+origins, _allow_credentials = _resolve_cors(os.getenv("CORS_ALLOW_ORIGINS", ""), DEFAULT_ORIGINS)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins, allow_credentials=("*" not in origins),
+    allow_origins=origins, allow_credentials=_allow_credentials,
     allow_methods=["*"], allow_headers=["*"],
 )
 
@@ -917,13 +924,16 @@ def _extract_sections(rtype: str, data: Dict[str, Any], why_chips: List[str]) ->
 VALID_READING_TYPES = list(DEEP_READING_TYPES.keys())
 
 class ReadingRequest(BaseModel):
-    birthDate: str
-    birthPlace: str
-    birthTime: Optional[str] = None
-    approxDaypart: Optional[str] = None
-    period: str = Field("day", description="day|week|month")
-    tone: str = "mystic_deep"
-    readingType: str = Field("classic", description="classic|blueprint|soul_purpose|career|relationship|wealth|timeline|genius")
+    # max_length bounds keep oversized free-text fields (which get embedded
+    # directly into the OpenAI prompt) from amplifying per-request cost —
+    # the rate limiter caps call *count*, not payload size.
+    birthDate: str = Field(..., max_length=32)
+    birthPlace: str = Field(..., max_length=200)
+    birthTime: Optional[str] = Field(None, max_length=16)
+    approxDaypart: Optional[str] = Field(None, max_length=32)
+    period: str = Field("day", max_length=16, description="day|week|month")
+    tone: str = Field("mystic_deep", max_length=64)
+    readingType: str = Field("classic", max_length=64, description="classic|blueprint|soul_purpose|career|relationship|wealth|timeline|genius")
     seed: Optional[int] = None
     mixer: Optional[Dict[str, float]] = None
     coords: Optional[Dict[str, float]] = None
