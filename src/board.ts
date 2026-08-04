@@ -420,6 +420,22 @@ function renderExplainCard(today: Today) {
 
 // --- Kapitel & Share -------------------------------------------------------
 
+// Die Prompts bitten das Orakel, mit dem „Satz für heute" zu schließen —
+// einem kleinen, konkreten Impuls. Wir heben den letzten Satz visuell heraus;
+// klappt die Satztrennung nicht, bleibt der Text einfach ungeteilt.
+function splitImpuls(text: string): { body: string; impuls: string | null } {
+  const parts = text.match(/[^.!?]+[.!?]+["“”»']*\s*/g);
+  if (!parts || parts.length < 2) return { body: text, impuls: null };
+  const impuls = parts[parts.length - 1].trim();
+  if (impuls.length < 8 || impuls.length > 160) return { body: text, impuls: null };
+  return { body: parts.slice(0, -1).join('').trim(), impuls };
+}
+
+function todaysImpuls(state: BoardState, today: Today): string | null {
+  const ch = [...state.chapters].reverse().find(c => c.day === today.dayIndex);
+  return ch ? splitImpuls(ch.text).impuls : null;
+}
+
 function renderChapters(state: BoardState, today: Today) {
   const el = $('chapters'); el.innerHTML = '';
   if (!state.chapters.length) return;
@@ -439,9 +455,15 @@ function renderChapters(state: BoardState, today: Today) {
       : `zieht auf Feld ${ch.to}${ch.fieldName ? ' · ' + ch.fieldName : ''}`;
     const strong = document.createElement('strong'); strong.textContent = `${label} ${where}`;
     title.append(orb, strong);
+    const { body, impuls } = splitImpuls(ch.text);
     const txt = document.createElement('div'); txt.className = 'chapter-text';
-    txt.textContent = ch.text;
+    txt.textContent = body;
     card.append(day, title, txt);
+    if (impuls) {
+      const imp = document.createElement('div'); imp.className = 'impuls';
+      imp.textContent = impuls;
+      card.appendChild(imp);
+    }
     if (ch.chips?.length) {
       const chips = document.createElement('div'); chips.className = 'reading-chips';
       for (const c of ch.chips) {
@@ -460,7 +482,10 @@ function shareText(state: BoardState, today: Today): string {
     const filled = Math.round(Math.min(p, 30) / 30 * 5);
     return STONE_META[s].glyph + ' ' + '▓'.repeat(filled) + '░'.repeat(5 - filled) + (p === 31 ? ' ✓' : '');
   });
-  return `Das Monatsbrett · Tag ${today.dayIndex} ${moonEmoji(today.moon.frac)}\n${rows.join('\n')}\nhttps://www.horoskop.one/play`;
+  const impuls = todaysImpuls(state, today);
+  return `Das Monatsbrett · Tag ${today.dayIndex} ${moonEmoji(today.moon.frac)}\n${rows.join('\n')}`
+    + (impuls ? `\n„${impuls}“` : '')
+    + `\nhttps://www.horoskop.one/play`;
 }
 
 // --- Aktionsbereich --------------------------------------------------------
@@ -641,9 +666,19 @@ function renderPlayed(state: BoardState, today: Today) {
   actionStep(el);
   const p = document.createElement('p');
   p.textContent = '✓ Dein Zug für heute ist gemacht — die Deutung steht unten in deiner Monatsgeschichte.';
+  el.appendChild(p);
+  const impuls = todaysImpuls(state, today);
+  if (impuls) {
+    const hero = document.createElement('div'); hero.className = 'impuls-hero';
+    const lab = document.createElement('span'); lab.className = 'impuls-label';
+    lab.textContent = 'Dein Satz für heute';
+    const q = document.createElement('p'); q.textContent = impuls;
+    hero.append(lab, q);
+    el.appendChild(hero);
+  }
   const nxt = document.createElement('p'); nxt.className = 'action-hint';
   nxt.textContent = 'Morgen wirft das Orakel neu. Schau einfach wieder vorbei.';
-  el.append(p, nxt);
+  el.appendChild(nxt);
   const row = document.createElement('div'); row.className = 'share-row';
   const share = document.createElement('button'); share.className = 'btn-ghost';
   share.textContent = 'Brettstand teilen';

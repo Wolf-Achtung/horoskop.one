@@ -549,13 +549,22 @@ def _chat_kwargs(model: str, temperature: float, seed: Optional[int] = None) -> 
             kwargs["seed"] = seed
     return kwargs
 
-_LLM_DEFAULT_SYSTEM = ("Du bist ein klarer, sachlicher und freundlicher Schreibassistent. "
-                       "Du schreibst verständlich, konkret und alltagsnah — ohne Esoterik, "
-                       "ohne Pathos, ohne blumige Metaphern. "
-                       "Du schreibst fehlerfreies, natürliches Deutsch und verwendest "
-                       "ausschließlich existierende deutsche Wörter — keine "
-                       "Wortneuschöpfungen, keine erfundenen Adjektive, keine gestelzten "
-                       "Komposita. Im Zweifel wähle das einfache, gebräuchliche Wort.")
+# Die Produktstimme (docs/tonalitaet.md): Horoskope, die klingen wie der Rat
+# einer guten Freundin — authentisch, alltagsnah, mit kleinen konkreten
+# Impulsen statt kosmischer Floskeln. Gilt als Basis für alle Textsorten;
+# die Ton-Regler (_TONE_DIRECTIVES) färben nur noch darüber.
+_LLM_DEFAULT_SYSTEM = (
+    "Du schreibst Tageshoroskope, die klingen wie der Rat einer guten Freundin "
+    "oder eines guten Freundes: authentisch, warm, direkt und auf Augenhöhe, "
+    "in Du-Form — so, wie Menschen im echten Leben miteinander sprechen. "
+    "Kurze Sätze. Keine Astro-Floskeln, kein Pathos, keine Belehrung. "
+    "Gute Impulse sind klein und noch heute machbar, zum Beispiel: "
+    "„Schütze heute deine Grenzen.“ — „Erwarte heute nicht zu viel, von dir "
+    "und von anderen.“ — „Lass dein Handy heute Abend so lange wie möglich aus.“ "
+    "Du schreibst fehlerfreies, natürliches Deutsch und verwendest "
+    "ausschließlich existierende deutsche Wörter — keine Wortneuschöpfungen, "
+    "keine erfundenen Adjektive, keine gestelzten Komposita. Im Zweifel wähle "
+    "das einfache, gebräuchliche Wort.")
 
 def _anthropic_text(system: str, user: str) -> str:
     """Ein Text-Call gegen die Anthropic Messages API.
@@ -665,9 +674,9 @@ _MIXER_LABELS: Dict[str, str] = {
 
 _TONE_DIRECTIVES: Dict[str, str] = {
     "mystic_coach": (
-        "Schreibe in einer ausbalancierten Stimme: warm, achtsam, zugleich klar "
-        "und handlungsorientiert. Eine Prise Mystik ist erlaubt, darf aber nie "
-        "die Konkretheit überlagern. Nutze ruhige Bilder, bleib aber alltagsnah."
+        "Schreibe warm und achtsam, aber immer alltagsnah — wie eine Freundin "
+        "mit einem Gespür fürs Mystische. Eine Prise Poesie ist erlaubt, darf "
+        "aber nie die Konkretheit überlagern: Jeder Rat bleibt greifbar."
     ),
     "mystisch": (
         "Schreibe in einer poetisch-mystischen Stimme: Bilder aus Natur, Mond, "
@@ -1320,7 +1329,10 @@ Gib nur JSON:
     }
 
     system_prompt = (_deep_system_prompt(rtype) + "\n\nTon-Vorgabe: " + tone_block
-                     + "\n\nSprache: fehlerfreies, natürliches Deutsch; ausschließlich "
+                     + "\n\nStimme: wie der Rat einer guten Freundin — warm, direkt, "
+                       "auf Augenhöhe, in Du-Form, alltagsnah statt kosmisch. Impulse "
+                       "klein und konkret genug für heute."
+                       "\n\nSprache: fehlerfreies, natürliches Deutsch; ausschließlich "
                        "existierende Wörter — keine Wortneuschöpfungen oder erfundenen "
                        "Adjektive. Im Zweifel das einfache, gebräuchliche Wort.")
     user_prompt = _deep_user_prompt(rtype, ctx)
@@ -1710,9 +1722,11 @@ Zug: Der Stein „{stone_label}“ ({'zieht aus ins Binsengefilde' if to_pos == 
 Profil: Sternzeichen {sun}, Lebenszahl {lp}{f", Ort {req.birthPlace}" if req.birthPlace else ""}.{f'''
 Besonderer Tag: {event['symbol']} {event['name']} — {event['text']} Webe dieses seltene Ereignis kurz in die Deutung ein.''' if event else ""}
 
-Schreibe 2–3 Sätze Deutung dieses Zuges für den Lebensbereich {stone_label} und
-schließe mit einem konkreten Tagesimpuls (Imperativ, 1 Satz). Keine Aufzählung,
-keine Überschrift, keine medizinisch/juristisch/finanziell heiklen Ratschläge."""
+Schreibe 2–3 kurze Sätze Deutung dieses Zuges für den Lebensbereich {stone_label} —
+wie eine gute Freundin, die dir beim Kaffee etwas mitgibt. Der letzte Satz ist
+der „Satz für heute“: ein kleiner, konkreter Alltags-Impuls im Imperativ, der
+bis heute Abend machbar ist. Keine Aufzählung, keine Überschrift, keine
+medizinisch/juristisch/finanziell heiklen Ratschläge."""
     try:
         return oa_text(_tone_directive(req.tone) + "\n\n" + prompt, temperature=0.8).strip()
     except Exception as e:
@@ -1840,11 +1854,13 @@ Tageszeichen {today['ganzhi']['label']} · Feld „{today['field']['name']}“ �
 Paar-Resonanz: Person A ist Sternzeichen {z1}, Lebenszahl {lp1}, Jahreszeichen {a1}.
 Person B ist Sternzeichen {z2}, Lebenszahl {lp2}, Jahreszeichen {a2}.
 
-Schreibe 3–4 Sätze darüber, wie diese beiden Energien heute zusammenwirken —
-was sie einander geben, wo es knistern oder haken kann — und schließe mit einem
-konkreten gemeinsamen Tagesimpuls (Imperativ, 1 Satz). Sprich beide als „ihr" an.
-Keine Aufzählung, keine Überschrift, keine medizinisch/juristisch/finanziell
-heiklen Ratschläge, keine Beziehungsprognosen über den heutigen Tag hinaus."""
+Schreibe 3–4 kurze Sätze darüber, wie diese beiden Energien heute zusammenwirken —
+was sie einander geben, wo es knistern oder haken kann — im Ton einer guten
+Freundin, die euch beide kennt. Sprich beide als „ihr" an. Der letzte Satz ist
+euer „Satz für heute": ein kleiner, gemeinsamer Impuls im Imperativ, der bis
+heute Abend machbar ist. Keine Aufzählung, keine Überschrift, keine
+medizinisch/juristisch/finanziell heiklen Ratschläge, keine Beziehungsprognosen
+über den heutigen Tag hinaus."""
     seed = _det_hash("resonanz", req.birthDate.strip(), req.partnerDate.strip(), today["date"])
     try:
         text = oa_text(_tone_directive(req.tone) + "\n\n" + prompt, seed=seed).strip()
@@ -1889,9 +1905,11 @@ Tageszeichen {today['ganzhi']['label']}.
 Zug: Der Stein „{stone_label}“ zieht auf Feld {field['index']} „{field['name']}“ — {field['core']}.
 Profil: Sternzeichen {sun}, Lebenszahl {lp}.
 
-Schreibe 2–3 Sätze Deutung dieses Zuges für den Lebensbereich {stone_label} und
-schließe mit einem konkreten Tagesimpuls (Imperativ, 1 Satz). Keine Aufzählung,
-keine Überschrift, keine medizinisch/juristisch/finanziell heiklen Ratschläge."""
+Schreibe 2–3 kurze Sätze Deutung dieses Zuges für den Lebensbereich {stone_label} —
+wie eine gute Freundin, die dir beim Kaffee etwas mitgibt. Der letzte Satz ist
+der „Satz für heute“: ein kleiner, konkreter Alltags-Impuls im Imperativ, der
+bis heute Abend machbar ist. Keine Aufzählung, keine Überschrift, keine
+medizinisch/juristisch/finanziell heiklen Ratschläge."""
     return _tone_directive(None), user, today
 
 def _compare_page(body: str) -> Response:

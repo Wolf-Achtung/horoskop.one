@@ -206,6 +206,16 @@ html, body{
   width:26px;height:26px;border-radius:50%;color:#fffaf0;font-size:14px;flex:none;
   border:1px solid rgba(60,40,10,.35)}
 .chapter-text{line-height:1.65;font-size:16px}
+.impuls{margin-top:10px;padding:8px 12px;border-left:3px solid #a9782c;
+  background:#faf3e0;border-radius:0 8px 8px 0;font-size:16px;line-height:1.5;
+  color:#4a3d26;font-weight:600}
+.impuls-hero{margin:14px 0 4px;padding:14px 16px;border-radius:12px;
+  background:linear-gradient(100deg,#fdf3d8,#f6e8c4);border:1px solid #d9b86a;
+  box-shadow:0 1px 8px rgba(169,120,44,.15)}
+.impuls-label{display:block;font-size:12px;letter-spacing:.14em;
+  text-transform:uppercase;color:#a9782c;font-weight:700;margin-bottom:5px}
+.impuls-hero p{margin:0;font-family:'Cormorant Garamond',Georgia,serif;
+  font-size:21px;line-height:1.45;color:#2b2317;font-weight:600}
 .chapter .reading-chips{margin-top:9px}
 .board-container .reading-chip{background:#f5e9cd;border:1px solid #dcca9e;color:#5a4c33}
 .share-row{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
