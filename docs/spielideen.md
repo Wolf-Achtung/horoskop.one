@@ -43,7 +43,9 @@ Bonus-Variante „Jahrgangszwilling" (Tag+Jahr) für den Wow-Effekt, wo die
 Tabelle es hergibt. Teilbar („Ich bin Sternzwilling von …!").
 **Aufwand: klein–mittel (Datentabelle kuratieren + Anzeige).**
 
-### 3. Ereignisfelder & seltene Momente — Überraschung im Zug
+### 3. Ereignisfelder & seltene Momente — Überraschung im Zug ✓ umgesetzt 08/2026
+> v1 mit zwei Ereignissen: ✨ Sternschnuppe (Doppelwurf mit Wahl) und
+> 🌬 Rückenwind (+1 Feld); deterministisch ~2 Tage/Monat pro Person.
 Nicht jeder Tag ist gleich: deterministisch (aus Datum + Profil) fallen
 selten **besondere Momente** — „✨ Sternschnuppe: Das Orakel wirft heute
 zweimal, wähle den Wurf", „🌬 Rückenwind: dein Stein zieht ein Feld
@@ -60,7 +62,7 @@ gibt Langzeitbindung ohne Streaks. Seltene Karten: die Auszugshäuser
 28–30 und das Wasser. Vorstufe für spätere Premium-Artworks.
 **Aufwand: klein (LocalStorage-Set + Albumseite), Artwork später.**
 
-### 5. Partner-Resonanz — dein „Partner-Check"
+### 5. Partner-Resonanz — dein „Partner-Check" ✓ umgesetzt 08/2026
 Zweites Geburtsdatum eingeben → **Resonanz-Lesung**: Sonnenzeichen-Paar,
 Lebenszahlen-Verhältnis, chinesische Zeichen-Harmonie, gemeinsamer
 LLM-Text („Löwe trifft Waage, 11 trifft 4 …"). Als eigene Karte im Spiel

@@ -11,14 +11,22 @@ type Chapter = { day: number; stone: string; to: number; text: string;
                  chips: string[]; fieldName?: string };
 type Profile = { birthDate: string; birthPlace?: string; birthTime?: string };
 type Gespuer = { boardId: string; guessed: number; right: number };
+type Resonanz = { date: string; partnerDate: string; text: string; chips: string[] };
 type BoardState = {
   boardId: string; positions: Positions; lastPlayedDay: number;
   profile: Profile | null; chapters: Chapter[];
   album?: number[];      // je entdecktes Feld (1–30), überdauert Monatsbretter
   gespuer?: Gespuer;     // Vorahnungs-Zähler, resettet mit jedem neuen Brett
+  resonanz?: Resonanz;   // letzte Partner-Resonanz (1 LLM-Call pro Tag reicht)
 };
 type FieldCard = { index: number; name: string; core: string };
 type StarTwin = { name: string; year: number; known: string };
+type BoardEvent = { key: string; symbol: string; name: string; text: string };
+type ThrowData = {
+  throw: number; legalMoves: Record<string, number>;
+  event: BoardEvent | null;
+  alt?: { throw: number; legalMoves: Record<string, number> };
+};
 type Explain = { key: string; title: string; heute: string; hintergrund: string; link: string };
 type Today = {
   date: string; boardId: string; dayIndex: number;
@@ -148,6 +156,76 @@ async function renderStarTwins(profile: Profile) {
     line.appendChild(jw);
   }
   el.appendChild(line);
+}
+
+// --- Partner-Resonanz ------------------------------------------------------
+
+function renderResonanz(state: BoardState, today: Today) {
+  const el = document.getElementById('resonanz');
+  if (!el || !state.profile) return;
+  el.hidden = false;
+  el.innerHTML = '';
+  const det = document.createElement('details');
+  const sum = document.createElement('summary'); sum.className = 'resonanz-summary';
+  sum.textContent = '♡ Partner-Resonanz — wie läuft euer gemeinsamer Tag?';
+  det.appendChild(sum);
+  const hint = document.createElement('p'); hint.className = 'onboard-hint';
+  hint.textContent = 'Gib ein zweites Geburtsdatum ein — Partnerin, Freund, Kollegin — '
+    + 'und das Orakel liest, wie eure Energien heute zusammenwirken. '
+    + 'Das Datum bleibt in deinem Browser.';
+  det.appendChild(hint);
+  const row = document.createElement('div'); row.className = 'resonanz-row';
+  const input = document.createElement('input'); input.type = 'date';
+  if (state.resonanz?.partnerDate) {
+    const m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(state.resonanz.partnerDate);
+    if (m) input.value = `${m[3]}-${m[2]}-${m[1]}`;
+  }
+  const btn = document.createElement('button'); btn.className = 'btn-primary resonanz-btn';
+  btn.textContent = 'Resonanz lesen';
+  row.append(input, btn);
+  det.appendChild(row);
+  const out = document.createElement('div'); out.className = 'resonanz-out';
+  det.appendChild(out);
+
+  const renderResult = (r: Resonanz) => {
+    out.innerHTML = '';
+    const chips = document.createElement('div'); chips.className = 'reading-chips';
+    for (const c of r.chips) {
+      const s = document.createElement('span'); s.className = 'reading-chip'; s.textContent = c;
+      chips.appendChild(s);
+    }
+    const txt = document.createElement('p'); txt.className = 'resonanz-text';
+    txt.textContent = r.text;
+    out.append(chips, txt);
+  };
+  // Heutige Lesung schon da? Direkt zeigen — spart den LLM-Call beim Reload.
+  if (state.resonanz && state.resonanz.date === today.date) renderResult(state.resonanz);
+
+  btn.addEventListener('click', async () => {
+    if (!input.value) { input.focus(); return; }
+    const [y, m, d] = input.value.split('-');
+    const partnerDate = `${d}.${m}.${y}`;
+    if (state.resonanz && state.resonanz.date === today.date
+        && state.resonanz.partnerDate === partnerDate) {
+      renderResult(state.resonanz); return;
+    }
+    btn.disabled = true; btn.textContent = 'Das Orakel liest …';
+    try {
+      const data = await api('/resonanz', {
+        birthDate: state.profile!.birthDate, partnerDate });
+      state.resonanz = { date: data.date, partnerDate, text: data.text, chips: data.chips };
+      saveState(state);
+      renderResult(state.resonanz);
+    } catch (e: any) {
+      out.innerHTML = '';
+      const p = document.createElement('p'); p.className = 'action-hint';
+      p.textContent = 'Fehler: ' + (e?.message || e) + ' — bitte versuche es gleich noch einmal.';
+      out.appendChild(p);
+    } finally {
+      btn.disabled = false; btn.textContent = 'Resonanz lesen';
+    }
+  });
+  el.appendChild(det);
 }
 
 // --- Gespür (Orakelfrage) --------------------------------------------------
@@ -455,10 +533,20 @@ function sticksRow(throwVal: number | null, tossing: boolean): HTMLElement {
 
 type Guess = 'kurz' | 'weit' | null;
 
-function renderThrowIntro(gespuer: Gespuer | undefined, onThrow: (guess: Guess) => void) {
+function eventBanner(event: BoardEvent): HTMLElement {
+  const b = document.createElement('div'); b.className = 'event-banner';
+  const t = document.createElement('b'); t.textContent = `${event.symbol} ${event.name}! `;
+  b.appendChild(t);
+  b.appendChild(document.createTextNode(event.text));
+  return b;
+}
+
+function renderThrowIntro(gespuer: Gespuer | undefined, event: BoardEvent | null,
+                          onThrow: (guess: Guess) => void) {
   const el = $('action'); el.innerHTML = '';
   actionStep(el, 'Vier Wurfstäbe entscheiden, wie weit du heute ziehst. Hast du eine Vorahnung, wie sie fallen?');
   const wrap = document.createElement('div'); wrap.className = 'throw-intro';
+  if (event) wrap.appendChild(eventBanner(event));
   wrap.appendChild(sticksRow(null, false));
   const q = document.createElement('p'); q.className = 'throw-label';
   q.textContent = 'Deine Vorahnung — fällt der Wurf kurz oder weit?';
@@ -487,22 +575,44 @@ function renderThrowIntro(gespuer: Gespuer | undefined, onThrow: (guess: Guess) 
   el.appendChild(wrap);
 }
 
-function renderThrowChoices(today: Today, throwVal: number,
-                            legal: Record<string, number>, onMove: (stone: string) => void,
+function renderThrowChoices(today: Today, t: ThrowData, useAlt: boolean,
+                            onMove: (stone: string) => void,
+                            onSwitch: (useAlt: boolean) => void,
                             guess: Guess, gespuer: Gespuer | undefined) {
   const el = $('action'); el.innerHTML = '';
   actionStep(el, 'Die Stäbe sind gefallen. Du triffst genau eine Entscheidung pro Tag: Welcher Lebensbereich geht diesen Weg?');
-  el.appendChild(sticksRow(throwVal, false));
+  if (t.event) el.appendChild(eventBanner(t.event));
+  const shownThrow = useAlt && t.alt ? t.alt.throw : t.throw;
+  const legal = useAlt && t.alt ? t.alt.legalMoves : t.legalMoves;
+  el.appendChild(sticksRow(shownThrow, false));
   const label = document.createElement('p'); label.className = 'throw-label';
-  label.textContent = `Der Wurf: ${throwVal} ${throwVal === 1 ? 'Feld' : 'Felder'} weit.`;
+  if (!useAlt && t.event?.key === 'rueckenwind') {
+    label.textContent = `Der Wurf: ${t.throw} · 🌬 Rückenwind → ${t.throw + 1} Felder weit.`;
+  } else {
+    label.textContent = `Der Wurf: ${shownThrow} ${shownThrow === 1 ? 'Feld' : 'Felder'} weit.`;
+  }
   el.appendChild(label);
+  if (t.alt) {
+    // Sternschnuppe: zwei Würfe liegen auf dem Tisch — einer gilt.
+    const row = document.createElement('div'); row.className = 'guess-row';
+    const mkSwitch = (alt: boolean, tv: number) => {
+      const btn = document.createElement('button');
+      btn.className = 'btn-ghost throw-switch' + ((alt === useAlt) ? ' active' : '');
+      btn.textContent = `${alt === useAlt ? '● ' : ''}Wurf ${alt ? 2 : 1}: ${tv} ${tv === 1 ? 'Feld' : 'Felder'}`;
+      btn.addEventListener('click', () => { if (alt !== useAlt) onSwitch(alt); });
+      row.appendChild(btn);
+    };
+    mkSwitch(false, t.throw);
+    mkSwitch(true, t.alt.throw);
+    el.appendChild(row);
+  }
   if (guess) {
-    const correct = (throwVal <= 2) === (guess === 'kurz');
+    const correct = (t.throw <= 2) === (guess === 'kurz');
     const verdict = document.createElement('p');
     verdict.className = 'guess-verdict' + (correct ? ' hit' : '');
     verdict.textContent = correct
-      ? `✨ Dein Gespür lag richtig — der Wurf fiel ${throwVal <= 2 ? 'kurz' : 'weit'}.`
-      : `Der Wurf fiel ${throwVal <= 2 ? 'kurz' : 'weit'} — diesmal wollte das Orakel dich überraschen.`;
+      ? `✨ Dein Gespür lag richtig — der Wurf fiel ${t.throw <= 2 ? 'kurz' : 'weit'}.`
+      : `Der Wurf fiel ${t.throw <= 2 ? 'kurz' : 'weit'} — diesmal wollte das Orakel dich überraschen.`;
     if (gespuer && gespuer.guessed > 0) {
       verdict.textContent += ` (${gespuer.right} von ${gespuer.guessed} richtig)`;
     }
@@ -556,10 +666,11 @@ function renderPlayed(state: BoardState, today: Today) {
 
 // --- Hauptablauf -----------------------------------------------------------
 
-async function playDay(state: BoardState, day: number, stone: string, silent: boolean) {
+async function playDay(state: BoardState, day: number, stone: string, silent: boolean,
+                       useAlt = false) {
   const data = await api('/board/move', {
     birthDate: state.profile!.birthDate, birthPlace: state.profile!.birthPlace,
-    positions: state.positions, stone, dayIndex: day,
+    positions: state.positions, stone, dayIndex: day, useAlt,
   });
   state.positions = data.positions;
   state.chapters.push({ day, stone, to: data.moved.to, text: data.reading.text,
@@ -596,6 +707,7 @@ async function startDay(state: BoardState, today: Today) {
   await catchUp(state, today);
   renderChapters(state, today);
   renderAlbum(state);
+  renderResonanz(state, today);
 
   if (state.lastPlayedDay >= today.dayIndex) {
     renderBoard(state.positions, today, null, null);
@@ -616,6 +728,7 @@ async function startDay(state: BoardState, today: Today) {
     // Das Ritual: erst die Vorahnung (Orakelfrage), dann fliegen die Stäbe —
     // der eine Klick wird zu Einsatz → Enthüllung → Wahl.
     renderThrowIntro(state.gespuer?.boardId === today.boardId ? state.gespuer : undefined,
+      t.event || null,
       (guess) => {
         const g = gespuerFor(state, today.boardId);
         if (guess) {
@@ -626,15 +739,17 @@ async function startDay(state: BoardState, today: Today) {
         const el = $('action'); el.innerHTML = '';
         actionStep(el);
         el.appendChild(sticksRow(t.throw, true));
-        setTimeout(() => {
-          renderBoard(state.positions, today, t.legalMoves, pick);
-          renderThrowChoices(today, t.throw, t.legalMoves, pick, guess, state.gespuer);
-        }, 1150);
+        const show = (useAlt: boolean) => {
+          const legal = useAlt && t.alt ? t.alt.legalMoves : t.legalMoves;
+          renderBoard(state.positions, today, legal, s => pick(s, useAlt));
+          renderThrowChoices(today, t, useAlt, s => pick(s, useAlt), show, guess, state.gespuer);
+        };
+        setTimeout(() => show(false), 1150);
       });
-    async function pick(stone: string) {
+    async function pick(stone: string, useAlt: boolean) {
       setActionMessage('Der Zug wird gedeutet …');
       try {
-        await playDay(state, today.dayIndex, stone, false);
+        await playDay(state, today.dayIndex, stone, false, useAlt);
         renderBoard(state.positions, today, null, null);
         renderChapters(state, today);
         renderAlbum(state);

@@ -187,6 +187,84 @@ class TestBoardEndpoints:
         assert r.status_code in (200, 404)
 
 
+class TestEventDays:
+    def test_event_deterministic_valid_and_rare(self):
+        a = main.board_event("27.07.1966", "2026-08", 5)
+        assert a == main.board_event("27.07.1966", "2026-08", 5)
+        events = [main.board_event("27.07.1966", "2026-08", d) for d in range(1, 31)]
+        found = [e for e in events if e]
+        for e in found:
+            assert e["key"] in main.BOARD_EVENTS
+            assert e["symbol"] and e["name"] and e["text"]
+        assert len(found) <= 6  # selten: im Schnitt ~2 pro Monat
+
+    def test_alt_throw_in_range(self):
+        for d in range(1, 31):
+            assert 1 <= main.board_alt_throw("27.07.1966", "b", d) <= 5
+
+    def test_throw_endpoint_carries_event_field(self):
+        r = client.post("/board/throw", json={"birthDate": "27.07.1966", "positions": {}})
+        assert r.status_code == 200
+        assert "event" in r.json()
+
+    def test_sternschnuppe_day_offers_alt_throw(self):
+        today = client.get("/board/today").json()
+        for day in range(1, today["dayIndex"] + 1):
+            ev = main.board_event("27.07.1966", today["boardId"], day)
+            if ev and ev["key"] == "sternschnuppe":
+                r = client.post("/board/throw", json={
+                    "birthDate": "27.07.1966", "positions": {}, "dayIndex": day}).json()
+                assert r["event"]["key"] == "sternschnuppe"
+                assert 1 <= r["alt"]["throw"] <= 5
+                assert set(r["alt"]["legalMoves"]) <= set(main.STONES)
+                return
+        # kein Sternschnuppen-Tag in Reichweite dieses Monats — nichts zu prüfen
+
+    def test_rueckenwind_day_extends_legal_moves(self):
+        today = client.get("/board/today").json()
+        for day in range(1, today["dayIndex"] + 1):
+            ev = main.board_event("27.07.1966", today["boardId"], day)
+            if ev and ev["key"] == "rueckenwind":
+                base = main.board_throw("27.07.1966", today["boardId"], day)
+                r = client.post("/board/throw", json={
+                    "birthDate": "27.07.1966", "positions": {}, "dayIndex": day}).json()
+                assert r["throw"] == base
+                assert r["legalMoves"]["fokus"] == base + 1  # vom Start: Feld = Wurf+1
+                return
+
+    def test_move_rejects_alt_without_sternschnuppe(self):
+        today = client.get("/board/today").json()
+        for day in range(1, today["dayIndex"] + 1):
+            ev = main.board_event("27.07.1966", today["boardId"], day)
+            if not (ev and ev["key"] == "sternschnuppe"):
+                r = client.post("/board/move", json={
+                    "birthDate": "27.07.1966", "positions": {}, "stone": "fokus",
+                    "dayIndex": day, "useAlt": True})
+                assert r.status_code == 422
+                assert "zweiten Wurf" in r.json()["detail"]
+                return
+        raise AssertionError("kein ereignisfreier Tag gefunden — extrem unwahrscheinlich")
+
+
+class TestResonanz:
+    def test_rejects_unparseable_dates(self):
+        r = client.post("/resonanz", json={"birthDate": "quatsch", "partnerDate": "27.07.1966"})
+        assert r.status_code == 422
+
+    def test_happy_path_with_fallback_text(self, monkeypatch):
+        def boom(*a, **k):
+            raise RuntimeError("kein LLM im Test")
+        monkeypatch.setattr(main, "oa_text", boom)
+        r = client.post("/resonanz", json={
+            "birthDate": "27.07.1966", "partnerDate": "13.02.1970"})
+        assert r.status_code == 200
+        data = r.json()
+        assert data["text"] and len(data["chips"]) == 3
+        assert data["pair"]["zodiac"] == ["Löwe", "Wassermann"]
+        assert data["pair"]["animal"] == ["Pferd", "Hund"]
+        assert data["date"]
+
+
 class TestFieldAlbum:
     def test_fields_endpoint_returns_all_30_cards(self):
         r = client.get("/board/fields")

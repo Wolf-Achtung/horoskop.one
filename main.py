@@ -1571,6 +1571,29 @@ def board_throw(birth_date: str, board_id: str, day_index: int) -> int:
     """Deterministischer Senet-Wurf (1..5) aus Profil + Bretttag."""
     return _det_hash("board", (birth_date or "").strip(), board_id, day_index) % 5 + 1
 
+# --- Seltene Ereignistage (docs/spielideen.md #3) --------------------------
+# Deterministisch aus Profil + Bretttag: im Schnitt ~2 besondere Tage pro
+# Mondmonat und Person — selten genug, dass sie sich wie Geschenke anfühlen,
+# und fair, weil vorherbestimmt statt ausgewürfelt.
+BOARD_EVENTS: Dict[str, Dict[str, str]] = {
+    "sternschnuppe": {
+        "symbol": "✨", "name": "Sternschnuppe",
+        "text": "Das Orakel wirft heute zweimal — du wählst, welcher Wurf gilt."},
+    "rueckenwind": {
+        "symbol": "🌬", "name": "Rückenwind",
+        "text": "Ein günstiger Wind schiebt an: dein Stein zieht heute ein Feld weiter."},
+}
+
+def board_event(birth_date: str, board_id: str, day_index: int) -> Optional[Dict[str, str]]:
+    """Besonderer Moment des Tages (oder None). Zwei feste Lose aus 30."""
+    r = _det_hash("event", (birth_date or "").strip(), board_id, day_index) % 30
+    key = {7: "sternschnuppe", 13: "rueckenwind"}.get(r)
+    return {"key": key, **BOARD_EVENTS[key]} if key else None
+
+def board_alt_throw(birth_date: str, board_id: str, day_index: int) -> int:
+    """Zweiter Wurf am Sternschnuppen-Tag (1..5, unabhängig vom ersten)."""
+    return _det_hash("board-alt", (birth_date or "").strip(), board_id, day_index) % 5 + 1
+
 def _water_landing(positions: Dict[str, int], stone: str) -> int:
     """Feld 27 (Haus des Wassers): zurück zu Feld 15; ist es belegt, das
     nächste freie Feld darunter."""
@@ -1651,9 +1674,11 @@ class BoardMoveRequest(BaseModel):
     stone: str = Field(..., max_length=16)
     tone: Optional[str] = Field(None, max_length=64)
     dayIndex: Optional[int] = Field(None, ge=1, le=30)
+    useAlt: bool = False  # Sternschnuppen-Tag: den zweiten Wurf nehmen
 
 def _board_reading(req: BoardMoveRequest, today: Dict[str, Any], stone: str,
-                   from_pos: int, to_pos: int, is_today: bool) -> str:
+                   from_pos: int, to_pos: int, is_today: bool,
+                   event: Optional[Dict[str, str]] = None) -> str:
     """Mikro-Lesung zum Zug. LLM nur für den aktuellen Tag; Nachhol-Züge und
     LLM-Fehler bekommen einen deterministischen Kurztext."""
     field = FIELD_EVENTS[min(to_pos, 30) - 1] if to_pos >= 1 else FIELD_EVENTS[0]
@@ -1673,7 +1698,8 @@ I-Ging {today['hexagram']['index']} „{today['hexagram']['name']}“ ({today['h
 Tageszeichen {today['ganzhi']['label']}.
 
 Zug: Der Stein „{stone_label}“ ({'zieht aus ins Binsengefilde' if to_pos == _AARU else f"zieht von Feld {from_pos} auf Feld {to_pos} „{field['name']}“ — {field['core']}"}).
-Profil: Sternzeichen {sun}, Lebenszahl {lp}{f", Ort {req.birthPlace}" if req.birthPlace else ""}.
+Profil: Sternzeichen {sun}, Lebenszahl {lp}{f", Ort {req.birthPlace}" if req.birthPlace else ""}.{f'''
+Besonderer Tag: {event['symbol']} {event['name']} — {event['text']} Webe dieses seltene Ereignis kurz in die Deutung ein.''' if event else ""}
 
 Schreibe 2–3 Sätze Deutung dieses Zuges für den Lebensbereich {stone_label} und
 schließe mit einem konkreten Tagesimpuls (Imperativ, 1 Satz). Keine Aufzählung,
@@ -1695,7 +1721,16 @@ async def _board_move_impl(req: BoardMoveRequest):
         positions = _validate_positions(req.positions)
     except ValueError as e:
         return JSONResponse(status_code=422, content={"detail": str(e)})
-    throw = board_throw(req.birthDate, today["boardId"], day)
+    event = board_event(req.birthDate, today["boardId"], day)
+    if req.useAlt and not (event and event["key"] == "sternschnuppe"):
+        return JSONResponse(status_code=422, content={
+            "detail": "Heute gibt es keinen zweiten Wurf."})
+    if req.useAlt:
+        throw = board_alt_throw(req.birthDate, today["boardId"], day)
+    else:
+        throw = board_throw(req.birthDate, today["boardId"], day)
+        if event and event["key"] == "rueckenwind":
+            throw += 1  # Rückenwind: ein Feld weiter (Auszug verlangt weiter Präzision)
     moves = legal_moves(positions, throw)
     if req.stone not in moves:
         return JSONResponse(status_code=422, content={
@@ -1704,18 +1739,19 @@ async def _board_move_impl(req: BoardMoveRequest):
     to_pos = moves[req.stone]
     positions[req.stone] = to_pos
     is_today = (day == today["dayIndex"])
-    text = _board_reading(req, today, req.stone, from_pos, to_pos, is_today)
+    text = _board_reading(req, today, req.stone, from_pos, to_pos, is_today, event)
     field = FIELD_EVENTS[min(to_pos, 30) - 1]
+    chips = [f"Tag {day}", today["moon"]["name"],
+             f"I-Ging: {today['hexagram']['name']}", today["ganzhi"]["label"]]
+    if event:
+        chips.append(f"{event['symbol']} {event['name']}")
     return {
         "boardId": today["boardId"], "dayIndex": day, "throw": throw,
-        "positions": positions,
+        "positions": positions, "event": event,
         "moved": {"stone": req.stone, "from": from_pos, "to": to_pos,
                   "water": (from_pos + throw == 27 and to_pos != 27),
                   "field": field["name"] if to_pos != _AARU else "Binsengefilde"},
-        "reading": {"text": text,
-                    "chips": [f"Tag {day}", today["moon"]["name"],
-                              f"I-Ging: {today['hexagram']['name']}",
-                              today["ganzhi"]["label"]]},
+        "reading": {"text": text, "chips": chips},
         "disclaimer": "Unterhaltung & Selbstreflexion – kein Ersatz für professionelle Beratung.",
     }
 
@@ -1740,8 +1776,14 @@ def board_throw_route(req: BoardThrowRequest = Body(...)):
     except ValueError as e:
         return JSONResponse(status_code=422, content={"detail": str(e)})
     throw = board_throw(req.birthDate, today["boardId"], day)
-    return {"boardId": today["boardId"], "dayIndex": day, "throw": throw,
-            "legalMoves": legal_moves(positions, throw)}
+    event = board_event(req.birthDate, today["boardId"], day)
+    effective = throw + 1 if (event and event["key"] == "rueckenwind") else throw
+    resp = {"boardId": today["boardId"], "dayIndex": day, "throw": throw,
+            "event": event, "legalMoves": legal_moves(positions, effective)}
+    if event and event["key"] == "sternschnuppe":
+        alt = board_alt_throw(req.birthDate, today["boardId"], day)
+        resp["alt"] = {"throw": alt, "legalMoves": legal_moves(positions, alt)}
+    return resp
 
 # /board/move ruft das LLM auf und bekommt darum dasselbe Rate-Limit wie
 # /reading (Nachholzüge sind LLM-frei, zählen aber mit — 80/Tag reicht weit).
@@ -1754,6 +1796,65 @@ else:
     @app.post("/board/move")
     async def board_move(req: BoardMoveRequest = Body(...)):
         return await _board_move_impl(req)
+
+
+# ---------------------------------------------------------------------------
+# /resonanz — Partner-Resonanz (docs/spielideen.md #5): zweites Geburtsdatum
+# → gemeinsame Tageslesung aus Sonnenzeichen-Paar, Lebenszahlen und
+# chinesischen Jahreszeichen. Rein deterministische Inputs, LLM-Text mit
+# deterministischem Fallback; teilt das Reading-Rate-Limit.
+# ---------------------------------------------------------------------------
+
+class ResonanzRequest(BaseModel):
+    birthDate: str = Field(..., max_length=32)
+    partnerDate: str = Field(..., max_length=32)
+    tone: Optional[str] = Field(None, max_length=64)
+
+def _resonanz_impl(req: ResonanzRequest):
+    d1 = parse_birth_date(req.birthDate)
+    d2 = parse_birth_date(req.partnerDate)
+    if not d1 or not d2:
+        return JSONResponse(status_code=422, content={
+            "detail": "Bitte beide Geburtsdaten angeben (TT.MM.JJJJ)."})
+    today = board_today()
+    z1, z2 = zodiac_from_date(d1), zodiac_from_date(d2)
+    lp1, lp2 = life_path_number(d1), life_path_number(d2)
+    a1, a2 = chinese_animal(d1.year), chinese_animal(d2.year)
+    chips = [f"{z1} & {z2}", f"Lebenszahlen {lp1} & {lp2}", f"{a1} & {a2}"]
+    fallback = (f"{z1} trifft {z2}, Lebenszahl {lp1} trifft {lp2}, "
+                f"{a1} begegnet {a2}. Unter dem heutigen Feld "
+                f"„{today['field']['name']}“ gilt für euch beide: {today['field']['core']}")
+    prompt = f"""Tageslage: Tag {today['dayIndex']} des Mondmonats · {today['moon']['name']} ·
+I-Ging {today['hexagram']['index']} „{today['hexagram']['name']}“ ({today['hexagram']['core']}) ·
+Tageszeichen {today['ganzhi']['label']} · Feld „{today['field']['name']}“ — {today['field']['core']}.
+
+Paar-Resonanz: Person A ist Sternzeichen {z1}, Lebenszahl {lp1}, Jahreszeichen {a1}.
+Person B ist Sternzeichen {z2}, Lebenszahl {lp2}, Jahreszeichen {a2}.
+
+Schreibe 3–4 Sätze darüber, wie diese beiden Energien heute zusammenwirken —
+was sie einander geben, wo es knistern oder haken kann — und schließe mit einem
+konkreten gemeinsamen Tagesimpuls (Imperativ, 1 Satz). Sprich beide als „ihr" an.
+Keine Aufzählung, keine Überschrift, keine medizinisch/juristisch/finanziell
+heiklen Ratschläge, keine Beziehungsprognosen über den heutigen Tag hinaus."""
+    seed = _det_hash("resonanz", req.birthDate.strip(), req.partnerDate.strip(), today["date"])
+    try:
+        text = oa_text(_tone_directive(req.tone) + "\n\n" + prompt, seed=seed).strip()
+    except Exception as e:
+        print(f"resonanz LLM failed ({_llm_id()}): {e}")
+        text = fallback
+    return {"date": today["date"], "chips": chips, "text": text,
+            "pair": {"zodiac": [z1, z2], "lifePath": [lp1, lp2], "animal": [a1, a2]},
+            "disclaimer": "Unterhaltung & Selbstreflexion – kein Ersatz für professionelle Beratung."}
+
+if _HAS_SLOWAPI and limiter is not None:
+    @app.post("/resonanz")
+    @limiter.limit(READING_RATE_LIMIT)
+    async def resonanz(request: Request, req: ResonanzRequest = Body(...)):
+        return _resonanz_impl(req)
+else:
+    @app.post("/resonanz")
+    async def resonanz(req: ResonanzRequest = Body(...)):
+        return _resonanz_impl(req)
 
 
 # ---------------------------------------------------------------------------
