@@ -210,3 +210,28 @@ class TestExplanations:
     def test_all_elements_and_animals_covered(self):
         assert set(main._ELEMENT_TRAITS) == {e for _, e in main._STEMS}
         assert set(main._ANIMAL_TRAITS) == {a for _, a in main._BRANCHES}
+
+
+class TestComparePage:
+    def test_without_anthropic_shows_setup_hint(self, monkeypatch):
+        monkeypatch.setattr(main, "_anthropic_client", None)
+        r = client.get("/compare")
+        assert r.status_code == 200
+        assert "ANTHROPIC_API_KEY" in r.text
+
+    def test_form_shown_when_configured(self, monkeypatch):
+        monkeypatch.setattr(main, "_anthropic_client", object())
+        r = client.get("/compare")
+        assert r.status_code == 200
+        assert "Geburtsdatum" in r.text and "Vergleich erzeugen" in r.text
+
+    def test_blind_pair_with_mocked_providers(self, monkeypatch):
+        monkeypatch.setattr(main, "_anthropic_client", object())
+        def fake_llm(system, user, temperature=0.8, seed=None, provider=None):
+            return f"text-von-{provider}"
+        monkeypatch.setattr(main, "llm_text", fake_llm)
+        r = client.get("/compare", params={"birthDate": "1966-07-27", "stone": "werk"})
+        assert r.status_code == 200
+        assert "Version A" in r.text and "Version B" in r.text
+        assert "text-von-openai" in r.text and "text-von-anthropic" in r.text
+        assert "Auflösung" in r.text

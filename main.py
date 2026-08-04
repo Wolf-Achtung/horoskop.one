@@ -26,6 +26,27 @@ from openai import OpenAI
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 MODEL = os.getenv("OPENAI_MODEL", "gpt-5-mini")
 
+# --- LLM-Provider-Abstraktion ----------------------------------------------
+# Ein dünnes eigenes Interface statt OpenRouter/LiteLLM: bei zwei Prompt-Typen
+# und Beta-Volumen ist ein Gateway Overkill. Der Provider wird per
+# LLM_PROVIDER (openai|anthropic) gewählt; der Anthropic-Client ist optional —
+# fehlt SDK oder Key, läuft alles unverändert über OpenAI weiter.
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "openai").strip().lower()
+ANTHROPIC_MODEL = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-5")
+try:
+    import anthropic as _anthropic_sdk
+    _anthropic_client = _anthropic_sdk.Anthropic() if os.getenv("ANTHROPIC_API_KEY") else None
+except ImportError:
+    _anthropic_sdk = None
+    _anthropic_client = None
+if LLM_PROVIDER == "anthropic" and _anthropic_client is None:
+    print("LLM_PROVIDER=anthropic gesetzt, aber ANTHROPIC_API_KEY/SDK fehlt — nutze openai.")
+    LLM_PROVIDER = "openai"
+
+def _llm_id(provider: Optional[str] = None) -> str:
+    p = (provider or LLM_PROVIDER)
+    return f"anthropic:{ANTHROPIC_MODEL}" if p == "anthropic" else f"openai:{MODEL}"
+
 app = FastAPI(title="horoskop.one API", version="v6.0-deep-reading")
 
 # CORS: Default ist eine restriktive Allowlist der bekannten horoskop.one-Domains.
@@ -526,13 +547,47 @@ def _chat_kwargs(model: str, temperature: float, seed: Optional[int] = None) -> 
             kwargs["seed"] = seed
     return kwargs
 
-def oa_text(prompt:str, seed:Optional[int]=None, temperature:float=0.8)->str:
-    kwargs=dict(_chat_kwargs(MODEL, temperature, seed), messages=[
-        {"role":"system","content":"Du bist ein klarer, sachlicher und freundlicher Schreibassistent. Du schreibst verständlich, konkret und alltagsnah — ohne Esoterik, ohne Pathos, ohne blumige Metaphern."},
-        {"role":"user","content":prompt},
+_LLM_DEFAULT_SYSTEM = ("Du bist ein klarer, sachlicher und freundlicher Schreibassistent. "
+                       "Du schreibst verständlich, konkret und alltagsnah — ohne Esoterik, "
+                       "ohne Pathos, ohne blumige Metaphern.")
+
+def _anthropic_text(system: str, user: str) -> str:
+    """Ein Text-Call gegen die Anthropic Messages API.
+
+    Claude Sonnet 5 lehnt Nicht-Default-Sampling-Parameter ab und denkt
+    standardmäßig adaptiv; für kurze Deutungstexte reicht effort=low
+    (schnell, günstig) — per ANTHROPIC_EFFORT übersteuerbar. max_tokens
+    deckt Denken + Antwort gemeinsam ab, daher großzügig.
+    """
+    resp = _anthropic_client.messages.create(
+        model=ANTHROPIC_MODEL,
+        max_tokens=4096,
+        output_config={"effort": os.getenv("ANTHROPIC_EFFORT", "low")},
+        system=system,
+        messages=[{"role": "user", "content": user}],
+    )
+    text = next((b.text for b in resp.content if b.type == "text"), None)
+    if text is None:
+        raise RuntimeError(f"Anthropic-Antwort ohne Text (stop_reason={resp.stop_reason})")
+    return text
+
+def llm_text(system: str, user: str, temperature: float = 0.8,
+             seed: Optional[int] = None, provider: Optional[str] = None) -> str:
+    """Provider-neutraler Text-Call. `provider` übersteuert LLM_PROVIDER
+    (genutzt vom /compare-Blindtest)."""
+    p = (provider or LLM_PROVIDER)
+    if p == "anthropic":
+        if _anthropic_client is None:
+            raise RuntimeError("Anthropic nicht konfiguriert (ANTHROPIC_API_KEY fehlt)")
+        return _anthropic_text(system, user)
+    kwargs = dict(_chat_kwargs(MODEL, temperature, seed), messages=[
+        {"role": "system", "content": system},
+        {"role": "user", "content": user},
     ])
-    cr=client.chat.completions.create(**kwargs)
-    return cr.choices[0].message.content
+    return client.chat.completions.create(**kwargs).choices[0].message.content
+
+def oa_text(prompt:str, seed:Optional[int]=None, temperature:float=0.8)->str:
+    return llm_text(_LLM_DEFAULT_SYSTEM, prompt, temperature, seed)
 
 def try_load_json(maybe:str)->Any:
     m=re.search(r"```json([\s\S]*?)```", maybe)
@@ -974,7 +1029,7 @@ class ReadingResponse(BaseModel):
 
 @app.get("/health")
 @app.get("/healthz")
-def health(): return {"ok": True, "model": MODEL}
+def health(): return {"ok": True, "provider": LLM_PROVIDER, "model": _llm_id()}
 
 @app.get("/reading-types")
 def reading_types():
@@ -1009,6 +1064,7 @@ def _cache_key(req: "ReadingRequest") -> str:
         str(req.seed or ""),
         repr(mixer_items),
         _period_bucket(req.period),
+        _llm_id(),  # Provider-Wechsel darf keine gecachten Fremdtexte liefern
     ])
 
 def _cache_get(key: str):
@@ -1263,15 +1319,10 @@ Gib nur JSON:
         user_prompt = mixer_block + "\n\n" + user_prompt
 
     try:
-        raw = client.chat.completions.create(
-            **_chat_kwargs(MODEL, 0.7, req.seed),
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
-        ).choices[0].message.content
+        raw = llm_text(system_prompt, user_prompt, temperature=0.7, seed=req.seed)
         data = try_load_json(raw)
     except Exception as e:
+        print(f"deep reading LLM failed ({_llm_id()}): {e}")
         data = {"error": str(e)}
 
     sections = [Section(**s) for s in _extract_sections(rtype, data, why_chips)]
@@ -1697,6 +1748,107 @@ else:
     @app.post("/board/move")
     async def board_move(req: BoardMoveRequest = Body(...)):
         return await _board_move_impl(req)
+
+
+# ---------------------------------------------------------------------------
+# /compare — Blind-A/B-Test der LLM-Provider (OpenAI vs. Anthropic).
+# Erzeugt dieselbe Tages-Mikrodeutung mit beiden Providern und zeigt sie in
+# zufälliger (aber deterministischer) Reihenfolge als A/B — die Auflösung
+# steht eingeklappt darunter. Nur nutzbar, wenn beide Provider konfiguriert
+# sind; teilt sich das Rate-Limit der Readings.
+# ---------------------------------------------------------------------------
+import html as _html
+
+def _compare_prompt(birth_date: str, stone: str) -> tuple:
+    today = board_today()
+    bdate = parse_birth_date(birth_date)
+    sun = zodiac_from_date(bdate) if bdate else "unbekannt"
+    lp = life_path_number(bdate) if bdate else "–"
+    stone_label = STONES.get(stone, "Fokus")
+    field = today["field"]
+    user = f"""Tageslage: Tag {today['dayIndex']} des Mondmonats · {today['moon']['name']} ·
+I-Ging {today['hexagram']['index']} „{today['hexagram']['name']}“ ({today['hexagram']['core']}) ·
+Tageszeichen {today['ganzhi']['label']}.
+
+Zug: Der Stein „{stone_label}“ zieht auf Feld {field['index']} „{field['name']}“ — {field['core']}.
+Profil: Sternzeichen {sun}, Lebenszahl {lp}.
+
+Schreibe 2–3 Sätze Deutung dieses Zuges für den Lebensbereich {stone_label} und
+schließe mit einem konkreten Tagesimpuls (Imperativ, 1 Satz). Keine Aufzählung,
+keine Überschrift, keine medizinisch/juristisch/finanziell heiklen Ratschläge."""
+    return _tone_directive(None), user, today
+
+def _compare_page(body: str) -> Response:
+    page = f"""<!doctype html><html lang="de"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LLM-Blindvergleich · horoskop.one</title>
+<style>body{{font-family:Georgia,serif;background:#f3ead7;color:#2b2317;max-width:720px;
+margin:0 auto;padding:24px;line-height:1.6}}
+.card{{background:#fffaf0;border:1px solid #dcca9e;border-radius:14px;padding:20px;margin:16px 0}}
+h1{{font-size:22px}}h2{{font-size:16px;color:#8a6420;letter-spacing:.08em;text-transform:uppercase}}
+input,select{{padding:10px;border:1px solid #cdb98c;border-radius:8px;font-size:16px}}
+button{{background:#a9782c;color:#fffaf0;border:none;border-radius:10px;padding:12px 18px;
+font-size:16px;cursor:pointer}}details{{margin-top:14px}}summary{{cursor:pointer;color:#8a6420}}
+.hint{{color:#6b5c40;font-size:14px}}</style></head><body>
+<h1>🔬 LLM-Blindvergleich</h1>{body}</body></html>"""
+    return Response(content=page, media_type="text/html; charset=utf-8")
+
+async def _compare_impl(birthDate: Optional[str], stone: str):
+    if _anthropic_client is None:
+        return _compare_page(
+            "<div class='card'><p>Für den Vergleich müssen <b>beide</b> Provider konfiguriert "
+            "sein — bitte <code>ANTHROPIC_API_KEY</code> in den Railway-Variablen setzen "
+            "(OPENAI_API_KEY ist bereits vorhanden).</p></div>")
+    if not birthDate:
+        return _compare_page("""<div class='card'>
+<p>Erzeugt dieselbe Tages-Mikrodeutung einmal mit OpenAI und einmal mit Anthropic —
+in zufälliger Reihenfolge, damit du blind entscheiden kannst.</p>
+<form method="get" action="/compare">
+<label>Geburtsdatum: <input type="date" name="birthDate" required></label>
+<label> Stein: <select name="stone"><option value="fokus">Fokus</option>
+<option value="werk">Werk</option><option value="liebe">Liebe</option>
+<option value="kraft">Kraft</option><option value="geist">Geist</option></select></label>
+<button type="submit">Vergleich erzeugen</button></form>
+<p class="hint">Jeder Aufruf kostet zwei LLM-Anfragen und zählt gegen das Reading-Rate-Limit.</p>
+</div>""")
+    if re.match(r'^\d{4}-\d{2}-\d{2}$', birthDate.strip()):
+        y, m, d = birthDate.strip().split('-')
+        birthDate = f"{d}.{m}.{y}"
+    system, user, today = _compare_prompt(birthDate[:32], stone[:16])
+    results = {}
+    for prov in ("openai", "anthropic"):
+        try:
+            results[prov] = llm_text(system, user, temperature=0.8, provider=prov)
+        except Exception as e:
+            print(f"compare: {prov} failed: {e}")
+            results[prov] = f"[{prov} fehlgeschlagen: {e}]"
+    # Deterministische, aber tagesabhängige Zuordnung A/B — nicht erratbar
+    # ohne Auflösung, aber reproduzierbar beim Neuladen.
+    flip = _det_hash("compare", birthDate, today["date"]) % 2 == 1
+    order = [("anthropic", ANTHROPIC_MODEL), ("openai", MODEL)] if flip \
+        else [("openai", MODEL), ("anthropic", ANTHROPIC_MODEL)]
+    blocks = ""
+    for label, (prov, _model) in zip(("A", "B"), order):
+        blocks += (f"<div class='card'><h2>Version {label}</h2>"
+                   f"<p>{_html.escape(results[prov])}</p></div>")
+    reveal = " · ".join(f"Version {label} = {prov} ({_html.escape(model)})"
+                        for label, (prov, model) in zip(("A", "B"), order))
+    blocks += (f"<details><summary>🔍 Auflösung (erst nach deinem Urteil öffnen)</summary>"
+               f"<p>{reveal}</p></details>"
+               f"<p class='hint'>Tag {today['dayIndex']} · {_html.escape(today['moon']['name'])} · "
+               f"I-Ging {today['hexagram']['index']} · {_html.escape(today['ganzhi']['label'])} · "
+               f"<a href='/compare'>Neuer Vergleich</a></p>")
+    return _compare_page(blocks)
+
+if _HAS_SLOWAPI and limiter is not None:
+    @app.get("/compare")
+    @limiter.limit(READING_RATE_LIMIT)
+    async def compare(request: Request, birthDate: Optional[str] = None, stone: str = "fokus"):
+        return await _compare_impl(birthDate, stone)
+else:
+    @app.get("/compare")
+    async def compare(birthDate: Optional[str] = None, stone: str = "fokus"):
+        return await _compare_impl(birthDate, stone)
 
 
 # Host-/Pfad-Routing für die Spiel-Beta: play.horoskop.one (und der Pfad
