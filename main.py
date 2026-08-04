@@ -1723,6 +1723,12 @@ async def _board_move_impl(req: BoardMoveRequest):
 def board_today_route():
     return board_today()
 
+@app.get("/board/fields")
+def board_fields_route():
+    """Alle 30 Feldkarten (für das Feld-Album im Frontend) — statisch,
+    identisch für alle, daher unbegrenzt cachebar."""
+    return {"fields": [{"index": i + 1, **f} for i, f in enumerate(FIELD_EVENTS)]}
+
 @app.post("/board/throw")
 def board_throw_route(req: BoardThrowRequest = Body(...)):
     today = board_today()

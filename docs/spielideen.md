@@ -20,7 +20,7 @@ Die Ideen unten sind danach sortiert, welche Lücke sie schließen.
 
 ## Stufe 1 — Quick Wins (kein Account, keine DB, LocalStorage reicht)
 
-### 1. Die Orakelfrage („Gespür") — Spannung vor dem Wurf ⭐ Empfehlung #1
+### 1. Die Orakelfrage („Gespür") — Spannung vor dem Wurf ⭐ ✓ umgesetzt 08/2026
 Bevor die Wurfstäbe fliegen, tippt man eine Vorahnung: **„Fällt der Wurf
 kurz (1–2) oder weit (3–5)?"** Nach der Animation: „Dein Gespür lag
 richtig!" — ein rein kosmetischer **Gespür-Wert** (z. B. „7 von 12 Tagen
@@ -29,7 +29,9 @@ einen Klick in *Einsatz → Enthüllung → Belohnung* — die klassische
 Spannungskurve, die Wordle trägt. Deterministisch, 0 LLM-Kosten.
 **Aufwand: klein (nur Frontend + LocalStorage).**
 
-### 2. Promi-Sternzwillinge — deine Idee, und sie ist gut ⭐ Empfehlung #2
+### 2. Promi-Sternzwillinge — deine Idee, und sie ist gut ⭐ ✓ umgesetzt 08/2026
+> Kuratierte Tabelle: `public/assets/sternzwillinge.json` (936 Einträge,
+> alle 366 Kalendertage, per Web-Recherche belegt).
 Beim Onboarding und im Profil: **„Dein Sternzwilling: [Promi] hat am
 selben Tag Geburtstag"** (kuratierte statische Tabelle, ~2–3 pro
 Kalendertag, DACH-relevant gemischt mit international). Täglicher
@@ -50,7 +52,7 @@ dass sie sich wie Geschenke anfühlen; deterministisch, also fair und
 cache-freundlich. Variable Belohnung ohne Glücksspiel-Mechanik.
 **Aufwand: mittel (Regeln + Backend + UI).**
 
-### 4. Das Feld-Album — Sammeln über Monate
+### 4. Das Feld-Album — Sammeln über Monate ✓ umgesetzt 08/2026
 Jedes Feld, das ein eigener Stein je betreten hat, schaltet seine
 **Feldkarte** frei (Name, Deutung, Symbol — später Midjourney-Artwork).
 Ein Album „17 von 30 Häusern entdeckt" überdauert die Monatsbretter und
