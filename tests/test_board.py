@@ -187,6 +187,47 @@ class TestBoardEndpoints:
         assert r.status_code in (200, 404)
 
 
+class TestFieldAlbum:
+    def test_fields_endpoint_returns_all_30_cards(self):
+        r = client.get("/board/fields")
+        assert r.status_code == 200
+        fields = r.json()["fields"]
+        assert len(fields) == 30
+        assert [f["index"] for f in fields] == list(range(1, 31))
+        assert fields[14]["name"] == "Haus der Wiedergeburt"
+        for f in fields:
+            assert f["name"] and f["core"]
+
+
+class TestSternzwillinge:
+    """Die kuratierte Promi-Geburtstagstabelle (public/assets/sternzwillinge.json):
+    vollständig (alle 366 Kalendertage), wohlgeformt, nur belegbare Fakten
+    (Name, Jahr, Kurzbeschreibung) — keine erfundenen Aussagen über Personen."""
+
+    def _load(self):
+        import json, pathlib
+        p = pathlib.Path(__file__).parent.parent / "public" / "assets" / "sternzwillinge.json"
+        assert p.exists(), "public/assets/sternzwillinge.json fehlt"
+        return json.loads(p.read_text(encoding="utf-8"))
+
+    def test_covers_every_calendar_day(self):
+        data = self._load()
+        days_per_month = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+        expected = {f"{m:02d}-{d:02d}"
+                    for m, n in enumerate(days_per_month, start=1)
+                    for d in range(1, n + 1)}
+        assert set(data) == expected
+
+    def test_entries_are_wellformed(self):
+        data = self._load()
+        for day, twins in data.items():
+            assert 1 <= len(twins) <= 4, f"{day}: {len(twins)} Einträge"
+            for t in twins:
+                assert t["name"].strip(), day
+                assert isinstance(t["year"], int) and 1000 <= t["year"] <= 2020, (day, t)
+                assert t["known"].strip(), (day, t)
+
+
 class TestExplanations:
     def test_today_carries_four_explanations(self):
         data = client.get("/board/today").json()

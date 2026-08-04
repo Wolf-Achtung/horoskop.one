@@ -10,10 +10,15 @@ type Positions = Record<string, number>;
 type Chapter = { day: number; stone: string; to: number; text: string;
                  chips: string[]; fieldName?: string };
 type Profile = { birthDate: string; birthPlace?: string; birthTime?: string };
+type Gespuer = { boardId: string; guessed: number; right: number };
 type BoardState = {
   boardId: string; positions: Positions; lastPlayedDay: number;
   profile: Profile | null; chapters: Chapter[];
+  album?: number[];      // je entdecktes Feld (1–30), überdauert Monatsbretter
+  gespuer?: Gespuer;     // Vorahnungs-Zähler, resettet mit jedem neuen Brett
 };
+type FieldCard = { index: number; name: string; core: string };
+type StarTwin = { name: string; year: number; known: string };
 type Explain = { key: string; title: string; heute: string; hintergrund: string; link: string };
 type Today = {
   date: string; boardId: string; dayIndex: number;
@@ -60,6 +65,98 @@ async function api(path: string, body?: unknown) {
 function moonEmoji(frac: number): string {
   const seq = ['🌑', '🌒', '🌓', '🌔', '🌕', '🌖', '🌗', '🌘'];
   return seq[Math.round(frac * 8) % 8];
+}
+
+// --- Feld-Album ------------------------------------------------------------
+
+let FIELD_CARDS: FieldCard[] = [];
+
+function albumSet(state: BoardState): Set<number> {
+  if (!state.album) {
+    // Migration: Bestandsspielern die bereits erlebten Kapitel gutschreiben.
+    state.album = [...new Set(state.chapters.map(c => c.to).filter(t => t >= 1 && t <= 30))];
+  }
+  return new Set(state.album);
+}
+
+function unlockFields(state: BoardState, ...fields: number[]) {
+  const set = albumSet(state);
+  for (const f of fields) if (f >= 1 && f <= 30) set.add(f);
+  state.album = [...set].sort((a, b) => a - b);
+}
+
+function renderAlbum(state: BoardState) {
+  const el = document.getElementById('album');
+  if (!el || !FIELD_CARDS.length) return;
+  const found = albumSet(state);
+  const wasOpen = !!el.querySelector('details[open]');
+  el.innerHTML = '';
+  const det = document.createElement('details'); det.className = 'album';
+  det.open = wasOpen;
+  const sum = document.createElement('summary');
+  sum.textContent = `Dein Feld-Album — ${found.size} von 30 Häusern entdeckt`;
+  det.appendChild(sum);
+  const hint = document.createElement('p'); hint.className = 'album-hint';
+  hint.textContent = 'Jedes Haus, das einer deiner Steine je betreten hat, bleibt '
+    + 'hier gesammelt — über alle Monatsbretter hinweg. Selten sind die '
+    + 'Auszugshäuser 28–30 und das Haus des Wassers.';
+  det.appendChild(hint);
+  const grid = document.createElement('div'); grid.className = 'album-grid';
+  for (const card of FIELD_CARDS) {
+    const tile = document.createElement('div');
+    const has = found.has(card.index);
+    tile.className = 'album-tile' + (has ? ' found' : '');
+    const num = document.createElement('span'); num.className = 'album-num';
+    num.textContent = String(card.index) + (SPECIAL_FIELDS[card.index] ? ' ' + SPECIAL_FIELDS[card.index] : '');
+    const name = document.createElement('span'); name.className = 'album-name';
+    name.textContent = has ? card.name : '?';
+    tile.append(num, name);
+    if (has) tile.title = card.core;
+    grid.appendChild(tile);
+  }
+  det.appendChild(grid);
+  el.appendChild(det);
+}
+
+// --- Sternzwillinge --------------------------------------------------------
+
+async function renderStarTwins(profile: Profile) {
+  const el = document.getElementById('startwins');
+  if (!el) return;
+  const m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(profile.birthDate || '');
+  if (!m) return;
+  const [, dd, mm, yyyy] = m;
+  let twins: StarTwin[];
+  try {
+    const res = await fetch('/assets/sternzwillinge.json');
+    if (!res.ok) return;
+    const data = await res.json();
+    twins = data[`${mm}-${dd}`] || [];
+  } catch { return; }
+  if (!twins.length) return;
+  el.innerHTML = '';
+  const line = document.createElement('p'); line.className = 'startwins-line';
+  const star = document.createElement('b'); star.textContent = '✦ Deine Sternzwillinge: ';
+  line.appendChild(star);
+  const names = twins.map(t => `${t.name} (${t.known}, *${t.year})`).join(' · ');
+  line.appendChild(document.createTextNode(names
+    + (twins.length === 1 ? ' hat' : ' haben') + ' am selben Tag Geburtstag wie du.'));
+  const same = twins.find(t => String(t.year) === yyyy);
+  if (same) {
+    const jw = document.createElement('b');
+    jw.textContent = ` ${same.name} sogar im selben Jahr — dein Jahrgangszwilling!`;
+    line.appendChild(jw);
+  }
+  el.appendChild(line);
+}
+
+// --- Gespür (Orakelfrage) --------------------------------------------------
+
+function gespuerFor(state: BoardState, boardId: string): Gespuer {
+  if (!state.gespuer || state.gespuer.boardId !== boardId) {
+    state.gespuer = { boardId, guessed: 0, right: 0 };
+  }
+  return state.gespuer;
 }
 
 // --- Brett-Rendering (SVG, 3×10 Boustrophedon mit sichtbarem Pfad) ---------
@@ -339,26 +436,61 @@ function sticksRow(throwVal: number | null, tossing: boolean): HTMLElement {
   return row;
 }
 
-function renderThrowIntro(onReveal: () => void) {
+type Guess = 'kurz' | 'weit' | null;
+
+function renderThrowIntro(gespuer: Gespuer | undefined, onThrow: (guess: Guess) => void) {
   const el = $('action'); el.innerHTML = '';
-  actionStep(el, 'Vier Wurfstäbe entscheiden, wie weit du heute ziehst. Wirf sie — dann wählst du, welcher Lebensbereich den Weg geht.');
+  actionStep(el, 'Vier Wurfstäbe entscheiden, wie weit du heute ziehst. Hast du eine Vorahnung, wie sie fallen?');
   const wrap = document.createElement('div'); wrap.className = 'throw-intro';
   wrap.appendChild(sticksRow(null, false));
-  const btn = document.createElement('button'); btn.className = 'btn-primary';
-  btn.textContent = 'Die Wurfstäbe werfen';
-  btn.addEventListener('click', onReveal);
-  wrap.appendChild(btn);
+  const q = document.createElement('p'); q.className = 'throw-label';
+  q.textContent = 'Deine Vorahnung — fällt der Wurf kurz oder weit?';
+  wrap.appendChild(q);
+  const row = document.createElement('div'); row.className = 'guess-row';
+  const mkGuess = (label: string, sub: string, guess: Guess) => {
+    const btn = document.createElement('button'); btn.className = 'stone-btn guess-btn';
+    btn.appendChild(document.createTextNode(label));
+    const t = document.createElement('span'); t.className = 'target'; t.textContent = sub;
+    btn.appendChild(t);
+    btn.addEventListener('click', () => onThrow(guess));
+    row.appendChild(btn);
+  };
+  mkGuess('Kurz', '1–2 Felder', 'kurz');
+  mkGuess('Weit', '3–5 Felder', 'weit');
+  wrap.appendChild(row);
+  const skip = document.createElement('button'); skip.className = 'btn-ghost';
+  skip.textContent = 'Ohne Vorahnung werfen';
+  skip.addEventListener('click', () => onThrow(null));
+  wrap.appendChild(skip);
+  if (gespuer && gespuer.guessed > 0) {
+    const stat = document.createElement('p'); stat.className = 'action-hint';
+    stat.textContent = `Dein Gespür auf diesem Brett: ${gespuer.right} von ${gespuer.guessed} Vorahnungen richtig.`;
+    wrap.appendChild(stat);
+  }
   el.appendChild(wrap);
 }
 
 function renderThrowChoices(today: Today, throwVal: number,
-                            legal: Record<string, number>, onMove: (stone: string) => void) {
+                            legal: Record<string, number>, onMove: (stone: string) => void,
+                            guess: Guess, gespuer: Gespuer | undefined) {
   const el = $('action'); el.innerHTML = '';
   actionStep(el, 'Die Stäbe sind gefallen. Du triffst genau eine Entscheidung pro Tag: Welcher Lebensbereich geht diesen Weg?');
   el.appendChild(sticksRow(throwVal, false));
   const label = document.createElement('p'); label.className = 'throw-label';
   label.textContent = `Der Wurf: ${throwVal} ${throwVal === 1 ? 'Feld' : 'Felder'} weit.`;
   el.appendChild(label);
+  if (guess) {
+    const correct = (throwVal <= 2) === (guess === 'kurz');
+    const verdict = document.createElement('p');
+    verdict.className = 'guess-verdict' + (correct ? ' hit' : '');
+    verdict.textContent = correct
+      ? `✨ Dein Gespür lag richtig — der Wurf fiel ${throwVal <= 2 ? 'kurz' : 'weit'}.`
+      : `Der Wurf fiel ${throwVal <= 2 ? 'kurz' : 'weit'} — diesmal wollte das Orakel dich überraschen.`;
+    if (gespuer && gespuer.guessed > 0) {
+      verdict.textContent += ` (${gespuer.right} von ${gespuer.guessed} richtig)`;
+    }
+    el.appendChild(verdict);
+  }
   const choices = document.createElement('div'); choices.className = 'stone-choices';
   for (const [stone, name] of Object.entries(today.stones)) {
     const btn = document.createElement('button'); btn.className = 'stone-btn';
@@ -416,6 +548,10 @@ async function playDay(state: BoardState, day: number, stone: string, silent: bo
   state.chapters.push({ day, stone, to: data.moved.to, text: data.reading.text,
                         chips: silent ? [] : data.reading.chips,
                         fieldName: data.moved.field });
+  // Album: das erreichte Haus freischalten; das Haus des Wassers (27) ist nie
+  // Landefeld, zählt aber als „berührt", wenn die Strömung uns getragen hat.
+  unlockFields(state, data.moved.to);
+  if (data.moved.water) unlockFields(state, 27);
   state.lastPlayedDay = day;
   saveState(state);
 }
@@ -434,13 +570,15 @@ async function catchUp(state: BoardState, today: Today) {
 
 async function startDay(state: BoardState, today: Today) {
   renderTageslage(today);
+  renderStarTwins(state.profile!);
   if (state.boardId && state.boardId !== today.boardId) {
     state.boardId = today.boardId; state.positions = {}; state.chapters = [];
     state.lastPlayedDay = today.dayIndex - 1; // Geschichte beginnt heute
-    saveState(state);
+    saveState(state); // Album & Gespür: Album überdauert, Gespür resettet beim ersten Tipp
   }
   await catchUp(state, today);
   renderChapters(state, today);
+  renderAlbum(state);
 
   if (state.lastPlayedDay >= today.dayIndex) {
     renderBoard(state.positions, today, null, null);
@@ -458,22 +596,31 @@ async function startDay(state: BoardState, today: Today) {
       return;
     }
     renderBoard(state.positions, today, null, null);
-    // Das Ritual: Wurf erst auf Klick enthüllen — der Moment gehört dem Wurf.
-    renderThrowIntro(() => {
-      const el = $('action'); el.innerHTML = '';
-      actionStep(el);
-      el.appendChild(sticksRow(t.throw, true));
-      setTimeout(() => {
-        renderBoard(state.positions, today, t.legalMoves, pick);
-        renderThrowChoices(today, t.throw, t.legalMoves, pick);
-      }, 1150);
-    });
+    // Das Ritual: erst die Vorahnung (Orakelfrage), dann fliegen die Stäbe —
+    // der eine Klick wird zu Einsatz → Enthüllung → Wahl.
+    renderThrowIntro(state.gespuer?.boardId === today.boardId ? state.gespuer : undefined,
+      (guess) => {
+        const g = gespuerFor(state, today.boardId);
+        if (guess) {
+          g.guessed += 1;
+          if ((t.throw <= 2) === (guess === 'kurz')) g.right += 1;
+          saveState(state);
+        }
+        const el = $('action'); el.innerHTML = '';
+        actionStep(el);
+        el.appendChild(sticksRow(t.throw, true));
+        setTimeout(() => {
+          renderBoard(state.positions, today, t.legalMoves, pick);
+          renderThrowChoices(today, t.throw, t.legalMoves, pick, guess, state.gespuer);
+        }, 1150);
+      });
     async function pick(stone: string) {
       setActionMessage('Der Zug wird gedeutet …');
       try {
         await playDay(state, today.dayIndex, stone, false);
         renderBoard(state.positions, today, null, null);
         renderChapters(state, today);
+        renderAlbum(state);
         renderPlayed(state, today);
       } catch (e: any) {
         setActionMessage('Fehler: ' + (e?.message || e), 'Bitte versuche es gleich noch einmal.');
@@ -489,6 +636,10 @@ async function init() {
   try { today = await api('/board/today'); }
   catch { setActionMessage('Die Tageslage konnte nicht geladen werden.', 'Bitte lade die Seite neu.'); return; }
   const state = loadState();
+  // Feldkarten fürs Album im Hintergrund laden (statisch, cachebar).
+  api('/board/fields')
+    .then(d => { FIELD_CARDS = d.fields || []; renderAlbum(state); })
+    .catch(() => {});
   renderTageslage(today);
   renderBoard(state.positions, today, null, null);
   if (!state.profile) {
