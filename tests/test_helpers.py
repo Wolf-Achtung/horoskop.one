@@ -392,3 +392,81 @@ class TestChatKwargs:
         assert kw["temperature"] == 0.7
         assert kw["seed"] == 7
         assert "reasoning_effort" not in kw
+
+
+# ---------------------------------------------------------------------------
+# LLM-Provider-Abstraktion
+# ---------------------------------------------------------------------------
+
+class _FakeOpenAI:
+    """Minimaler OpenAI-Client-Ersatz, der den Prompt zurückspiegelt."""
+    class _C:
+        class _Completions:
+            @staticmethod
+            def create(**kwargs):
+                class R:
+                    class Choice:
+                        class Msg: content = "openai-antwort"
+                        message = Msg()
+                    choices = [Choice()]
+                return R()
+        completions = _Completions()
+    chat = _C()
+
+
+class _FakeAnthropic:
+    class _Messages:
+        @staticmethod
+        def create(**kwargs):
+            class Block:
+                type = "text"
+                text = "anthropic-antwort"
+            class R:
+                content = [Block()]
+                stop_reason = "end_turn"
+            return R()
+    messages = _Messages()
+
+
+class TestLLMProvider:
+    def test_default_routes_to_openai(self, monkeypatch):
+        monkeypatch.setattr(main, "client", _FakeOpenAI())
+        monkeypatch.setattr(main, "LLM_PROVIDER", "openai")
+        assert main.llm_text("sys", "user") == "openai-antwort"
+
+    def test_provider_override_anthropic(self, monkeypatch):
+        monkeypatch.setattr(main, "_anthropic_client", _FakeAnthropic())
+        assert main.llm_text("sys", "user", provider="anthropic") == "anthropic-antwort"
+
+    def test_anthropic_without_key_raises(self, monkeypatch):
+        monkeypatch.setattr(main, "_anthropic_client", None)
+        try:
+            main.llm_text("sys", "user", provider="anthropic")
+            assert False, "sollte RuntimeError werfen"
+        except RuntimeError:
+            pass
+
+    def test_oa_text_uses_default_system(self, monkeypatch):
+        seen = {}
+        class Capture(_FakeOpenAI):
+            class _C:
+                class _Completions:
+                    @staticmethod
+                    def create(**kwargs):
+                        seen.update(kwargs)
+                        return _FakeOpenAI._C._Completions.create()
+                completions = _Completions()
+            chat = _C()
+        monkeypatch.setattr(main, "client", Capture())
+        monkeypatch.setattr(main, "LLM_PROVIDER", "openai")
+        main.oa_text("hallo")
+        assert seen["messages"][0]["role"] == "system"
+        assert "Schreibassistent" in seen["messages"][0]["content"]
+
+    def test_cache_key_contains_provider(self):
+        req = main.ReadingRequest(birthDate="27.07.1966", birthPlace="Berlin")
+        assert main._llm_id() in main._cache_key(req)
+
+    def test_llm_id_format(self):
+        assert main._llm_id("anthropic") == f"anthropic:{main.ANTHROPIC_MODEL}"
+        assert main._llm_id("openai") == f"openai:{main.MODEL}"
