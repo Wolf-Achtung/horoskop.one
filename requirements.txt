@@ -8,3 +8,4 @@ openai>=1.40
 pyswisseph<3.12
 slowapi>=0.1.9
 anthropic>=0.40
+pywebpush>=2.0

@@ -265,6 +265,78 @@ class TestResonanz:
         assert data["date"]
 
 
+class TestResonanzProfil:
+    def test_shape_and_pair(self):
+        r = client.get("/resonanz/profil", params={
+            "birthDate": "27.07.1966", "partnerDate": "13.02.1970"})
+        assert r.status_code == 200
+        data = r.json()
+        assert [b["key"] for b in data["blocks"]] == ["elements", "animals", "lifepath"]
+        assert data["pair"]["element"] == ["Feuer", "Luft"]
+        for b in data["blocks"]:
+            assert b["title"] and b["text"]
+
+    def test_rejects_bad_dates(self):
+        r = client.get("/resonanz/profil", params={"birthDate": "x", "partnerDate": "y"})
+        assert r.status_code == 422
+
+    def test_all_element_pairs_covered(self):
+        import itertools
+        for pair in itertools.combinations_with_replacement(
+                ["Erde", "Feuer", "Luft", "Wasser"], 2):
+            assert tuple(sorted(pair)) in main._ELEMENT_PAIR_TEXTS, pair
+        assert set(main._ZODIAC_ELEMENT) == set(main._ZODIAC_TRAITS)
+
+    def test_animal_harmony_cases(self):
+        assert "Dreiklang" in main._animal_harmony("Ratte", "Drache")   # Trine
+        assert "gegenüber" in main._animal_harmony("Ratte", "Pferd")    # Opposition
+        assert "auswendig" in main._animal_harmony("Hund", "Hund")      # gleich
+        assert "bewusst" in main._animal_harmony("Ratte", "Büffel")     # neutral
+
+
+class TestWochenlesung:
+    def test_fallback_and_shape(self, monkeypatch):
+        def boom(*a, **k):
+            raise RuntimeError("kein LLM im Test")
+        monkeypatch.setattr(main, "oa_text", boom)
+        r = client.post("/wochenlesung", json={
+            "birthDate": "27.07.1966",
+            "moves": [{"day": 20, "stone": "werk", "field": "Der Abendstern"}]})
+        assert r.status_code == 200
+        data = r.json()
+        assert data["text"] and data["week"].count("-W") == 1
+        assert any(c.startswith("KW ") for c in data["chips"])
+
+    def test_rejects_bad_date_and_too_many_moves(self):
+        assert client.post("/wochenlesung", json={
+            "birthDate": "quatsch", "moves": []}).status_code == 422
+        moves = [{"day": 1, "stone": "werk"}] * 11
+        assert client.post("/wochenlesung", json={
+            "birthDate": "27.07.1966", "moves": moves}).status_code == 422
+
+
+class TestPush:
+    def test_config_disabled_without_keys(self):
+        r = client.get("/push/config")
+        assert r.status_code == 200
+        assert r.json()["enabled"] is False
+
+    def test_subscribe_rejected_when_disabled(self):
+        r = client.post("/push/subscribe", json={
+            "endpoint": "https://example.org/x",
+            "keys": {"p256dh": "a", "auth": "b"}})
+        assert r.status_code == 503
+
+    def test_store_roundtrip(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(main, "PUSH_STORE_PATH", str(tmp_path / "subs.json"))
+        main._push_save([{"endpoint": "e1", "keys": {}}])
+        assert main._push_load() == [{"endpoint": "e1", "keys": {}}]
+        # unsubscribe entfernt unabhängig vom enabled-Zustand
+        r = client.post("/push/unsubscribe", json={"endpoint": "e1"})
+        assert r.status_code == 200
+        assert main._push_load() == []
+
+
 class TestFieldAlbum:
     def test_fields_endpoint_returns_all_30_cards(self):
         r = client.get("/board/fields")

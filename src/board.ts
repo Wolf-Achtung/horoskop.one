@@ -12,13 +12,17 @@ type Chapter = { day: number; stone: string; to: number; text: string;
 type Profile = { birthDate: string; birthPlace?: string; birthTime?: string };
 type Gespuer = { boardId: string; guessed: number; right: number };
 type Resonanz = { date: string; partnerDate: string; text: string; chips: string[] };
+type Person = { name: string; date: string; profil?: ProfilBlock[]; lastReading?: Resonanz };
+type Wochenlesung = { week: string; text: string; chips: string[] };
 type BoardState = {
   boardId: string; positions: Positions; lastPlayedDay: number;
   profile: Profile | null; chapters: Chapter[];
   album?: number[];      // je entdecktes Feld (1–30), überdauert Monatsbretter
   gespuer?: Gespuer;     // Vorahnungs-Zähler, resettet mit jedem neuen Brett
-  resonanz?: Resonanz;   // letzte Partner-Resonanz (1 LLM-Call pro Tag reicht)
+  resonanz?: Resonanz;   // Alt-Feld (v1) — wird zu people[0] migriert
   profil?: ProfilData;   // Profil-Karte, gecacht pro Geburtsdatum
+  people?: Person[];     // „Deine Menschen": gespeicherte Resonanz-Personen
+  wochenlesung?: Wochenlesung;  // Sonntagsbogen, gecacht pro Kalenderwoche
 };
 type ProfilBlock = { key: string; title: string; text: string };
 type ProfilData = { birthDate: string; blocks: ProfilBlock[]; link?: string };
@@ -195,74 +199,255 @@ async function renderProfil(state: BoardState) {
   el.appendChild(det);
 }
 
-// --- Partner-Resonanz ------------------------------------------------------
+// --- „Deine Menschen" (Resonanz & Kompatibilität) --------------------------
 
-function renderResonanz(state: BoardState, today: Today) {
+function peopleOf(state: BoardState): Person[] {
+  if (!state.people) {
+    state.people = [];
+    // Migration v1 → v2: das einzelne Resonanz-Datum wird zur ersten Person.
+    if (state.resonanz?.partnerDate) {
+      state.people.push({ name: '', date: state.resonanz.partnerDate,
+                          lastReading: state.resonanz });
+    }
+  }
+  return state.people;
+}
+
+function renderChipsAndText(out: HTMLElement, chips: string[], text: string) {
+  const row = document.createElement('div'); row.className = 'reading-chips';
+  for (const c of chips) {
+    const s = document.createElement('span'); s.className = 'reading-chip'; s.textContent = c;
+    row.appendChild(s);
+  }
+  const txt = document.createElement('p'); txt.className = 'resonanz-text';
+  txt.textContent = text;
+  out.append(row, txt);
+}
+
+function renderMenschen(state: BoardState, today: Today, selected = -1) {
   const el = document.getElementById('resonanz');
   if (!el || !state.profile) return;
+  const people = peopleOf(state);
+  if (selected < 0 && people.length) selected = 0;
+  const wasOpen = !!el.querySelector('details[open]');
   el.hidden = false;
   el.innerHTML = '';
   const det = document.createElement('details');
+  det.open = wasOpen || false;
   const sum = document.createElement('summary'); sum.className = 'resonanz-summary';
-  sum.textContent = '♡ Partner-Resonanz — wie läuft euer gemeinsamer Tag?';
+  sum.textContent = '♡ Deine Menschen — Resonanz & Kompatibilität';
   det.appendChild(sum);
   const hint = document.createElement('p'); hint.className = 'onboard-hint';
-  hint.textContent = 'Gib ein zweites Geburtsdatum ein — Partnerin, Freund, Kollegin — '
-    + 'und das Orakel liest, wie eure Energien heute zusammenwirken. '
-    + 'Das Datum bleibt in deinem Browser.';
+  hint.textContent = 'Speichere die Geburtstage deiner Menschen — Partner, Freundin, '
+    + 'Kollege — und schau, wie eure Zeichen zusammenspielen: als dauerhaftes '
+    + 'Kompatibilitätsprofil und als Tages-Resonanz. Alles bleibt in deinem Browser.';
   det.appendChild(hint);
-  const row = document.createElement('div'); row.className = 'resonanz-row';
-  const input = document.createElement('input'); input.type = 'date';
-  if (state.resonanz?.partnerDate) {
-    const m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(state.resonanz.partnerDate);
-    if (m) input.value = `${m[3]}-${m[2]}-${m[1]}`;
-  }
-  const btn = document.createElement('button'); btn.className = 'btn-primary resonanz-btn';
-  btn.textContent = 'Resonanz lesen';
-  row.append(input, btn);
-  det.appendChild(row);
-  const out = document.createElement('div'); out.className = 'resonanz-out';
-  det.appendChild(out);
 
-  const renderResult = (r: Resonanz) => {
-    out.innerHTML = '';
-    const chips = document.createElement('div'); chips.className = 'reading-chips';
-    for (const c of r.chips) {
-      const s = document.createElement('span'); s.className = 'reading-chip'; s.textContent = c;
-      chips.appendChild(s);
-    }
-    const txt = document.createElement('p'); txt.className = 'resonanz-text';
-    txt.textContent = r.text;
-    out.append(chips, txt);
+  const rerender = (idx: number) => {
+    const open = det.open;
+    renderMenschen(state, today, idx);
+    const d2 = document.querySelector('#resonanz details') as HTMLDetailsElement | null;
+    if (d2) d2.open = open;
   };
-  // Heutige Lesung schon da? Direkt zeigen — spart den LLM-Call beim Reload.
-  if (state.resonanz && state.resonanz.date === today.date) renderResult(state.resonanz);
 
-  btn.addEventListener('click', async () => {
-    if (!input.value) { input.focus(); return; }
-    const [y, m, d] = input.value.split('-');
-    const partnerDate = `${d}.${m}.${y}`;
-    if (state.resonanz && state.resonanz.date === today.date
-        && state.resonanz.partnerDate === partnerDate) {
-      renderResult(state.resonanz); return;
+  // Personen-Chips
+  if (people.length) {
+    const chips = document.createElement('div'); chips.className = 'people-row';
+    people.forEach((p, i) => {
+      const chip = document.createElement('button');
+      chip.className = 'dock-chip person-chip' + (i === selected ? ' active' : '');
+      chip.textContent = (p.name || p.date) + ' ';
+      const x = document.createElement('span'); x.className = 'person-remove'; x.textContent = '×';
+      x.title = 'Entfernen';
+      x.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        people.splice(i, 1); saveState(state);
+        rerender(-1);
+      });
+      chip.appendChild(x);
+      chip.addEventListener('click', () => rerender(i));
+      chips.appendChild(chip);
+    });
+    det.appendChild(chips);
+  }
+
+  // Hinzufügen-Formular
+  const row = document.createElement('div'); row.className = 'resonanz-row';
+  const nameIn = document.createElement('input'); nameIn.type = 'text';
+  nameIn.placeholder = 'Name (optional)'; nameIn.maxLength = 40;
+  const dateIn = document.createElement('input'); dateIn.type = 'date';
+  const addBtn = document.createElement('button'); addBtn.className = 'btn-ghost';
+  addBtn.textContent = '+ Hinzufügen';
+  addBtn.addEventListener('click', () => {
+    if (!dateIn.value) { dateIn.focus(); return; }
+    const [y, m, d] = dateIn.value.split('-');
+    people.push({ name: nameIn.value.trim(), date: `${d}.${m}.${y}` });
+    saveState(state);
+    rerender(people.length - 1);
+  });
+  row.append(nameIn, dateIn, addBtn);
+  det.appendChild(row);
+
+  // Ausgewählte Person: Kompatibilitätsprofil + Tages-Resonanz
+  const person = people[selected];
+  if (person) {
+    const out = document.createElement('div'); out.className = 'resonanz-out';
+    det.appendChild(out);
+    const h = document.createElement('h3'); h.className = 'person-heading';
+    h.textContent = `Du & ${person.name || person.date}`;
+    out.appendChild(h);
+
+    const blocksWrap = document.createElement('div');
+    out.appendChild(blocksWrap);
+    const renderBlocks = (blocks: ProfilBlock[]) => {
+      blocksWrap.innerHTML = '';
+      for (const b of blocks) {
+        const block = document.createElement('div'); block.className = 'explain-block';
+        const t = document.createElement('h3'); t.textContent = b.title;
+        const p = document.createElement('p'); p.textContent = b.text;
+        block.append(t, p);
+        blocksWrap.appendChild(block);
+      }
+    };
+    if (person.profil) renderBlocks(person.profil);
+    else {
+      api(`/resonanz/profil?birthDate=${encodeURIComponent(state.profile!.birthDate)}`
+          + `&partnerDate=${encodeURIComponent(person.date)}`)
+        .then(data => { person.profil = data.blocks; saveState(state); renderBlocks(data.blocks); })
+        .catch(() => {});
     }
+
+    const daily = document.createElement('div');
+    out.appendChild(daily);
+    if (person.lastReading && person.lastReading.date === today.date) {
+      renderChipsAndText(daily, person.lastReading.chips, person.lastReading.text);
+    } else {
+      const btn = document.createElement('button'); btn.className = 'btn-primary resonanz-btn';
+      btn.textContent = 'Eure Tages-Resonanz lesen';
+      btn.addEventListener('click', async () => {
+        btn.disabled = true; btn.textContent = 'Das Orakel liest …';
+        try {
+          const data = await api('/resonanz', {
+            birthDate: state.profile!.birthDate, partnerDate: person.date });
+          person.lastReading = { date: data.date, partnerDate: person.date,
+                                text: data.text, chips: data.chips };
+          saveState(state);
+          daily.innerHTML = '';
+          renderChipsAndText(daily, data.chips, data.text);
+        } catch (e: any) {
+          btn.disabled = false; btn.textContent = 'Eure Tages-Resonanz lesen';
+          alert('Fehler: ' + (e?.message || e));
+        }
+      });
+      daily.appendChild(btn);
+    }
+  }
+  el.appendChild(det);
+}
+
+// --- Wochenlesung (Sonntagsbogen) ------------------------------------------
+
+function isoWeekKey(d: Date): string {
+  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const day = t.getUTCDay() || 7;
+  t.setUTCDate(t.getUTCDate() + 4 - day);
+  const y = t.getUTCFullYear();
+  const week = Math.ceil(((t.getTime() - Date.UTC(y, 0, 1)) / 86400000 + 1) / 7);
+  return `${y}-W${String(week).padStart(2, '0')}`;
+}
+
+function renderWochenlesung(state: BoardState, today: Today) {
+  const el = document.getElementById('wochen');
+  if (!el || !state.profile) return;
+  const week = isoWeekKey(new Date());
+  const cached = state.wochenlesung && state.wochenlesung.week === week
+    ? state.wochenlesung : null;
+  // Die Karte erscheint sonntags — und bleibt sichtbar, solange die
+  // aktuelle Wochenlesung schon gelesen wurde.
+  if (new Date().getDay() !== 0 && !cached) { el.hidden = true; return; }
+  el.hidden = false;
+  el.innerHTML = '';
+  const step = document.createElement('h2'); step.className = 'card-step';
+  step.textContent = '🌙 Wochenlesung';
+  const sub = document.createElement('span'); sub.className = 'step-sub';
+  sub.textContent = 'Der Sonntagsbogen: Was diese Woche erzählt hat — und was sich für die nächste andeutet.';
+  step.appendChild(sub);
+  el.appendChild(step);
+  const out = document.createElement('div');
+  el.appendChild(out);
+  if (cached) {
+    renderChipsAndText(out, cached.chips, cached.text);
+    return;
+  }
+  const btn = document.createElement('button'); btn.className = 'btn-primary';
+  btn.textContent = 'Wochenlesung lesen';
+  btn.addEventListener('click', async () => {
     btn.disabled = true; btn.textContent = 'Das Orakel liest …';
     try {
-      const data = await api('/resonanz', {
-        birthDate: state.profile!.birthDate, partnerDate });
-      state.resonanz = { date: data.date, partnerDate, text: data.text, chips: data.chips };
+      const moves = state.chapters.slice(-7).map(c => ({
+        day: c.day, stone: c.stone, field: c.fieldName || undefined }));
+      const data = await api('/wochenlesung', {
+        birthDate: state.profile!.birthDate, moves });
+      state.wochenlesung = { week: data.week, text: data.text, chips: data.chips };
       saveState(state);
-      renderResult(state.resonanz);
-    } catch (e: any) {
       out.innerHTML = '';
-      const p = document.createElement('p'); p.className = 'action-hint';
-      p.textContent = 'Fehler: ' + (e?.message || e) + ' — bitte versuche es gleich noch einmal.';
-      out.appendChild(p);
-    } finally {
-      btn.disabled = false; btn.textContent = 'Resonanz lesen';
+      renderChipsAndText(out, data.chips, data.text);
+    } catch (e: any) {
+      btn.disabled = false; btn.textContent = 'Wochenlesung lesen';
+      alert('Fehler: ' + (e?.message || e));
     }
   });
-  el.appendChild(det);
+  out.appendChild(btn);
+}
+
+// --- Web-Push (Morgen-Ritual) ----------------------------------------------
+
+let PUSH_CONFIG: { enabled: boolean; publicKey: string | null } | null | 'unavailable' = null;
+
+function urlBase64ToUint8Array(s: string): Uint8Array {
+  const pad = '='.repeat((4 - (s.length % 4)) % 4);
+  const raw = atob((s + pad).replace(/-/g, '+').replace(/_/g, '/'));
+  return Uint8Array.from(Array.from(raw, c => c.charCodeAt(0)));
+}
+
+async function appendPushButton(container: HTMLElement) {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) return;
+  if (PUSH_CONFIG === null) {
+    try { PUSH_CONFIG = await api('/push/config'); } catch { PUSH_CONFIG = 'unavailable'; }
+  }
+  if (PUSH_CONFIG === 'unavailable' || !PUSH_CONFIG?.enabled || !PUSH_CONFIG.publicKey) return;
+  const key = PUSH_CONFIG.publicKey;
+  let reg: ServiceWorkerRegistration;
+  try { reg = await navigator.serviceWorker.ready; } catch { return; }
+  let sub = await reg.pushManager.getSubscription();
+  const btn = document.createElement('button'); btn.className = 'btn-ghost';
+  const setLabel = () => {
+    btn.textContent = sub ? '🔕 Morgen-Ritual abbestellen' : '🔔 Morgen-Ritual aktivieren';
+  };
+  setLabel();
+  btn.addEventListener('click', async () => {
+    btn.disabled = true;
+    try {
+      if (sub) {
+        const endpoint = sub.endpoint;
+        await sub.unsubscribe();
+        await api('/push/unsubscribe', { endpoint }).catch(() => {});
+        sub = null;
+      } else {
+        const perm = await Notification.requestPermission();
+        if (perm !== 'granted') { btn.disabled = false; return; }
+        sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(key),
+        });
+        const j = sub.toJSON();
+        await api('/push/subscribe', { endpoint: j.endpoint, keys: j.keys });
+      }
+    } catch {}
+    setLabel();
+    btn.disabled = false;
+  });
+  container.appendChild(btn);
 }
 
 // --- Gespür (Orakelfrage) --------------------------------------------------
@@ -734,6 +919,7 @@ function renderPlayed(state: BoardState, today: Today) {
     }
   });
   row.append(share, reset); el.appendChild(row);
+  appendPushButton(row);
 }
 
 // --- Hauptablauf -----------------------------------------------------------
@@ -780,7 +966,8 @@ async function startDay(state: BoardState, today: Today) {
   renderChapters(state, today);
   renderAlbum(state);
   renderProfil(state);
-  renderResonanz(state, today);
+  renderMenschen(state, today);
+  renderWochenlesung(state, today);
 
   if (state.lastPlayedDay >= today.dayIndex) {
     renderBoard(state.positions, today, null, null);
@@ -837,6 +1024,10 @@ async function startDay(state: BoardState, today: Today) {
 }
 
 async function init() {
+  // Service Worker (nur Push/Notification, kein Caching) früh registrieren.
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  }
   let today: Today;
   try { today = await api('/board/today'); }
   catch { setActionMessage('Die Tageslage konnte nicht geladen werden.', 'Bitte lade die Seite neu.'); return; }
