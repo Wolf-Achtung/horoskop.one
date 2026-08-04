@@ -461,7 +461,9 @@ class TestLLMProvider:
         monkeypatch.setattr(main, "LLM_PROVIDER", "openai")
         main.oa_text("hallo")
         assert seen["messages"][0]["role"] == "system"
-        assert "Schreibassistent" in seen["messages"][0]["content"]
+        # Produktstimme (docs/tonalitaet.md): Freundes-Ton in Du-Form
+        assert "Freundin" in seen["messages"][0]["content"]
+        assert "Du-Form" in seen["messages"][0]["content"]
 
     def test_cache_key_contains_provider(self):
         req = main.ReadingRequest(birthDate="27.07.1966", birthPlace="Berlin")
