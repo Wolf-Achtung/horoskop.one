@@ -185,3 +185,28 @@ class TestBoardEndpoints:
         # aber NICHT die index-Route der StaticFiles).
         r = client.get("/play")
         assert r.status_code in (200, 404)
+
+
+class TestExplanations:
+    def test_today_carries_four_explanations(self):
+        data = client.get("/board/today").json()
+        ex = data["explain"]
+        assert [e["key"] for e in ex] == ["moon", "hexagram", "ganzhi", "field"]
+        for e in ex:
+            assert e["title"] and e["heute"] and e["hintergrund"] and e["link"]
+
+    def test_ganzhi_explanation_composes_element_and_animal(self):
+        data = client.get("/board/today").json()
+        gz = data["ganzhi"]
+        ex = next(e for e in data["explain"] if e["key"] == "ganzhi")
+        assert gz["element"] in ex["heute"]
+        assert gz["animal"] in ex["heute"]
+
+    def test_all_moon_phase_names_have_meanings(self):
+        names = {main.moon_phase_name(f / 100) for f in range(0, 100)}
+        for n in names:
+            assert n in main._MOON_MEANINGS, f"Mondphase ohne Deutung: {n}"
+
+    def test_all_elements_and_animals_covered(self):
+        assert set(main._ELEMENT_TRAITS) == {e for _, e in main._STEMS}
+        assert set(main._ANIMAL_TRAITS) == {a for _, a in main._BRANCHES}

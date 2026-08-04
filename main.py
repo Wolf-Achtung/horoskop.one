@@ -1361,7 +1361,97 @@ def ganzhi_day(d: dt.date) -> Dict[str, Any]:
     stem, element = _STEMS[idx % 10]
     branch, animal = _BRANCHES[idx % 12]
     return {"index": idx + 1, "pinyin": f"{stem}{branch.lower()}",
-            "label": f"{element}-{animal}"}
+            "label": f"{element}-{animal}", "element": element, "animal": animal}
+
+# --- Erklärungstexte für die Tageslage -------------------------------------
+# Kurze, statische Deutungsbausteine — kein LLM nötig, keine Kosten. Die
+# Systemtexte beantworten: Was ist das, woher kommt es, wofür taugt es?
+
+_ELEMENT_TRAITS: Dict[str, str] = {
+    "Holz": "Wachstum, Anfang, Beweglichkeit — gut für alles, was keimen soll",
+    "Feuer": "Ausstrahlung, Begeisterung, Sichtbarkeit — gut für Auftritt und Ausdruck",
+    "Erde": "Stabilität, Fürsorge, Verlässlichkeit — gut für Ordnen und Nähren",
+    "Metall": "Klarheit, Präzision, Konsequenz — gut für Entscheidungen und Trennung von Unnötigem",
+    "Wasser": "Tiefe, Intuition, Anpassung — gut für Zuhören, Forschen, Fließenlassen",
+}
+_ANIMAL_TRAITS: Dict[str, str] = {
+    "Ratte": "wach, findig, vorausschauend", "Büffel": "geduldig, ausdauernd, tragfähig",
+    "Tiger": "mutig, initiativ, leidenschaftlich", "Hase": "diplomatisch, feinfühlig, friedliebend",
+    "Drache": "visionär, kraftvoll, großgesinnt", "Schlange": "weise, verschwiegen, analytisch",
+    "Pferd": "freiheitsliebend, dynamisch, direkt", "Ziege": "kreativ, sanft, gemeinschaftlich",
+    "Affe": "erfinderisch, verspielt, wendig", "Hahn": "genau, aufrichtig, pflichtbewusst",
+    "Hund": "loyal, gerecht, beschützend", "Schwein": "großzügig, ehrlich, genussfähig",
+}
+_MOON_MEANINGS: Dict[str, str] = {
+    "Neumond": "Stunde null des Zyklus: säen, wünschen, still beginnen.",
+    "zunehmende Sichel": "Erste Energie kehrt zurück: kleine Schritte, zarte Anfänge.",
+    "erstes Viertel": "Erste Hürde: dranbleiben, Entscheidungen treffen.",
+    "zunehmender Mond": "Aufbauphase: Kraft sammeln, wachsen lassen, sichtbar werden.",
+    "Vollmond": "Höhepunkt und Erntezeit: Klarheit, Fülle — und Gefühle in Großformat.",
+    "abnehmender Mond": "Loslassphase: aussortieren, verdauen, weitergeben.",
+    "letztes Viertel": "Bilanz: vergeben, abschließen, Ballast abwerfen.",
+    "abnehmende Sichel": "Ausklang: ruhen, reflektieren, Raum für das Neue schaffen.",
+}
+_SYSTEM_INFO: Dict[str, Dict[str, str]] = {
+    "moon": {
+        "title": "Die Mondphase",
+        "text": ("Der Mond durchläuft seinen Zyklus in rund 29,5 Tagen — er ist der älteste "
+                 "Kalender der Menschheit. Fast alle Kulturen lasen in ihm denselben Rhythmus: "
+                 "zunehmend = aufbauen, Vollmond = ernten, abnehmend = loslassen. "
+                 "Das Monatsbrett übernimmt diesen Bogen als Spielfeld."),
+        "link": "/methoden.html#mondphase",
+    },
+    "hexagram": {
+        "title": "Das I-Ging-Hexagramm",
+        "text": ("Das I Ging („Buch der Wandlungen“) ist ein rund 3000 Jahre alter chinesischer "
+                 "Weisheits- und Orakeltext — einer der ältesten der Welt, kommentiert von "
+                 "Konfuzius, geschätzt von C. G. Jung. Seine 64 Hexagramme beschreiben "
+                 "Grundsituationen des Wandels; sie eignen sich weniger für Vorhersagen als für "
+                 "die Frage: Welche Haltung passt zu diesem Moment?"),
+        "link": "/methoden.html#i-ging",
+    },
+    "ganzhi": {
+        "title": "Das Tageszeichen (Ganzhi)",
+        "text": ("Der 60er-Zyklus aus zehn Himmelsstämmen (Elementen) und zwölf Erdzweigen "
+                 "(Tierzeichen) zählt in China seit über 3000 Jahren die Tage — belegt schon auf "
+                 "den Orakelknochen der Shang-Dynastie. Auch das antike Spiel Liubo war mit "
+                 "diesem Kalender verwoben: Brett und Orakel waren dasselbe System. Jedes "
+                 "Tageszeichen verbindet ein Element mit einem Tier zu einer Tagesqualität."),
+        "link": "/methoden.html#chinesisch",
+    },
+    "field": {
+        "title": "Das Senet-Feld",
+        "text": ("Senet ist eines der ältesten Brettspiele der Welt (Ägypten, ab ca. 3000 "
+                 "v. Chr.) — und zugleich ein religiöses Sinnbild: Die 30 Felder galten als "
+                 "Stationen der Seelenreise, gespielt wurde symbolisch auch gegen das Schicksal. "
+                 "Das Monatsbrett legt diese 30 Häuser auf die 30 Tage des Mondmonats; die "
+                 "Sonderhäuser (Wiedergeburt, Wasser, die drei Schwellen) folgen dem "
+                 "historischen Brett."),
+        "link": "/methoden.html",
+    },
+}
+
+def board_explanations(today: Dict[str, Any]) -> List[Dict[str, str]]:
+    """Die vier Tageslage-Elemente mit Heute-Deutung + Hintergrund."""
+    moon_name = today["moon"]["name"]
+    gz = today["ganzhi"]
+    return [
+        {"key": "moon", "title": f"{_SYSTEM_INFO['moon']['title']}: {moon_name}",
+         "heute": _MOON_MEANINGS.get(moon_name, ""),
+         "hintergrund": _SYSTEM_INFO["moon"]["text"], "link": _SYSTEM_INFO["moon"]["link"]},
+        {"key": "hexagram",
+         "title": f"I-Ging {today['hexagram']['index']} — „{today['hexagram']['name']}“",
+         "heute": today["hexagram"]["core"],
+         "hintergrund": _SYSTEM_INFO["hexagram"]["text"], "link": _SYSTEM_INFO["hexagram"]["link"]},
+        {"key": "ganzhi", "title": f"Tageszeichen {gz['label']} ({gz['pinyin']})",
+         "heute": (f"{gz['element']}: {_ELEMENT_TRAITS.get(gz['element'], '')}. "
+                   f"Der {gz['animal']} ist {_ANIMAL_TRAITS.get(gz['animal'], '')}."),
+         "hintergrund": _SYSTEM_INFO["ganzhi"]["text"], "link": _SYSTEM_INFO["ganzhi"]["link"]},
+        {"key": "field",
+         "title": f"Feld {today['field']['index']} — {today['field']['name']}",
+         "heute": today["field"]["core"],
+         "hintergrund": _SYSTEM_INFO["field"]["text"], "link": _SYSTEM_INFO["field"]["link"]},
+    ]
 
 # --- Mondmonats-Brett ------------------------------------------------------
 _SYNODIC = 29.53058867
@@ -1484,7 +1574,7 @@ def board_today(d: Optional[dt.date] = None) -> Dict[str, Any]:
     hex_idx = iching_index(d)
     hx = iching_lookup(hex_idx)
     field = FIELD_EVENTS[lb["dayIndex"] - 1]
-    return {
+    today = {
         "date": d.isoformat(),
         "boardId": lb["boardId"], "dayIndex": lb["dayIndex"],
         "moon": {"name": moon_phase_name(mf), "frac": round(mf, 3)},
@@ -1493,6 +1583,8 @@ def board_today(d: Optional[dt.date] = None) -> Dict[str, Any]:
         "field": {"index": lb["dayIndex"], **field},
         "stones": STONES,
     }
+    today["explain"] = board_explanations(today)
+    return today
 
 # --- Request-Modelle -------------------------------------------------------
 
