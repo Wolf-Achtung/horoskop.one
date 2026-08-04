@@ -1,52 +1,95 @@
-/* Das Monatsbrett — Spiel-UI (mobile-first, ergänzt styles.css) */
+/* Das Monatsbrett — helles Papyrus-Thema.
+   Diese Datei wird NUR von play.html geladen und darf daher globale
+   Grundfarben der Seite überschreiben. */
+
+html, body{
+  background:#f3ead7 !important;
+  background-image:radial-gradient(900px 500px at 50% -10%, #faf4e4, #f3ead7 70%) !important;
+  color:#2b2317 !important;
+}
 .board-container{max-width:720px}
 .board-loading{opacity:.7;font-style:italic}
 
+/* Header/Footer an das helle Thema anpassen */
+.site-header .brand strong{color:#8a6420;letter-spacing:.06em}
+.site-header .tagline,.site-footer,.site-footer a{color:#6b5c40}
+.site-footer a{text-decoration-color:rgba(138,100,32,.5)}
+
+/* Karten */
+.board-container .card{
+  background:#fffaf0;border:1px solid #e0d3b4;border-radius:14px;
+  box-shadow:0 2px 10px rgba(90,70,30,.08);color:#2b2317;padding:18px;
+  margin-bottom:16px;
+}
+.card-step{margin:0 0 10px;font-size:15px;letter-spacing:.04em;
+  text-transform:uppercase;color:#8a6420}
+.card-step .step-sub{display:block;text-transform:none;letter-spacing:0;
+  font-size:14px;color:#6b5c40;margin-top:4px;font-weight:400}
+
 /* Tageslage */
 .tageslage-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px;margin-bottom:6px}
-.tageslage-head h2{margin:0;font-size:20px}
-.tageslage-sub{opacity:.75;font-size:14px}
-.tageslage-field{margin-top:6px;line-height:1.5}
-.tageslage-field b{color:var(--brand,#d4af6a)}
+.tageslage-head h2{margin:0;font-size:22px;color:#2b2317;font-family:Georgia,'Times New Roman',serif}
+.tageslage-sub{color:#6b5c40;font-size:14px}
+.tageslage-field{margin-top:6px;line-height:1.55}
+.tageslage-field b{color:#8a6420}
+
+/* Hilfe */
+.board-help summary{cursor:pointer;font-weight:700;color:#8a6420}
+.board-help ol{margin:10px 0 0;padding-left:20px;line-height:1.6}
+.board-help li{margin-bottom:8px}
+.board-help b{color:#5a4520}
 
 /* Brett */
 .board-card{padding:14px}
 #board-wrap svg{width:100%;height:auto;display:block}
-.cell{fill:rgba(255,255,255,.04);stroke:rgba(212,175,106,.35);stroke-width:1}
-.cell-today{fill:rgba(212,175,106,.16);stroke:rgba(212,175,106,.9);stroke-width:1.6}
-.cell-num{fill:rgba(255,255,255,.35);font-size:11px}
-.cell-glyph{fill:rgba(212,175,106,.8);font-size:14px}
-.stone{stroke:rgba(0,0,0,.5);stroke-width:1;cursor:default}
-.stone-label{fill:#0b1020;font-size:12px;font-weight:700;pointer-events:none}
-.stone-legal{cursor:pointer;filter:drop-shadow(0 0 6px rgba(212,175,106,.9))}
-.stone-selected{stroke:#fff;stroke-width:2.5}
-.board-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;font-size:13px;opacity:.85}
-.board-legend .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:baseline}
+.cell{fill:#faf3e0;stroke:#cdb98c;stroke-width:1}
+.cell-today{fill:#f5e3b8;stroke:#a9782c;stroke-width:2}
+.cell-num{fill:#a2915f;font-size:11px}
+.cell-glyph{fill:#a9782c;font-size:14px}
+.stone{stroke:rgba(60,40,10,.45);stroke-width:1;cursor:default}
+.stone-label{fill:#fff;font-size:12px;font-weight:700;pointer-events:none}
+.stone-legal{cursor:pointer;filter:drop-shadow(0 0 6px rgba(169,120,44,.85))}
+.stone-selected{stroke:#2b2317;stroke-width:2.5}
+.board-legend{display:flex;flex-wrap:wrap;gap:10px 16px;margin-top:12px;font-size:13px;color:#5a4c33}
+.board-legend .dot{display:inline-block;width:10px;height:10px;border-radius:50%;
+  margin-right:5px;vertical-align:baseline;border:1px solid rgba(60,40,10,.3)}
 
 /* Aktion / Wurf / Zugwahl */
-.throw-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.throw-sticks{font-size:26px;letter-spacing:4px}
-.stone-choices{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
-.stone-btn{border:1px solid rgba(212,175,106,.5);background:rgba(212,175,106,.08);
-  color:inherit;border-radius:10px;padding:10px 14px;font-size:15px;cursor:pointer}
-.stone-btn:disabled{opacity:.35;cursor:not-allowed}
-.stone-btn .target{display:block;font-size:12px;opacity:.7}
-.btn-primary{background:var(--brand,#d4af6a);color:#0b1020;border:none;border-radius:10px;
-  padding:12px 18px;font-size:16px;font-weight:700;cursor:pointer;margin-top:10px}
-.btn-ghost{background:transparent;border:1px solid rgba(255,255,255,.25);color:inherit;
+.throw-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:4px}
+.throw-sticks{font-size:24px;letter-spacing:4px;color:#a9782c}
+.throw-label{font-size:16px;line-height:1.5}
+.stone-choices{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.stone-btn{border:2px solid #cdb98c;background:#fffdf7;color:#2b2317;
+  border-radius:12px;padding:10px 16px;font-size:15px;font-weight:600;cursor:pointer;
+  transition:transform .06s ease}
+.stone-btn:not(:disabled):hover{transform:translateY(-1px)}
+.stone-btn:disabled{opacity:.4;cursor:not-allowed}
+.stone-btn .target{display:block;font-size:12px;font-weight:400;color:#6b5c40;margin-top:2px}
+.btn-primary{background:#a9782c;color:#fffaf0;border:none;border-radius:12px;
+  padding:13px 20px;font-size:16px;font-weight:700;cursor:pointer;margin-top:12px}
+.btn-ghost{background:transparent;border:1px solid #cdb98c;color:#5a4c33;
   border-radius:10px;padding:10px 14px;font-size:14px;cursor:pointer}
+.action-hint{font-size:13px;color:#6b5c40;line-height:1.5;margin-top:10px}
 
 /* Onboarding */
-.onboard-grid{display:grid;gap:12px;grid-template-columns:1fr}
-.onboard-grid label{display:flex;flex-direction:column;gap:4px;font-size:14px}
-.onboard-grid input{padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.2);
-  background:rgba(255,255,255,.05);color:inherit;font-size:16px}
-.onboard-hint{font-size:13px;opacity:.7;line-height:1.5}
+.onboard-grid{display:grid;gap:12px;grid-template-columns:1fr;margin-top:10px}
+.onboard-grid label{display:flex;flex-direction:column;gap:4px;font-size:14px;color:#5a4c33}
+.onboard-grid input{padding:11px;border-radius:10px;border:1px solid #cdb98c;
+  background:#fffdf7;color:#2b2317;font-size:16px}
+.onboard-hint{font-size:13px;color:#6b5c40;line-height:1.55}
 
 /* Kapitel */
-.chapter{margin-top:14px}
+.chapters-heading{margin:22px 0 10px;font-size:15px;letter-spacing:.04em;
+  text-transform:uppercase;color:#8a6420}
+.chapter{margin-bottom:12px}
+.chapter .reading-block{background:transparent;border:none;padding:0}
+.chapter-day{font-size:13px;color:#a2915f;margin-bottom:4px}
+.chapter-title{display:flex;align-items:baseline;gap:8px;font-weight:700;margin-bottom:4px}
+.chapter-title .dot{display:inline-block;width:10px;height:10px;border-radius:50%;
+  border:1px solid rgba(60,40,10,.3);flex:none;position:relative;top:0}
+.chapter-text{line-height:1.55}
 .chapter .reading-chips{margin-top:8px}
-.chapter-day{font-size:13px;opacity:.6;margin-bottom:4px}
+.board-container .reading-chip{background:#f5e9cd;border:1px solid #e0d3b4;color:#5a4c33}
 .share-row{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
 
 @media(min-width:560px){
