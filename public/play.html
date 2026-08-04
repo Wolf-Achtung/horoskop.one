@@ -20,6 +20,9 @@
       form-action 'self';
       frame-ancestors 'none';
     ">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/styles.css">
     <link rel="stylesheet" href="/board.css">
   </head>
@@ -32,8 +35,11 @@
     </header>
 
     <main class="container board-container">
-      <section class="card" id="tageslage" aria-live="polite">
-        <div class="board-loading">Die Tageslage wird gelesen …</div>
+      <section class="card tageslage-card">
+        <img class="hero-wheel" src="/assets/hero-wheel-gold.svg" alt="" aria-hidden="true"/>
+        <div id="tageslage" aria-live="polite">
+          <div class="board-loading">Die Tageslage wird gelesen …</div>
+        </div>
       </section>
 
       <section class="card" id="action"></section>
@@ -46,17 +52,18 @@
             jede Geschichte ist eigen. Zum nächsten Neumond beginnt ein
             frisches Brett.</li>
           <li><b>Deine fünf Steine sind Lebensbereiche:</b>
-            <b>Fokus</b> (Klarheit &amp; Richtung), <b>Werk</b> (Arbeit &amp;
-            Projekte), <b>Liebe</b> (Beziehungen), <b>Kraft</b> (Körper &amp;
-            Energie), <b>Geist</b> (Intuition &amp; Inneres). Alle beginnen
+            ☉ <b>Fokus</b> (Klarheit &amp; Richtung), ⚒ <b>Werk</b> (Arbeit &amp;
+            Projekte), ♥ <b>Liebe</b> (Beziehungen), ⚡ <b>Kraft</b> (Körper &amp;
+            Energie), ☽ <b>Geist</b> (Intuition &amp; Inneres). Alle beginnen
             vor dem Brett.</li>
-          <li><b>Ein Zug pro Tag.</b> Das Orakel wirft jeden Tag für dich
-            (1–5 Augen, aus deinem Geburtsdatum und dem Tag berechnet). Du
-            entscheidest nur eines: <i>welcher Bereich zieht.</i> Zu jedem
-            Zug entsteht eine kurze, persönliche Deutung.</li>
+          <li><b>Ein Zug pro Tag.</b> Vier Wurfstäbe entscheiden, wie weit du
+            heute ziehst (1–5 — aus deinem Geburtsdatum und dem Tag
+            berechnet). Du triffst genau eine Entscheidung:
+            <i>welcher Bereich zieht.</i> Zu jedem Zug entsteht eine kurze,
+            persönliche Deutung.</li>
           <li><b>Besondere Häuser</b> (aus dem altägyptischen Senet):
-            Feld 15 „Haus der Wiedergeburt" (Vollmond), Feld 26 „Schönes
-            Haus", Feld 27 „Haus des Wassers" (trägt Steine sanft zurück zu
+            Feld 15 ⟲ „Haus der Wiedergeburt" (Vollmond), Feld 26 ✶ „Schönes
+            Haus", Feld 27 ≈ „Haus des Wassers" (trägt Steine sanft zurück zu
             Feld 15), Felder 28–30 sind die Schwellen zum Auszug ins
             <i>Binsengefilde</i> — dem Ziel jedes Steins.</li>
           <li><b>Kein Druck.</b> Verpasst du Tage, zieht das Orakel behutsam
@@ -66,9 +73,9 @@
       </details>
 
       <section class="card board-card">
-        <h2 class="card-step" id="board-heading">Dein Brett</h2>
+        <h2 class="card-step">3 · Dein Brett</h2>
         <div id="board-wrap" role="img" aria-label="Senet-Brett mit 30 Feldern"></div>
-        <div class="board-legend" id="board-legend"></div>
+        <div id="stone-dock"></div>
       </section>
 
       <section id="chapters"></section>

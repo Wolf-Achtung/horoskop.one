@@ -369,3 +369,26 @@ class TestRoutes:
         assert "blueprint" in ids
         assert "genius" in ids
         assert len(types) == 8
+
+
+# ---------------------------------------------------------------------------
+# _chat_kwargs — modellbewusste API-Parameter (GPT-5-Temperature-Bug)
+# ---------------------------------------------------------------------------
+
+class TestChatKwargs:
+    def test_gpt5_family_drops_temperature_and_seed(self):
+        kw = main._chat_kwargs("gpt-5-mini", 0.8, seed=42)
+        assert "temperature" not in kw
+        assert "seed" not in kw
+        assert kw["reasoning_effort"] == "minimal"
+
+    def test_o_series_drops_temperature(self):
+        kw = main._chat_kwargs("o3-mini", 0.4)
+        assert "temperature" not in kw
+        assert "reasoning_effort" in kw
+
+    def test_classic_models_keep_temperature_and_seed(self):
+        kw = main._chat_kwargs("gpt-4o-mini", 0.7, seed=7)
+        assert kw["temperature"] == 0.7
+        assert kw["seed"] == 7
+        assert "reasoning_effort" not in kw

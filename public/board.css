@@ -1,37 +1,49 @@
-/* Das Monatsbrett — helles Papyrus-Thema.
+/* Das Monatsbrett — Papyrus-Thema v2.
    Diese Datei wird NUR von play.html geladen und darf daher globale
    Grundfarben der Seite überschreiben. */
 
 html, body{
-  background:#f3ead7 !important;
-  background-image:radial-gradient(900px 500px at 50% -10%, #faf4e4, #f3ead7 70%) !important;
+  background:#f1e6cf !important;
+  background-image:
+    radial-gradient(1100px 600px at 50% -12%, #fbf5e3, rgba(251,245,227,0) 70%),
+    repeating-linear-gradient(90deg, rgba(160,130,70,.035) 0 2px, rgba(0,0,0,0) 2px 26px),
+    repeating-linear-gradient(0deg, rgba(160,130,70,.03) 0 2px, rgba(0,0,0,0) 2px 22px) !important;
   color:#2b2317 !important;
 }
 .board-container{max-width:720px}
 .board-loading{opacity:.7;font-style:italic}
 
-/* Header/Footer an das helle Thema anpassen */
-.site-header .brand strong{color:#8a6420;letter-spacing:.06em}
+/* Kopf/Fuß */
+.site-header .brand strong{
+  color:#8a6420;letter-spacing:.1em;
+  font-family:'Cinzel Decorative', Georgia, serif;font-size:20px}
 .site-header .tagline,.site-footer,.site-footer a{color:#6b5c40}
 .site-footer a{text-decoration-color:rgba(138,100,32,.5)}
 
 /* Karten */
 .board-container .card{
-  background:#fffaf0;border:1px solid #e0d3b4;border-radius:14px;
-  box-shadow:0 2px 10px rgba(90,70,30,.08);color:#2b2317;padding:18px;
-  margin-bottom:16px;
+  background:#fffaf0;border:1px solid #dcca9e;border-radius:16px;
+  box-shadow:0 2px 12px rgba(90,70,30,.09), inset 0 0 0 3px rgba(220,202,158,.25);
+  color:#2b2317;padding:20px;margin-bottom:16px;
 }
-.card-step{margin:0 0 10px;font-size:15px;letter-spacing:.04em;
-  text-transform:uppercase;color:#8a6420}
+.card-step{margin:0 0 10px;font-size:13px;letter-spacing:.14em;
+  text-transform:uppercase;color:#a9782c;font-weight:700}
 .card-step .step-sub{display:block;text-transform:none;letter-spacing:0;
-  font-size:14px;color:#6b5c40;margin-top:4px;font-weight:400}
+  font-size:15px;color:#5a4c33;margin-top:6px;font-weight:400;
+  font-family:'Cormorant Garamond',Georgia,serif;font-size:17px;font-style:italic}
 
 /* Tageslage */
-.tageslage-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px;margin-bottom:6px}
-.tageslage-head h2{margin:0;font-size:22px;color:#2b2317;font-family:Georgia,'Times New Roman',serif}
-.tageslage-sub{color:#6b5c40;font-size:14px}
-.tageslage-field{margin-top:6px;line-height:1.55}
-.tageslage-field b{color:#8a6420}
+.tageslage-card{position:relative;overflow:hidden}
+.hero-wheel{position:absolute;right:-46px;top:-46px;width:190px;height:190px;
+  opacity:.16;pointer-events:none;animation:wheelspin 240s linear infinite}
+@keyframes wheelspin{to{transform:rotate(360deg)}}
+.tageslage-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px;margin-bottom:8px}
+.tageslage-head h2{margin:0;font-size:30px;color:#2b2317;
+  font-family:'Cinzel Decorative',Georgia,serif;line-height:1.15}
+.tageslage-sub{color:#6b5c40;font-size:14.5px}
+.tageslage-field{margin-top:8px;line-height:1.6;
+  font-family:'Cormorant Garamond',Georgia,serif;font-size:19px}
+.tageslage-field b{color:#8a6420;font-weight:600}
 
 /* Hilfe */
 .board-help summary{cursor:pointer;font-weight:700;color:#8a6420}
@@ -39,60 +51,106 @@ html, body{
 .board-help li{margin-bottom:8px}
 .board-help b{color:#5a4520}
 
-/* Brett */
-.board-card{padding:14px}
+/* ---------------- Brett ---------------- */
+.board-card{padding:16px}
 #board-wrap svg{width:100%;height:auto;display:block}
-.cell{fill:#faf3e0;stroke:#cdb98c;stroke-width:1}
-.cell-today{fill:#f5e3b8;stroke:#a9782c;stroke-width:2}
+.board-path{fill:none;stroke:#c9b077;stroke-width:3;stroke-dasharray:2 9;
+  stroke-linecap:round;opacity:.8}
+.cell{fill:#fbf4de;stroke:#cdb476;stroke-width:1.2}
+.cell-past{fill:#efe2bd;stroke:#c2a869}
+.cell-today{fill:#f6dfa4;stroke:#a9782c;stroke-width:2.5;
+  animation:todayglow 2.6s ease-in-out infinite}
+@keyframes todayglow{
+  0%,100%{filter:drop-shadow(0 0 2px rgba(169,120,44,.35))}
+  50%{filter:drop-shadow(0 0 9px rgba(169,120,44,.75))}}
 .cell-num{fill:#a2915f;font-size:11px}
-.cell-glyph{fill:#a9782c;font-size:14px}
-.stone{stroke:rgba(60,40,10,.45);stroke-width:1;cursor:default}
-.stone-label{fill:#fff;font-size:12px;font-weight:700;pointer-events:none}
-.stone-legal{cursor:pointer;filter:drop-shadow(0 0 6px rgba(169,120,44,.85))}
-.stone-selected{stroke:#2b2317;stroke-width:2.5}
-.board-legend{display:flex;flex-wrap:wrap;gap:10px 16px;margin-top:12px;font-size:13px;color:#5a4c33}
-.board-legend .dot{display:inline-block;width:10px;height:10px;border-radius:50%;
-  margin-right:5px;vertical-align:baseline;border:1px solid rgba(60,40,10,.3)}
+.cell-glyph{fill:#8a6420;font-size:19px;font-weight:700}
+.stone{stroke:rgba(60,40,10,.5);stroke-width:1.2;cursor:default}
+.stone-label{fill:#fffaf0;font-size:15px;font-weight:700;pointer-events:none}
+.stone-legal{cursor:pointer;animation:stonepulse 1.6s ease-in-out infinite}
+@keyframes stonepulse{
+  0%,100%{filter:drop-shadow(0 0 2px rgba(169,120,44,.5))}
+  50%{filter:drop-shadow(0 0 8px rgba(169,120,44,.95))}}
 
-/* Aktion / Wurf / Zugwahl */
-.throw-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:4px}
-.throw-sticks{font-size:24px;letter-spacing:4px;color:#a9782c}
-.throw-label{font-size:16px;line-height:1.5}
+/* Steindock unter dem Brett */
+#stone-dock{margin-top:14px;display:flex;flex-direction:column;gap:8px}
+.dock-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.dock-title{font-size:12px;letter-spacing:.1em;text-transform:uppercase;
+  color:#a2915f;min-width:110px}
+.dock-chip{display:inline-flex;align-items:center;gap:6px;font-size:13.5px;
+  color:#4a3d26;background:#f7edd3;border:1px solid #dcca9e;border-radius:999px;
+  padding:4px 12px 4px 5px}
+.dock-chip .orb{display:inline-flex;align-items:center;justify-content:center;
+  width:24px;height:24px;border-radius:50%;color:#fffaf0;font-size:13px;
+  border:1px solid rgba(60,40,10,.35)}
+.dock-chip.legal{cursor:pointer;box-shadow:0 0 0 2px rgba(169,120,44,.35)}
+
+/* ---------------- Wurf-Ritual ---------------- */
+.throw-intro{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+.sticks-row{display:flex;align-items:center;gap:14px;margin:10px 0 4px}
+.stick{width:14px;height:64px;border-radius:8px;background:#8a6420;
+  border:1px solid #5a4520;box-shadow:inset 0 0 4px rgba(0,0,0,.25)}
+.stick.light{background:#f3e2b6;border-color:#c2a869;
+  box-shadow:inset 0 0 3px rgba(255,255,255,.6)}
+.sticks-row.tossing .stick{animation:sticktoss .95s cubic-bezier(.3,.7,.4,1) both}
+.sticks-row .stick:nth-child(1){animation-delay:0s}
+.sticks-row .stick:nth-child(2){animation-delay:.08s}
+.sticks-row .stick:nth-child(3){animation-delay:.16s}
+.sticks-row .stick:nth-child(4){animation-delay:.24s}
+@keyframes sticktoss{
+  0%{transform:translateY(0) rotate(0)}
+  35%{transform:translateY(-26px) rotate(200deg)}
+  70%{transform:translateY(2px) rotate(340deg)}
+  100%{transform:translateY(0) rotate(360deg)}}
+.throw-result{font-family:'Cinzel Decorative',Georgia,serif;font-size:26px;
+  color:#8a6420;margin-left:6px;min-width:34px}
+.throw-label{font-size:16px;line-height:1.55}
 .stone-choices{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
-.stone-btn{border:2px solid #cdb98c;background:#fffdf7;color:#2b2317;
+.stone-btn{border:2px solid #cdb476;background:#fffdf7;color:#2b2317;
   border-radius:12px;padding:10px 16px;font-size:15px;font-weight:600;cursor:pointer;
-  transition:transform .06s ease}
-.stone-btn:not(:disabled):hover{transform:translateY(-1px)}
+  transition:transform .06s ease, box-shadow .12s ease}
+.stone-btn:not(:disabled):hover{transform:translateY(-1px);
+  box-shadow:0 3px 8px rgba(90,70,30,.18)}
 .stone-btn:disabled{opacity:.4;cursor:not-allowed}
+.stone-btn .glyph{margin-right:6px}
 .stone-btn .target{display:block;font-size:12px;font-weight:400;color:#6b5c40;margin-top:2px}
 .btn-primary{background:#a9782c;color:#fffaf0;border:none;border-radius:12px;
-  padding:13px 20px;font-size:16px;font-weight:700;cursor:pointer;margin-top:12px}
-.btn-ghost{background:transparent;border:1px solid #cdb98c;color:#5a4c33;
+  padding:13px 22px;font-size:16px;font-weight:700;cursor:pointer;margin-top:12px;
+  box-shadow:0 2px 8px rgba(90,70,30,.25)}
+.btn-primary:hover{background:#93671f}
+.btn-ghost{background:transparent;border:1px solid #cdb476;color:#5a4c33;
   border-radius:10px;padding:10px 14px;font-size:14px;cursor:pointer}
-.action-hint{font-size:13px;color:#6b5c40;line-height:1.5;margin-top:10px}
+.action-hint{font-size:13.5px;color:#6b5c40;line-height:1.55;margin-top:10px}
 
 /* Onboarding */
 .onboard-grid{display:grid;gap:12px;grid-template-columns:1fr;margin-top:10px}
 .onboard-grid label{display:flex;flex-direction:column;gap:4px;font-size:14px;color:#5a4c33}
-.onboard-grid input{padding:11px;border-radius:10px;border:1px solid #cdb98c;
+.onboard-grid input{padding:11px;border-radius:10px;border:1px solid #cdb476;
   background:#fffdf7;color:#2b2317;font-size:16px}
-.onboard-hint{font-size:13px;color:#6b5c40;line-height:1.55}
+.onboard-hint{font-size:13.5px;color:#6b5c40;line-height:1.55}
+#action h3{font-family:'Cormorant Garamond',Georgia,serif;font-size:22px;margin:4px 0 6px}
 
 /* Kapitel */
-.chapters-heading{margin:22px 0 10px;font-size:15px;letter-spacing:.04em;
-  text-transform:uppercase;color:#8a6420}
+.chapters-heading{margin:24px 0 10px;font-size:13px;letter-spacing:.14em;
+  text-transform:uppercase;color:#a9782c;font-weight:700}
 .chapter{margin-bottom:12px}
-.chapter .reading-block{background:transparent;border:none;padding:0}
-.chapter-day{font-size:13px;color:#a2915f;margin-bottom:4px}
-.chapter-title{display:flex;align-items:baseline;gap:8px;font-weight:700;margin-bottom:4px}
-.chapter-title .dot{display:inline-block;width:10px;height:10px;border-radius:50%;
-  border:1px solid rgba(60,40,10,.3);flex:none;position:relative;top:0}
-.chapter-text{line-height:1.55}
-.chapter .reading-chips{margin-top:8px}
-.board-container .reading-chip{background:#f5e9cd;border:1px solid #e0d3b4;color:#5a4c33}
+.chapter-day{font-size:12.5px;letter-spacing:.06em;color:#a2915f;margin-bottom:5px;
+  text-transform:uppercase}
+.chapter-title{display:flex;align-items:center;gap:9px;font-weight:700;margin-bottom:6px;
+  font-family:'Cormorant Garamond',Georgia,serif;font-size:20px}
+.chapter-title .orb{display:inline-flex;align-items:center;justify-content:center;
+  width:26px;height:26px;border-radius:50%;color:#fffaf0;font-size:14px;flex:none;
+  border:1px solid rgba(60,40,10,.35)}
+.chapter-text{line-height:1.65;font-size:16px}
+.chapter .reading-chips{margin-top:9px}
+.board-container .reading-chip{background:#f5e9cd;border:1px solid #dcca9e;color:#5a4c33}
 .share-row{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
 
 @media(min-width:560px){
   .onboard-grid{grid-template-columns:1fr 1fr}
   .onboard-grid .full{grid-column:1/-1}
+}
+@media(max-width:480px){
+  .tageslage-head h2{font-size:24px}
+  .hero-wheel{width:140px;height:140px;right:-40px;top:-40px}
 }
