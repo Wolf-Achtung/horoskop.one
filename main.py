@@ -1318,6 +1318,288 @@ else:
         return await _reading_impl(req)
 
 
+# ===========================================================================
+# Das Monatsbrett — kalendergebundenes Senet-Orakelspiel (docs/spielkonzept.md)
+#
+# Alles Orakelhafte ist deterministisch und zustandslos: Tageslage, Wurf und
+# Regelprüfung berechnet der Server aus (Datum, Geburtsprofil); die
+# Steinpositionen hält in Phase 1 der Client (LocalStorage) und schickt sie
+# zur Validierung mit.
+# ===========================================================================
+
+# --- Ganzhi (60er-Zyklus) — die Liubo-Referenz -----------------------------
+# Anker: 27.01.2019 war ein Jiǎzǐ-Tag (Index 0), vgl.
+# https://ytliu0.github.io/ChineseCalendar/sexagenary.html
+_GANZHI_ANCHOR = dt.date(2019, 1, 27)
+_STEMS = [("Jiǎ", "Holz"), ("Yǐ", "Holz"), ("Bǐng", "Feuer"), ("Dīng", "Feuer"),
+          ("Wù", "Erde"), ("Jǐ", "Erde"), ("Gēng", "Metall"), ("Xīn", "Metall"),
+          ("Rén", "Wasser"), ("Guǐ", "Wasser")]
+_BRANCHES = [("Zǐ", "Ratte"), ("Chǒu", "Büffel"), ("Yín", "Tiger"), ("Mǎo", "Hase"),
+             ("Chén", "Drache"), ("Sì", "Schlange"), ("Wǔ", "Pferd"), ("Wèi", "Ziege"),
+             ("Shēn", "Affe"), ("Yǒu", "Hahn"), ("Xū", "Hund"), ("Hài", "Schwein")]
+
+def ganzhi_day(d: dt.date) -> Dict[str, Any]:
+    """Sexagesimales Tageszeichen (Stamm-Zweig) für ein Datum."""
+    idx = (d - _GANZHI_ANCHOR).days % 60
+    stem, element = _STEMS[idx % 10]
+    branch, animal = _BRANCHES[idx % 12]
+    return {"index": idx + 1, "pinyin": f"{stem}{branch.lower()}",
+            "label": f"{element}-{animal}"}
+
+# --- Mondmonats-Brett ------------------------------------------------------
+_SYNODIC = 29.53058867
+
+def lunar_board(d: dt.date) -> Dict[str, Any]:
+    """Brett-Zyklus: von Neumond zu Neumond. Liefert eine stabile Brett-ID
+    (Datum des Zyklus-Neumonds) und den Tag im Brett (1..30).
+
+    Die Tagesfraktion von `days_since` ist innerhalb eines Zyklus konstant
+    (wir werten immer Mitternacht aus), daher ist die Brett-ID über den
+    ganzen Zyklus hinweg stabil.
+    """
+    frac = moon_phase_fraction(d)
+    days_since = frac * _SYNODIC
+    new_moon = (dt.datetime(d.year, d.month, d.day, tzinfo=dt.timezone.utc)
+                - dt.timedelta(days=days_since))
+    day_index = min(30, int(days_since) + 1)
+    return {"boardId": new_moon.date().isoformat(), "dayIndex": day_index}
+
+# --- Die 30 Felder — Senet-Häuser + thematische Stationen ------------------
+# Felder 15 und 26–30 folgen den historisch belegten Senet-Häusern; die
+# übrigen Stationen sind thematisch auf den Mondbogen gelegt (1–14 zunehmend
+# = Aufbau, 16–25 abnehmend = Ernte & Loslassen).
+FIELD_EVENTS: List[Dict[str, str]] = [
+    {"name": "Der Aufbruch", "core": "Etwas beginnt leise. Setze den ersten, kleinen Schritt."},
+    {"name": "Die Schwelle", "core": "Altes liegt hinter dir, Neues ist noch formlos. Bleib offen."},
+    {"name": "Das Saatkorn", "core": "Was du jetzt pflanzt, trägt den ganzen Monat. Wähle bewusst."},
+    {"name": "Der junge Mond", "core": "Erste Konturen werden sichtbar. Benenne, was du willst."},
+    {"name": "Die Weggabelung", "core": "Zwei Richtungen ziehen. Entscheide dich für eine — heute."},
+    {"name": "Das Werkzeug", "core": "Dir fehlt nichts. Nutze, was du schon in Händen hältst."},
+    {"name": "Der Gefährte", "core": "Du musst nicht allein gehen. Bitte um das, was du brauchst."},
+    {"name": "Die Prüfung", "core": "Ein Widerstand zeigt, was dir wichtig ist. Weiche nicht aus."},
+    {"name": "Der Rastplatz", "core": "Halte kurz inne und schau zurück: Es ist mehr geschafft, als du denkst."},
+    {"name": "Die Strömung", "core": "Es läuft. Verstärke, was von selbst in Bewegung ist."},
+    {"name": "Der Spiegel", "core": "Was dich an anderen reizt, erzählt von dir. Sieh genau hin."},
+    {"name": "Die Brücke", "core": "Ein Zwischenraum will überquert werden. Vertrau der Konstruktion."},
+    {"name": "Der Hüter", "core": "Grenzen schützen, was reift. Sag heute einmal freundlich Nein."},
+    {"name": "Der Vorabend", "core": "Kurz vor der Fülle: Sammle dich, statt zu zerstreuen."},
+    {"name": "Haus der Wiedergeburt", "core": "Vollmond-Feld. Hierher kehrt zurück, was neu beginnen darf."},
+    {"name": "Die Fülle", "core": "Nimm an, was da ist — ohne sofort nach dem Nächsten zu greifen."},
+    {"name": "Die Lese", "core": "Trenne reif von unreif. Nicht alles muss mit."},
+    {"name": "Das Geschenk", "core": "Etwas will weitergegeben werden. Teilen vermehrt es."},
+    {"name": "Die Wende", "core": "Der Bogen neigt sich. Richte den Blick vom Außen nach innen."},
+    {"name": "Der Abendstern", "core": "Würdige einen stillen Erfolg, den niemand sonst gesehen hat."},
+    {"name": "Das Sieb", "core": "Lass fallen, was nur Gewohnheit ist. Behalte, was nährt."},
+    {"name": "Die Quelle", "core": "Erneuere deine Kraft an ihrem Ursprung — nicht an ihren Ersatzmitteln."},
+    {"name": "Der Schatten", "core": "Was du vermeidest, wartet geduldig. Ein kurzer Blick genügt heute."},
+    {"name": "Die Stille", "core": "Weniger Worte, mehr Wahrnehmung. Höre einen Tag lang zu."},
+    {"name": "Der Vorbote", "core": "Das Ende des Zyklus kündigt sich an. Schließe einen offenen Kreis."},
+    {"name": "Schönes Haus", "core": "Segensfeld. Dankbarkeit für das, was dieser Monat gebracht hat."},
+    {"name": "Haus des Wassers", "core": "Die Strömung trägt zurück zur Wiedergeburt — ein Umweg, keine Strafe."},
+    {"name": "Haus der drei Wahrheiten", "core": "Nur was wahr ist, geht hinaus. Prüfe dein Motiv."},
+    {"name": "Haus des Re-Atum", "core": "Die Schwelle des Horizonts. Bereit sein ist alles."},
+    {"name": "Der Horizont", "core": "Ankunft. Was hier steht, tritt hinaus ins Binsengefilde."},
+]
+
+# --- Steine & Regeln -------------------------------------------------------
+STONES: Dict[str, str] = {
+    "fokus": "Fokus", "werk": "Werk", "liebe": "Liebe",
+    "kraft": "Kraft", "geist": "Geist",
+}
+_STONE_ORDER = list(STONES.keys())  # deterministische Reihenfolge (Orakelwahl)
+_START, _AARU = 0, 31  # 0 = vor dem Brett, 31 = ausgezogen (Binsengefilde)
+
+def board_throw(birth_date: str, board_id: str, day_index: int) -> int:
+    """Deterministischer Senet-Wurf (1..5) aus Profil + Bretttag."""
+    return _det_hash("board", (birth_date or "").strip(), board_id, day_index) % 5 + 1
+
+def _water_landing(positions: Dict[str, int], stone: str) -> int:
+    """Feld 27 (Haus des Wassers): zurück zu Feld 15; ist es belegt, das
+    nächste freie Feld darunter."""
+    taken = {p for s, p in positions.items() if s != stone and 1 <= p <= 30}
+    f = 15
+    while f in taken and f > 1:
+        f -= 1
+    return f
+
+def legal_moves(positions: Dict[str, int], throw: int) -> Dict[str, int]:
+    """Zielfeld je Stein für alle legalen Züge.
+
+    Regeln (v1, docs/spielkonzept.md): kein Landen auf eigenem Stein;
+    Feld 27 leitet nach 15 um; Auszug (→31) aus 30 mit jedem Wurf, aus 29
+    nur mit 2, aus 28 nur mit 3; Überwürfe darüber hinaus sind nicht legal.
+    """
+    moves: Dict[str, int] = {}
+    for stone in _STONE_ORDER:
+        pos = positions.get(stone, _START)
+        if pos == _AARU:
+            continue
+        target = pos + throw
+        if target > 30:
+            if pos == 30 or (pos == 29 and throw == 2) or (pos == 28 and throw == 3):
+                moves[stone] = _AARU
+            continue
+        final = _water_landing(positions, stone) if target == 27 else target
+        occupied = {p for s, p in positions.items() if s != stone and 1 <= p <= 30}
+        if final not in occupied:
+            moves[stone] = final
+    return moves
+
+def _validate_positions(raw: Dict[str, int]) -> Dict[str, int]:
+    """Client-Positionen prüfen: bekannte Steine, Wertebereich, keine
+    Doppelbelegung von Brettfeldern (0 und 31 dürfen mehrfach vorkommen)."""
+    pos: Dict[str, int] = {}
+    for stone in _STONE_ORDER:
+        v = raw.get(stone, _START)
+        if not isinstance(v, int) or not (_START <= v <= _AARU):
+            raise ValueError(f"Ungültige Position für {stone}")
+        pos[stone] = v
+    on_board = [v for v in pos.values() if 1 <= v <= 30]
+    if len(on_board) != len(set(on_board)):
+        raise ValueError("Zwei Steine auf demselben Feld")
+    return pos
+
+def board_today(d: Optional[dt.date] = None) -> Dict[str, Any]:
+    """Globale Tageslage — für alle Spieler identisch, daher cachebar."""
+    d = d or dt.date.today()
+    lb = lunar_board(d)
+    mf = moon_phase_fraction(d)
+    hex_idx = iching_index(d)
+    hx = iching_lookup(hex_idx)
+    field = FIELD_EVENTS[lb["dayIndex"] - 1]
+    return {
+        "date": d.isoformat(),
+        "boardId": lb["boardId"], "dayIndex": lb["dayIndex"],
+        "moon": {"name": moon_phase_name(mf), "frac": round(mf, 3)},
+        "hexagram": {"index": hex_idx, "name": hx.get("name", ""), "core": hx.get("core", "")},
+        "ganzhi": ganzhi_day(d),
+        "field": {"index": lb["dayIndex"], **field},
+        "stones": STONES,
+    }
+
+# --- Request-Modelle -------------------------------------------------------
+
+class BoardThrowRequest(BaseModel):
+    birthDate: str = Field(..., max_length=32)
+    positions: Dict[str, int] = Field(default_factory=dict)
+    dayIndex: Optional[int] = Field(None, ge=1, le=30)
+
+class BoardMoveRequest(BaseModel):
+    birthDate: str = Field(..., max_length=32)
+    birthPlace: Optional[str] = Field(None, max_length=200)
+    positions: Dict[str, int] = Field(default_factory=dict)
+    stone: str = Field(..., max_length=16)
+    tone: Optional[str] = Field(None, max_length=64)
+    dayIndex: Optional[int] = Field(None, ge=1, le=30)
+
+def _board_reading(req: BoardMoveRequest, today: Dict[str, Any], stone: str,
+                   from_pos: int, to_pos: int, is_today: bool) -> str:
+    """Mikro-Lesung zum Zug. LLM nur für den aktuellen Tag; Nachhol-Züge und
+    LLM-Fehler bekommen einen deterministischen Kurztext."""
+    field = FIELD_EVENTS[min(to_pos, 30) - 1] if to_pos >= 1 else FIELD_EVENTS[0]
+    stone_label = STONES.get(stone, stone)
+    if to_pos == _AARU:
+        fallback = (f"{stone_label} verlässt das Brett ins Binsengefilde — "
+                    f"dieser Bereich hat seinen Monatsweg vollendet.")
+    else:
+        fallback = f"{stone_label} erreicht {field['name']}: {field['core']}"
+    if not is_today:
+        return fallback
+    bdate = parse_birth_date(req.birthDate)
+    sun = zodiac_from_date(bdate) if bdate else "unbekannt"
+    lp = life_path_number(bdate) if bdate else "–"
+    prompt = f"""Tageslage: Tag {today['dayIndex']} des Mondmonats · {today['moon']['name']} ·
+I-Ging {today['hexagram']['index']} „{today['hexagram']['name']}“ ({today['hexagram']['core']}) ·
+Tageszeichen {today['ganzhi']['label']}.
+
+Zug: Der Stein „{stone_label}“ ({'zieht aus ins Binsengefilde' if to_pos == _AARU else f"zieht von Feld {from_pos} auf Feld {to_pos} „{field['name']}“ — {field['core']}"}).
+Profil: Sternzeichen {sun}, Lebenszahl {lp}{f", Ort {req.birthPlace}" if req.birthPlace else ""}.
+
+Schreibe 2–3 Sätze Deutung dieses Zuges für den Lebensbereich {stone_label} und
+schließe mit einem konkreten Tagesimpuls (Imperativ, 1 Satz). Keine Aufzählung,
+keine Überschrift, keine medizinisch/juristisch/finanziell heiklen Ratschläge."""
+    try:
+        return oa_text(_tone_directive(req.tone) + "\n\n" + prompt, temperature=0.8).strip()
+    except Exception:
+        return fallback
+
+async def _board_move_impl(req: BoardMoveRequest):
+    today = board_today()
+    day = req.dayIndex or today["dayIndex"]
+    if day > today["dayIndex"]:
+        return JSONResponse(status_code=422, content={"detail": "Dieser Tag liegt in der Zukunft."})
+    try:
+        positions = _validate_positions(req.positions)
+    except ValueError as e:
+        return JSONResponse(status_code=422, content={"detail": str(e)})
+    throw = board_throw(req.birthDate, today["boardId"], day)
+    moves = legal_moves(positions, throw)
+    if req.stone not in moves:
+        return JSONResponse(status_code=422, content={
+            "detail": "Dieser Zug ist nicht erlaubt.", "throw": throw, "legalMoves": moves})
+    from_pos = positions[req.stone]
+    to_pos = moves[req.stone]
+    positions[req.stone] = to_pos
+    is_today = (day == today["dayIndex"])
+    text = _board_reading(req, today, req.stone, from_pos, to_pos, is_today)
+    field = FIELD_EVENTS[min(to_pos, 30) - 1]
+    return {
+        "boardId": today["boardId"], "dayIndex": day, "throw": throw,
+        "positions": positions,
+        "moved": {"stone": req.stone, "from": from_pos, "to": to_pos,
+                  "water": (from_pos + throw == 27 and to_pos != 27),
+                  "field": field["name"] if to_pos != _AARU else "Binsengefilde"},
+        "reading": {"text": text,
+                    "chips": [f"Tag {day}", today["moon"]["name"],
+                              f"I-Ging: {today['hexagram']['name']}",
+                              today["ganzhi"]["label"]]},
+        "disclaimer": "Unterhaltung & Selbstreflexion – kein Ersatz für professionelle Beratung.",
+    }
+
+@app.get("/board/today")
+def board_today_route():
+    return board_today()
+
+@app.post("/board/throw")
+def board_throw_route(req: BoardThrowRequest = Body(...)):
+    today = board_today()
+    day = req.dayIndex or today["dayIndex"]
+    if day > today["dayIndex"]:
+        return JSONResponse(status_code=422, content={"detail": "Dieser Tag liegt in der Zukunft."})
+    try:
+        positions = _validate_positions(req.positions)
+    except ValueError as e:
+        return JSONResponse(status_code=422, content={"detail": str(e)})
+    throw = board_throw(req.birthDate, today["boardId"], day)
+    return {"boardId": today["boardId"], "dayIndex": day, "throw": throw,
+            "legalMoves": legal_moves(positions, throw)}
+
+# /board/move ruft das LLM auf und bekommt darum dasselbe Rate-Limit wie
+# /reading (Nachholzüge sind LLM-frei, zählen aber mit — 80/Tag reicht weit).
+if _HAS_SLOWAPI and limiter is not None:
+    @app.post("/board/move")
+    @limiter.limit(READING_RATE_LIMIT)
+    async def board_move(request: Request, req: BoardMoveRequest = Body(...)):
+        return await _board_move_impl(req)
+else:
+    @app.post("/board/move")
+    async def board_move(req: BoardMoveRequest = Body(...)):
+        return await _board_move_impl(req)
+
+
+# Host-/Pfad-Routing für die Spiel-Beta: play.horoskop.one (und der Pfad
+# /play auf jeder Domain) liefern das Brett statt der klassischen Startseite.
+@app.middleware("http")
+async def play_subdomain_rewrite(request: Request, call_next):
+    host = (request.headers.get("host") or "").split(":")[0].lower()
+    path = request.scope.get("path", "")
+    if path == "/play" or path == "/play/":
+        request.scope["path"] = "/play.html"
+    elif host.startswith("play.") and path == "/":
+        request.scope["path"] = "/play.html"
+    return await call_next(request)
+
+
 # Serve built frontend
 try:
     here = os.path.dirname(__file__)
