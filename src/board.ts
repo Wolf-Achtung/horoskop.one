@@ -559,6 +559,7 @@ function dockChip(stone: string, label: string, suffix: string,
   if (STONE_DESC[stone]) chip.title = STONE_DESC[stone];
   const orb = document.createElement('span'); orb.className = 'orb';
   orb.style.background = STONE_META[stone]?.color || '#ccc';
+  orb.dataset.stone = stone;
   orb.textContent = STONE_META[stone]?.glyph || '?';
   chip.appendChild(orb);
   chip.appendChild(document.createTextNode(label + suffix));
@@ -597,7 +598,15 @@ function renderTageslage(today: Today) {
   step.textContent = '1 · Die Tageslage';
   const head = document.createElement('div'); head.className = 'tageslage-head';
   const h2 = document.createElement('h2');
-  h2.textContent = `Tag ${today.dayIndex} von 30 ${moonEmoji(today.moon.frac)}`;
+  if (isNatur()) {
+    h2.textContent = `Tag ${today.dayIndex} von 30 `;
+    const m = document.createElement('img'); m.className = 'moon-img';
+    m.alt = today.moon.name;
+    m.src = `/assets/material/mond-${(Math.round(today.moon.frac * 8) % 8) + 1}.svg`;
+    h2.appendChild(m);
+  } else {
+    h2.textContent = `Tag ${today.dayIndex} von 30 ${moonEmoji(today.moon.frac)}`;
+  }
   const sub = document.createElement('span'); sub.className = 'tageslage-sub';
   sub.textContent = `${today.moon.name} · I-Ging ${today.hexagram.index} „${today.hexagram.name}“ · Tageszeichen ${today.ganzhi.label}`;
   head.append(h2, sub);
@@ -681,6 +690,7 @@ function renderChapters(state: BoardState, today: Today) {
     const title = document.createElement('div'); title.className = 'chapter-title';
     const orb = document.createElement('span'); orb.className = 'orb';
     orb.style.background = STONE_META[ch.stone]?.color || '#ccc';
+    orb.dataset.stone = ch.stone;
     orb.textContent = STONE_META[ch.stone]?.glyph || '?';
     const label = today.stones[ch.stone] || ch.stone;
     const where = ch.to === 31 ? 'zieht aus ins Binsengefilde'
@@ -781,6 +791,7 @@ function sticksRow(throwVal: number | null, tossing: boolean): HTMLElement {
   for (let i = 0; i < 4; i++) {
     const stick = document.createElement('div');
     stick.className = 'stick' + (throwVal !== null && throwVal <= 4 && i < throwVal ? ' light' : '');
+    stick.dataset.i = String(i + 1);
     row.appendChild(stick);
   }
   if (throwVal !== null) {
@@ -882,6 +893,7 @@ function renderThrowChoices(today: Today, t: ThrowData, useAlt: boolean,
   for (const [stone, name] of Object.entries(today.stones)) {
     const btn = document.createElement('button'); btn.className = 'stone-btn';
     btn.style.borderColor = STONE_META[stone]?.color || '';
+    btn.dataset.stone = stone;
     if (STONE_DESC[stone]) btn.title = STONE_DESC[stone];
     const g = document.createElement('span'); g.className = 'glyph';
     g.textContent = STONE_META[stone]?.glyph || '';
@@ -1050,7 +1062,25 @@ async function startDay(state: BoardState, today: Today) {
   }
 }
 
+function bootTheme() {
+  // Theme-Weiche: ?theme=natur aktiviert die Materialwelt (LocalStorage
+  // merkt sich die Wahl), ?theme=standard stellt zurück.
+  try {
+    const q = new URLSearchParams(location.search).get('theme');
+    if (q === 'natur') localStorage.setItem('mondlese_theme', 'natur');
+    if (q === 'standard') localStorage.removeItem('mondlese_theme');
+    if (localStorage.getItem('mondlese_theme') === 'natur') {
+      document.documentElement.dataset.theme = 'natur';
+    }
+  } catch {}
+}
+
+function isNatur(): boolean {
+  return document.documentElement.dataset.theme === 'natur';
+}
+
 async function init() {
+  bootTheme();
   // Service Worker (nur Push/Notification, kein Caching) früh registrieren.
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js').catch(() => {});

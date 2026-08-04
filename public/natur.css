@@ -1,0 +1,202 @@
+/* ============================================================
+   DIE MONDLESE — Theme „Naturgrund" (Knochen, Kalk & Rost)
+   Echte Materialfotos statt CSS-Imitat: Kalkputz als Grund,
+   Tusche als Schrift, Pigmentsteine, Geflecht, Rost.
+   Aktiv nur bei <html data-theme="natur"> (?theme=natur).
+   Alle Regeln überschreiben board.css — daher teils !important.
+   ============================================================ */
+
+html[data-theme="natur"], html[data-theme="natur"] body{
+  background:#e8e0cf url('/assets/material/grund-kalk.webp') repeat !important;
+  background-size:720px !important;
+  color:#2b241a !important;
+}
+
+/* --- Typografie: verwitterter Buchdruck + Handschrift ------------- */
+html[data-theme="natur"] .site-header .brand strong{
+  font-family:'IM Fell English', Georgia, serif;
+  font-size:34px; letter-spacing:.06em; color:#2b241a; font-weight:400;
+  font-style:italic;
+}
+html[data-theme="natur"] .site-header .tagline,
+html[data-theme="natur"] .site-footer,
+html[data-theme="natur"] .site-footer a{color:#5c4d36}
+html[data-theme="natur"] .tageslage-head h2,
+html[data-theme="natur"] #action h3,
+html[data-theme="natur"] .explain-heading{
+  font-family:'IM Fell English', Georgia, serif !important;
+  font-weight:400; color:#2b241a;
+}
+html[data-theme="natur"] .card-step{
+  font-family:'IM Fell English', Georgia, serif;
+  color:#6b4f2a; letter-spacing:.22em; font-weight:400;
+}
+html[data-theme="natur"] .moon-img{
+  width:34px; height:34px; vertical-align:-4px;
+}
+
+/* --- Karten: Kalkflächen mit Tusche-Rand und Geflecht-Kante ------- */
+html[data-theme="natur"] .board-container .card{
+  background:rgba(250,246,238,.55);
+  border:1px solid rgba(43,36,26,.4);
+  border-radius:3px;
+  box-shadow:0 1px 0 rgba(43,36,26,.15);
+  position:relative;
+  overflow:visible;
+}
+html[data-theme="natur"] .board-container .card::before{
+  content:''; position:absolute; top:-5px; left:14px; right:14px; height:9px;
+  background:url('/assets/material/geflecht.webp') repeat-x;
+  background-size:auto 100%;
+  mix-blend-mode:multiply; opacity:.85; border-radius:2px;
+  pointer-events:none;
+}
+
+/* Orakelknochen als stilles Wappen der Tageslage */
+html[data-theme="natur"] .hero-wheel{display:none}
+html[data-theme="natur"] .tageslage-card::after{
+  content:''; position:absolute; right:-8px; top:-14px; width:110px; height:150px;
+  background:url('/assets/material/orakelknochen.webp') center/contain no-repeat;
+  mix-blend-mode:multiply; opacity:.45; transform:rotate(8deg);
+  pointer-events:none;
+}
+html[data-theme="natur"] .tageslage-sub{color:#5c4d36}
+html[data-theme="natur"] .tageslage-field b,
+html[data-theme="natur"] .feld-zeile b{color:#8a5a28}
+
+/* --- Chips: handgezogene Tusche-Ovale ------------------------------ */
+html[data-theme="natur"] .board-container .reading-chip,
+html[data-theme="natur"] .dock-chip{
+  background:transparent !important;
+  border:1.2px solid rgba(43,36,26,.5) !important;
+  border-radius:160px 12px 150px 10px / 12px 150px 10px 160px !important;
+  color:#3a2f20 !important;
+}
+
+/* --- Die Steine: echte Pigmentsteine ------------------------------- */
+html[data-theme="natur"] .orb[data-stone]{
+  background-size:cover !important; background-position:center !important;
+  color:#f4ead8 !important; text-shadow:0 1px 3px rgba(0,0,0,.9);
+  border:none !important; box-shadow:0 1px 3px rgba(43,36,26,.5);
+}
+html[data-theme="natur"] .orb[data-stone="fokus"]{background-image:url('/assets/material/stein-ocker.webp') !important}
+html[data-theme="natur"] .orb[data-stone="werk"]{background-image:url('/assets/material/stein-graphit.webp') !important}
+html[data-theme="natur"] .orb[data-stone="liebe"]{background-image:url('/assets/material/stein-rost.webp') !important}
+html[data-theme="natur"] .orb[data-stone="kraft"]{background-image:url('/assets/material/stein-moos.webp') !important}
+html[data-theme="natur"] .orb[data-stone="geist"]{background-image:url('/assets/material/stein-umbra.webp') !important}
+
+/* Zugwahl-Knöpfe: Kalk mit Steinvorschau */
+html[data-theme="natur"] .stone-btn{
+  background:rgba(252,249,242,.7); border-width:1.5px !important;
+  border-color:rgba(43,36,26,.45) !important; border-radius:3px;
+  font-family:'IM Fell English', Georgia, serif; font-weight:400; color:#2b241a;
+}
+html[data-theme="natur"] .stone-btn[data-stone]{
+  padding-left:44px; position:relative;
+}
+html[data-theme="natur"] .stone-btn[data-stone]::before{
+  content:''; position:absolute; left:8px; top:50%; transform:translateY(-50%);
+  width:28px; height:28px; border-radius:50%;
+  background-size:cover; background-position:center;
+  box-shadow:0 1px 3px rgba(43,36,26,.5);
+}
+html[data-theme="natur"] .stone-btn[data-stone] .glyph{display:none}
+html[data-theme="natur"] .stone-btn[data-stone="fokus"]::before{background-image:url('/assets/material/stein-ocker.webp')}
+html[data-theme="natur"] .stone-btn[data-stone="werk"]::before{background-image:url('/assets/material/stein-graphit.webp')}
+html[data-theme="natur"] .stone-btn[data-stone="liebe"]::before{background-image:url('/assets/material/stein-rost.webp')}
+html[data-theme="natur"] .stone-btn[data-stone="kraft"]::before{background-image:url('/assets/material/stein-moos.webp')}
+html[data-theme="natur"] .stone-btn[data-stone="geist"]::before{background-image:url('/assets/material/stein-umbra.webp')}
+
+/* --- Wurfstäbe: die echten Knochen-Holz-Stäbe ---------------------- */
+html[data-theme="natur"] .stick{
+  width:18px !important; height:86px !important;
+  background:none !important; border:none !important; box-shadow:none !important;
+  border-radius:0 !important;
+  background-position:center !important; background-repeat:no-repeat !important;
+  background-size:contain !important;
+  mix-blend-mode:multiply;
+}
+html[data-theme="natur"] .stick[data-i="1"]{background-image:url('/assets/material/stab-1.webp') !important}
+html[data-theme="natur"] .stick[data-i="2"]{background-image:url('/assets/material/stab-2.webp') !important}
+html[data-theme="natur"] .stick[data-i="3"]{background-image:url('/assets/material/stab-3.webp') !important}
+html[data-theme="natur"] .stick[data-i="4"]{background-image:url('/assets/material/stab-4.webp') !important}
+/* dunkle Seite oben = Stab „gedreht" */
+html[data-theme="natur"] .stick:not(.light){filter:brightness(.5) saturate(.75) contrast(1.05)}
+
+/* --- Knöpfe: Rost als warmer Akzent -------------------------------- */
+html[data-theme="natur"] .btn-primary{
+  background:#5a3518 url('/assets/material/rost.webp') center/cover !important;
+  color:#f4ead8 !important; text-shadow:0 1px 3px rgba(0,0,0,.75);
+  border:1px solid #3a2312 !important; border-radius:3px !important;
+  box-shadow:0 2px 6px rgba(43,36,26,.35) !important;
+}
+html[data-theme="natur"] .btn-ghost{
+  background:transparent; border:1.2px solid rgba(43,36,26,.5);
+  border-radius:160px 10px 150px 8px / 10px 150px 8px 160px;
+  color:#3a2f20;
+}
+html[data-theme="natur"] .event-banner{
+  background:url('/assets/material/rost.webp') center/cover !important;
+  border:1px solid #3a2312 !important; color:#f4ead8 !important;
+  text-shadow:0 1px 3px rgba(0,0,0,.75); border-radius:3px;
+}
+html[data-theme="natur"] .event-banner b{color:#ffe9c4}
+
+/* --- Satz für heute: Handschrift auf Kalk -------------------------- */
+html[data-theme="natur"] .impuls-hero{
+  background:none !important; border:1.4px dashed rgba(43,36,26,.5) !important;
+  border-radius:3px; box-shadow:none !important;
+}
+html[data-theme="natur"] .impuls-hero p{
+  font-family:'Caveat', cursive; font-size:30px; line-height:1.25;
+  color:#2b241a; transform:rotate(-1deg); font-weight:600;
+}
+html[data-theme="natur"] .impuls-label{color:#8a5a28}
+html[data-theme="natur"] .impuls{
+  background:none; border-left:3px solid #8a5a28;
+  font-family:'Caveat', cursive; font-size:21px; font-weight:600;
+}
+
+/* --- Brett: Tusche-Linien auf Kalk --------------------------------- */
+html[data-theme="natur"] .cell{fill:transparent; stroke:rgba(43,36,26,.4); stroke-width:1.4}
+html[data-theme="natur"] .cell-past{fill:rgba(43,36,26,.06); stroke:rgba(43,36,26,.35)}
+html[data-theme="natur"] .cell-today{
+  fill:rgba(192,138,62,.16); stroke:#8a5a28; stroke-width:2.4;
+  animation:none; filter:none;
+}
+html[data-theme="natur"] .board-path{stroke:rgba(43,36,26,.3)}
+html[data-theme="natur"] .cell-num{fill:#6b5c40}
+html[data-theme="natur"] .cell-glyph{fill:#6b4f2a}
+html[data-theme="natur"] .stone-label{fill:#f4ead8}
+
+/* --- Album, Erklärungen, Resonanz ---------------------------------- */
+html[data-theme="natur"] .album-tile{
+  background:rgba(250,246,238,.5); border:1px solid rgba(43,36,26,.3);
+  border-radius:3px;
+}
+html[data-theme="natur"] .album-tile.found{
+  background:rgba(252,247,236,.85); border-color:#8a5a28;
+  box-shadow:inset 0 0 0 1px rgba(138,90,40,.3);
+}
+html[data-theme="natur"] .album-tile.found .album-num{color:#8a5a28}
+html[data-theme="natur"] .explain-block{
+  background:rgba(250,246,238,.55); border:1px solid rgba(43,36,26,.3);
+  border-radius:3px;
+}
+html[data-theme="natur"] .explain-block h3{color:#4a3a22}
+html[data-theme="natur"] .explain-jump a,
+html[data-theme="natur"] .explain summary,
+html[data-theme="natur"] .album summary,
+html[data-theme="natur"] .resonanz-summary,
+html[data-theme="natur"] .board-help summary{color:#8a5a28}
+html[data-theme="natur"] .guess-verdict.hit{color:#8a5a28}
+html[data-theme="natur"] .startwins-line b{color:#8a5a28}
+html[data-theme="natur"] .chapter-title{
+  font-family:'IM Fell English', Georgia, serif; font-weight:400;
+}
+html[data-theme="natur"] .onboard-grid input,
+html[data-theme="natur"] .resonanz-row input{
+  background:rgba(252,249,242,.8); border:1px solid rgba(43,36,26,.45);
+  border-radius:3px; color:#2b241a;
+}
+html[data-theme="natur"] ::selection{background:#8a5a28; color:#f4ead8}
