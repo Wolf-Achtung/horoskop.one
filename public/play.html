@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Das Monatsbrett — dein Zug unter den Sternen</title>
+    <meta name="description" content="Ein Senet-Brett ist dein Mondmonat. Jeden Tag wirft das Orakel — du entscheidest, welcher Lebensbereich zieht.">
+    <meta property="og:title" content="Das Monatsbrett"/>
+    <meta property="og:description" content="Ein Zug pro Tag. Ein Brett pro Mondmonat. Deine Geschichte."/>
+    <meta property="og:image" content="/assets/og-horoskopone-gold.png"/>
+    <meta property="og:type" content="website"/>
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      script-src 'self';
+      connect-src 'self';
+      img-src 'self' data: blob:;
+      style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+      font-src 'self' https://fonts.gstatic.com;
+      base-uri 'self';
+      form-action 'self';
+      frame-ancestors 'none';
+    ">
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/board.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="brand">
+        <strong>DAS MONATSBRETT</strong>
+        <span class="tagline">Beta · ein Zug pro Tag · ein Brett pro Mondmonat</span>
+      </div>
+    </header>
+
+    <main class="container board-container">
+      <section class="card" id="tageslage" aria-live="polite">
+        <div class="board-loading">Die Tageslage wird gelesen …</div>
+      </section>
+
+      <section class="card board-card">
+        <div id="board-wrap" role="img" aria-label="Senet-Brett mit 30 Feldern"></div>
+        <div class="board-legend" id="board-legend"></div>
+      </section>
+
+      <section class="card" id="action"></section>
+
+      <section id="chapters"></section>
+    </main>
+
+    <footer class="site-footer">
+      <nav aria-label="Rechtliche Hinweise">
+        <a href="/">Klassisches Reading</a>
+        <a href="/methoden.html">Methoden</a>
+        <a href="/impressum.html">Impressum</a>
+        <a href="/datenschutz.html">Datenschutz</a>
+      </nav>
+      <small>© 2026 horoskop.one · Wolf Hohl · Berlin · Unterhaltung &amp; Selbstreflexion</small>
+    </footer>
+
+    <script defer src="__BOARD_JS__" integrity="__BOARD_INTEGRITY__" crossorigin="anonymous"></script>
+  </body>
+</html>

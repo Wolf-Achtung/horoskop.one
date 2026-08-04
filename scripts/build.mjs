@@ -59,7 +59,7 @@
 
   async function run() {
     await build({
-      entryPoints: ['src/main.ts'],
+      entryPoints: ['src/main.ts', 'src/board.ts'],
       outdir: 'dist/assets',
       bundle: true,
       sourcemap: false,
@@ -72,11 +72,12 @@
     });
 
     const assetsDir = path.resolve(outdir, 'assets');
-    const files = fs.readdirSync(assetsDir).filter(f => f.endsWith('.js'));
-    const jsFile = files[0];
-    const integrity = sri(path.join(assetsDir, jsFile));
-
-    await copyPublicWithReplace({ '__APP_JS__': `/assets/${jsFile}`, '__INTEGRITY__': integrity });
+    await copyPublicWithReplace({
+      '__APP_JS__': '/assets/main.js',
+      '__INTEGRITY__': sri(path.join(assetsDir, 'main.js')),
+      '__BOARD_JS__': '/assets/board.js',
+      '__BOARD_INTEGRITY__': sri(path.join(assetsDir, 'board.js')),
+    });
     console.log('Build complete → dist/');
   }
   run().catch(err => { console.error(err); process.exit(1); });

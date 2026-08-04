@@ -1,0 +1,55 @@
+/* Das Monatsbrett — Spiel-UI (mobile-first, ergänzt styles.css) */
+.board-container{max-width:720px}
+.board-loading{opacity:.7;font-style:italic}
+
+/* Tageslage */
+.tageslage-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px;margin-bottom:6px}
+.tageslage-head h2{margin:0;font-size:20px}
+.tageslage-sub{opacity:.75;font-size:14px}
+.tageslage-field{margin-top:6px;line-height:1.5}
+.tageslage-field b{color:var(--brand,#d4af6a)}
+
+/* Brett */
+.board-card{padding:14px}
+#board-wrap svg{width:100%;height:auto;display:block}
+.cell{fill:rgba(255,255,255,.04);stroke:rgba(212,175,106,.35);stroke-width:1}
+.cell-today{fill:rgba(212,175,106,.16);stroke:rgba(212,175,106,.9);stroke-width:1.6}
+.cell-num{fill:rgba(255,255,255,.35);font-size:11px}
+.cell-glyph{fill:rgba(212,175,106,.8);font-size:14px}
+.stone{stroke:rgba(0,0,0,.5);stroke-width:1;cursor:default}
+.stone-label{fill:#0b1020;font-size:12px;font-weight:700;pointer-events:none}
+.stone-legal{cursor:pointer;filter:drop-shadow(0 0 6px rgba(212,175,106,.9))}
+.stone-selected{stroke:#fff;stroke-width:2.5}
+.board-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;font-size:13px;opacity:.85}
+.board-legend .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:baseline}
+
+/* Aktion / Wurf / Zugwahl */
+.throw-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.throw-sticks{font-size:26px;letter-spacing:4px}
+.stone-choices{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.stone-btn{border:1px solid rgba(212,175,106,.5);background:rgba(212,175,106,.08);
+  color:inherit;border-radius:10px;padding:10px 14px;font-size:15px;cursor:pointer}
+.stone-btn:disabled{opacity:.35;cursor:not-allowed}
+.stone-btn .target{display:block;font-size:12px;opacity:.7}
+.btn-primary{background:var(--brand,#d4af6a);color:#0b1020;border:none;border-radius:10px;
+  padding:12px 18px;font-size:16px;font-weight:700;cursor:pointer;margin-top:10px}
+.btn-ghost{background:transparent;border:1px solid rgba(255,255,255,.25);color:inherit;
+  border-radius:10px;padding:10px 14px;font-size:14px;cursor:pointer}
+
+/* Onboarding */
+.onboard-grid{display:grid;gap:12px;grid-template-columns:1fr}
+.onboard-grid label{display:flex;flex-direction:column;gap:4px;font-size:14px}
+.onboard-grid input{padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.2);
+  background:rgba(255,255,255,.05);color:inherit;font-size:16px}
+.onboard-hint{font-size:13px;opacity:.7;line-height:1.5}
+
+/* Kapitel */
+.chapter{margin-top:14px}
+.chapter .reading-chips{margin-top:8px}
+.chapter-day{font-size:13px;opacity:.6;margin-bottom:4px}
+.share-row{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+
+@media(min-width:560px){
+  .onboard-grid{grid-template-columns:1fr 1fr}
+  .onboard-grid .full{grid-column:1/-1}
+}
