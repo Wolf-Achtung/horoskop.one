@@ -90,6 +90,21 @@ zum Neumond** (bereits im Spielkonzept §6 als Premium-Kandidat).
 | 1 | Stimme + Satz für heute | Ton = Produkt | S | ✓ erledigt |
 | 2 | Profil-Karte („Stenografie") | Identität/Gespräch | S | ✓ erledigt |
 | 3 | PWA-Manifest (installierbar) | Ritual-Grundstein | S–M | ✓ erledigt |
-| 4 | Resonanz-Ausbau („Deine Menschen") | sozialer Kern | M | keine |
-| 5 | Wochenlesung Sonntag | Rhythmus | M | keine |
-| 6 | Web-Push „Satz für heute" | Ritual komplett | M–L | PWA + Phase 3 |
+| 4 | Resonanz-Ausbau („Deine Menschen") | sozialer Kern | M | ✓ erledigt |
+| 5 | Wochenlesung Sonntag | Rhythmus | M | ✓ erledigt |
+| 6 | Web-Push Morgen-Ritual | Ritual komplett | M–L | ✓ Beta (s. u.) |
+
+## 5. Web-Push aktivieren (Betreiber-Schritte)
+
+1. Lokal einmal `python scripts/generate_vapid.py` ausführen.
+2. Beide Werte als Railway-Variablen setzen: `VAPID_PRIVATE_KEY` (geheim!)
+   und `VAPID_PUBLIC_KEY`; optional `VAPID_SUBJECT` (mailto:…) und
+   `PUSH_TIME` (Standard `08:00`, Europe/Berlin).
+3. Danach erscheint auf `/play` nach dem Tageszug der Button
+   „🔔 Morgen-Ritual aktivieren".
+
+**Beta-Einschränkung:** Die Abos liegen in `PUSH_STORE_PATH`
+(Standard: Datei im Container) und überleben **kein Deploy**. Dauerhaft
+wird das mit einem Railway-Volume (`PUSH_STORE_PATH=/data/…`) oder ab
+Phase 2 mit Postgres. iOS zeigt Web-Push erst, wenn die Seite zum
+Home-Bildschirm hinzugefügt wurde (PWA-Voraussetzung, seit iOS 16.4).

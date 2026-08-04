@@ -1978,6 +1978,289 @@ else:
 
 
 # ---------------------------------------------------------------------------
+# /resonanz/profil — dauerhaftes Kompatibilitätsprofil („Deine Menschen",
+# docs/tonalitaet.md §3.3): statische Paar-Deutungen aus Elementen,
+# chinesischen Dreiklängen und Lebenszahlen. Kein LLM, keine Kosten.
+# ---------------------------------------------------------------------------
+
+_ZODIAC_ELEMENT: Dict[str, str] = {
+    "Widder": "Feuer", "Löwe": "Feuer", "Schütze": "Feuer",
+    "Stier": "Erde", "Jungfrau": "Erde", "Steinbock": "Erde",
+    "Zwillinge": "Luft", "Waage": "Luft", "Wassermann": "Luft",
+    "Krebs": "Wasser", "Skorpion": "Wasser", "Fische": "Wasser",
+}
+_ELEMENT_PAIR_TEXTS: Dict[tuple, str] = {
+    ("Feuer", "Feuer"): "Doppeltes Feuer: viel Energie, viel Tempo — ihr entzündet "
+        "einander. Achtet darauf, wer zwischendurch Holz nachlegt statt nur Funken.",
+    ("Erde", "Feuer"): "Feuer trifft Erde: Begeisterung trifft Beständigkeit. Ihr "
+        "könnt einander erden und entfachen — solange keiner den anderen bremsen "
+        "oder hetzen will.",
+    ("Feuer", "Luft"): "Feuer und Luft nähren sich gegenseitig: Ideen werden bei "
+        "euch schnell zu Taten. Plant bewusst Ruhe ein, sonst verfliegt die Woche.",
+    ("Feuer", "Wasser"): "Feuer und Wasser: Dampf oder Löschzug — bei euch "
+        "entscheidet die Dosierung. Gegensätze, die einander respektieren, werden "
+        "hier zum Kraftwerk.",
+    ("Erde", "Erde"): "Doppelte Erde: Verlässlichkeit im Quadrat. Ihr baut gern "
+        "gemeinsam — holt euch bewusst Leichtigkeit dazu, sonst wird es schwer.",
+    ("Erde", "Luft"): "Erde und Luft: das Konkrete trifft die Idee. Ihr ergänzt "
+        "euch, wenn ihr übersetzt statt zu belehren.",
+    ("Erde", "Wasser"): "Erde und Wasser: nährender Boden, tiefes Gefühl — eine "
+        "natürlich wachsende Verbindung. Gebt Struktur und Strömung beiden Raum.",
+    ("Luft", "Luft"): "Doppelte Luft: Gespräche ohne Ende, Ideen im Überfluss. "
+        "Landet ab und zu — Entscheidungen mögen festen Boden.",
+    ("Luft", "Wasser"): "Luft und Wasser: Kopf trifft Gefühl. Wenn ihr einander "
+        "zuhört statt zu erklären, wird daraus Poesie.",
+    ("Wasser", "Wasser"): "Doppeltes Wasser: ihr versteht euch ohne Worte — Tiefe, "
+        "Intuition, Nähe. Setzt Ufer, damit keiner im anderen verschwimmt.",
+}
+_CN_ANIMAL_ORDER = ["Ratte", "Büffel", "Tiger", "Hase", "Drache", "Schlange",
+                    "Pferd", "Ziege", "Affe", "Hahn", "Hund", "Schwein"]
+
+def _animal_harmony(a1: str, a2: str) -> str:
+    i, j = _CN_ANIMAL_ORDER.index(a1), _CN_ANIMAL_ORDER.index(a2)
+    if i == j:
+        return (f"Zwei {a1}-Jahrgänge: ihr kennt die Melodie des anderen "
+                f"auswendig — vertraut und ähnlich. Überrascht einander bewusst.")
+    if i % 4 == j % 4:
+        return (f"{a1} und {a2} gehören im chinesischen Kreis zum selben "
+                f"Dreiklang — eine der harmonischsten Verbindungen: Ihr zieht "
+                f"ähnlich, ohne euch im Weg zu stehen.")
+    if abs(i - j) == 6:
+        return (f"{a1} und {a2} stehen sich im Kreis direkt gegenüber — Reibung "
+                f"mit Anziehungskraft. Genau daraus entsteht Bewegung, wenn ihr "
+                f"sie zulasst.")
+    return (f"{a1} und {a2}: kein Autopilot, keine Kollision — eure Verbindung "
+            f"lebt von dem, was ihr bewusst daraus macht.")
+
+def _lifepath_pair(a: int, b: int) -> str:
+    ra, rb = _reduce_to_digit(a, keep_master=False), _reduce_to_digit(b, keep_master=False)
+    arch = lambda n: _LIFEPATH_ARCHETYPES.get(n, "").split(" — ")[0] or str(n)
+    if ra == rb:
+        return (f"Lebenszahl {a} & {b}: gleicher Grundton — ihr versteht die "
+                f"Antriebe des anderen sofort. Achtet nur darauf, nicht dieselben "
+                f"blinden Flecken zu teilen.")
+    return (f"Lebenszahl {a} trifft {b} — {arch(a)} trifft {arch(b)}: zwei "
+            f"verschiedene Antriebe, die einander ergänzen, wenn ihr sie "
+            f"beim Namen nennt.")
+
+@app.get("/resonanz/profil")
+def resonanz_profil_route(birthDate: str = "", partnerDate: str = ""):
+    d1, d2 = parse_birth_date(birthDate), parse_birth_date(partnerDate)
+    if not d1 or not d2:
+        return JSONResponse(status_code=422, content={
+            "detail": "Bitte beide Geburtsdaten angeben (TT.MM.JJJJ)."})
+    z1, z2 = zodiac_from_date(d1), zodiac_from_date(d2)
+    e1, e2 = _ZODIAC_ELEMENT[z1], _ZODIAC_ELEMENT[z2]
+    lp1, lp2 = life_path_number(d1), life_path_number(d2)
+    a1, a2 = chinese_animal(d1.year), chinese_animal(d2.year)
+    pair_text = _ELEMENT_PAIR_TEXTS[tuple(sorted((e1, e2)))]
+    blocks = [
+        {"key": "elements",
+         "title": f"{_ZODIAC_SYMBOLS.get(z1, '')} {z1} & {_ZODIAC_SYMBOLS.get(z2, '')} {z2} · {e1} & {e2}",
+         "text": pair_text},
+        {"key": "animals",
+         "title": f"{_ANIMAL_EMOJI.get(a1, '')} {a1} & {_ANIMAL_EMOJI.get(a2, '')} {a2}",
+         "text": _animal_harmony(a1, a2)},
+        {"key": "lifepath", "title": f"№ Lebenszahlen · {lp1} & {lp2}",
+         "text": _lifepath_pair(lp1, lp2)},
+    ]
+    return {"blocks": blocks,
+            "pair": {"zodiac": [z1, z2], "element": [e1, e2],
+                     "lifePath": [lp1, lp2], "animal": [a1, a2]}}
+
+
+# ---------------------------------------------------------------------------
+# /wochenlesung — der Sonntagsbogen (docs/tonalitaet.md §3.4): Rückblick auf
+# die gespielten Züge der Woche + Bogen für die kommende. LLM mit
+# deterministischem Seed pro Kalenderwoche und Fallback; Reading-Rate-Limit.
+# ---------------------------------------------------------------------------
+
+class WeekMove(BaseModel):
+    day: int = Field(..., ge=1, le=30)
+    stone: str = Field(..., max_length=16)
+    field: Optional[str] = Field(None, max_length=64)
+
+class WochenRequest(BaseModel):
+    birthDate: str = Field(..., max_length=32)
+    moves: List[WeekMove] = Field(default_factory=list, max_length=10)
+    tone: Optional[str] = Field(None, max_length=64)
+
+def _wochenlesung_impl(req: WochenRequest):
+    d = parse_birth_date(req.birthDate)
+    if not d:
+        return JSONResponse(status_code=422, content={
+            "detail": "Bitte ein Geburtsdatum angeben (TT.MM.JJJJ)."})
+    today = board_today()
+    iso = dt.date.today().isocalendar()
+    week_key = f"{iso[0]}-W{iso[1]:02d}"
+    zug_zeilen = "\n".join(
+        f"- Tag {m.day}: {STONES.get(m.stone, m.stone)}"
+        + (f" → {m.field}" if m.field else "")
+        for m in req.moves[:10]) or "- (diese Woche wurde nicht gezogen)"
+    fallback = ("Eine Woche auf dem Brett liegt hinter dir — jeder Zug hat "
+                "seinen Teil erzählt. Nimm dir heute zehn ruhige Minuten und "
+                "schau, welcher Bereich als Nächstes dran ist.")
+    prompt = f"""Wochenrückblick auf dem Monatsbrett (Kalenderwoche {iso[1]}).
+Tageslage heute: Tag {today['dayIndex']} des Mondmonats · {today['moon']['name']} ·
+I-Ging {today['hexagram']['index']} „{today['hexagram']['name']}“ · Feld „{today['field']['name']}“.
+
+Die Züge dieser Woche:
+{zug_zeilen}
+
+Sternzeichen: {zodiac_from_date(d)}, Lebenszahl: {life_path_number(d)}.
+
+Schreibe eine Wochenlesung in 4–5 kurzen Sätzen — wie eine gute Freundin beim
+Sonntagskaffee: Was für ein Bogen war diese Woche (nimm Bezug auf die Bereiche,
+die gezogen wurden — und die, die liegen blieben)? Was deutet sich für die
+kommende Woche an? Der letzte Satz ist der „Satz für die Woche“: ein kleiner,
+konkreter Impuls im Imperativ. Keine Aufzählung, keine Überschrift, keine
+medizinisch/juristisch/finanziell heiklen Ratschläge."""
+    seed = _det_hash("woche", req.birthDate.strip(), week_key)
+    try:
+        text = oa_text(_tone_directive(req.tone) + "\n\n" + prompt, seed=seed).strip()
+    except Exception as e:
+        print(f"wochenlesung LLM failed ({_llm_id()}): {e}")
+        text = fallback
+    return {"week": week_key, "text": text,
+            "chips": [f"KW {iso[1]}", today["moon"]["name"], today["ganzhi"]["label"]],
+            "disclaimer": "Unterhaltung & Selbstreflexion – kein Ersatz für professionelle Beratung."}
+
+if _HAS_SLOWAPI and limiter is not None:
+    @app.post("/wochenlesung")
+    @limiter.limit(READING_RATE_LIMIT)
+    async def wochenlesung(request: Request, req: WochenRequest = Body(...)):
+        return _wochenlesung_impl(req)
+else:
+    @app.post("/wochenlesung")
+    async def wochenlesung(req: WochenRequest = Body(...)):
+        return _wochenlesung_impl(req)
+
+
+# ---------------------------------------------------------------------------
+# Web-Push — das Morgen-Ritual (docs/tonalitaet.md §3.1, Phase 3).
+# Täglich zur festen Uhrzeit die Tageslage als Einladung zum Zug.
+# Aktiv nur mit VAPID-Keys (VAPID_PRIVATE_KEY/VAPID_PUBLIC_KEY, erzeugbar
+# mit scripts/generate_vapid.py). Abos liegen in PUSH_STORE_PATH — ohne
+# Volume/DB überleben sie kein Deploy (bewusster Beta-Kompromiss; der
+# Umstieg auf ein Railway-Volume ist nur eine Pfad-Variable).
+# ---------------------------------------------------------------------------
+
+try:
+    from pywebpush import webpush as _webpush, WebPushException as _WebPushException
+except ImportError:
+    _webpush = None
+    _WebPushException = Exception
+
+VAPID_PRIVATE_KEY = os.getenv("VAPID_PRIVATE_KEY", "").strip()
+VAPID_PUBLIC_KEY = os.getenv("VAPID_PUBLIC_KEY", "").strip()
+VAPID_SUBJECT = os.getenv("VAPID_SUBJECT", "mailto:hallo@horoskop.one").strip()
+PUSH_STORE_PATH = os.getenv("PUSH_STORE_PATH", "push_subscriptions.json")
+PUSH_TIME = os.getenv("PUSH_TIME", "08:00")  # Europe/Berlin
+
+def _push_enabled() -> bool:
+    return bool(_webpush and VAPID_PRIVATE_KEY and VAPID_PUBLIC_KEY)
+
+def _push_load() -> List[Dict[str, Any]]:
+    try:
+        with open(PUSH_STORE_PATH, encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return []
+
+def _push_save(subs: List[Dict[str, Any]]) -> None:
+    try:
+        with open(PUSH_STORE_PATH, "w", encoding="utf-8") as f:
+            json.dump(subs, f)
+    except OSError as e:
+        print(f"push store write failed: {e}")
+
+class PushSubscription(BaseModel):
+    endpoint: str = Field(..., max_length=1000)
+    keys: Dict[str, str] = Field(default_factory=dict)
+
+class PushUnsubscribe(BaseModel):
+    endpoint: str = Field(..., max_length=1000)
+
+@app.get("/push/config")
+def push_config():
+    return {"enabled": _push_enabled(), "publicKey": VAPID_PUBLIC_KEY or None}
+
+@app.post("/push/subscribe")
+def push_subscribe(req: PushSubscription = Body(...)):
+    if not _push_enabled():
+        return JSONResponse(status_code=503, content={
+            "detail": "Push ist auf diesem Server nicht konfiguriert."})
+    if not req.keys.get("p256dh") or not req.keys.get("auth"):
+        return JSONResponse(status_code=422, content={"detail": "Unvollständiges Abo."})
+    subs = [s for s in _push_load() if s.get("endpoint") != req.endpoint]
+    subs.append({"endpoint": req.endpoint, "keys": req.keys})
+    _push_save(subs)
+    return {"ok": True, "count": len(subs)}
+
+@app.post("/push/unsubscribe")
+def push_unsubscribe(req: PushUnsubscribe = Body(...)):
+    subs = [s for s in _push_load() if s.get("endpoint") != req.endpoint]
+    _push_save(subs)
+    return {"ok": True}
+
+def _push_payload() -> str:
+    today = board_today()
+    return json.dumps({
+        "title": f"Tag {today['dayIndex']} · {today['field']['name']}",
+        "body": f"{today['field']['core']} Dein Wurf wartet.",
+        "url": "/play",
+    }, ensure_ascii=False)
+
+def _push_send_all() -> int:
+    """Die Morgen-Nachricht an alle Abos; tote Endpoints (404/410) räumen wir weg."""
+    subs = _push_load()
+    if not subs:
+        return 0
+    payload = _push_payload()
+    alive, sent = [], 0
+    for sub in subs:
+        try:
+            _webpush(subscription_info=sub, data=payload,
+                     vapid_private_key=VAPID_PRIVATE_KEY,
+                     vapid_claims={"sub": VAPID_SUBJECT})
+            alive.append(sub); sent += 1
+        except _WebPushException as e:
+            code = getattr(getattr(e, "response", None), "status_code", None)
+            if code in (404, 410):
+                continue  # Abo ist erloschen
+            print(f"push send failed ({code}): {e}")
+            alive.append(sub)
+    _push_save(alive)
+    return sent
+
+async def _push_scheduler():
+    import asyncio
+    from zoneinfo import ZoneInfo
+    tz = ZoneInfo("Europe/Berlin")
+    try:
+        hour, minute = (int(x) for x in PUSH_TIME.split(":"))
+    except ValueError:
+        hour, minute = 8, 0
+    while True:
+        now = dt.datetime.now(tz)
+        target = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+        if target <= now:
+            target += dt.timedelta(days=1)
+        await asyncio.sleep((target - now).total_seconds())
+        try:
+            n = _push_send_all()
+            print(f"morning push sent to {n} subscriptions")
+        except Exception as e:
+            print(f"push scheduler error: {e}")
+
+@app.on_event("startup")
+async def _start_push_scheduler():
+    if _push_enabled():
+        import asyncio
+        asyncio.create_task(_push_scheduler())
+
+
+# ---------------------------------------------------------------------------
 # /compare — Blind-A/B-Test der LLM-Provider (OpenAI vs. Anthropic).
 # Erzeugt dieselbe Tages-Mikrodeutung mit beiden Providern und zeigt sie in
 # zufälliger (aber deterministischer) Reihenfolge als A/B — die Auflösung

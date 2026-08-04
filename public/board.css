@@ -154,6 +154,17 @@ html, body{
 .throw-switch.active{border-color:#a9782c;color:#8a6420;background:#f8efd8;
   box-shadow:0 0 0 2px rgba(169,120,44,.25)}
 
+/* Deine Menschen */
+.people-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.person-chip{border:1px solid #dcca9e;font-family:inherit;cursor:pointer}
+.person-chip.active{box-shadow:0 0 0 2px rgba(169,120,44,.4);background:#f8efd8}
+.person-remove{margin-left:4px;color:#a2915f;font-weight:700;padding:0 3px}
+.person-remove:hover{color:#8a3020}
+.person-heading{margin:14px 0 4px;font-family:'Cormorant Garamond',Georgia,serif;
+  font-size:20px;color:#2b2317}
+.resonanz-row input[type=text]{padding:11px;border-radius:10px;
+  border:1px solid #cdb476;background:#fffdf7;color:#2b2317;font-size:15px;max-width:180px}
+
 /* Partner-Resonanz */
 .resonanz-summary{cursor:pointer;font-weight:700;color:#8a6420;font-size:16px}
 .resonanz-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px}
