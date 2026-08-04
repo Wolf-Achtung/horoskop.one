@@ -715,9 +715,12 @@ function shareText(state: BoardState, today: Today): string {
     return STONE_META[s].glyph + ' ' + '▓'.repeat(filled) + '░'.repeat(5 - filled) + (p === 31 ? ' ✓' : '');
   });
   const impuls = todaysImpuls(state, today);
-  return `Das Monatsbrett · Tag ${today.dayIndex} ${moonEmoji(today.moon.frac)}\n${rows.join('\n')}`
+  // Auf der Mondlese-Domain ist das Brett die Startseite; anderswo /play.
+  const url = location.hostname.includes('mondlese')
+    ? 'https://www.mondlese.de' : 'https://www.horoskop.one/play';
+  return `Die Mondlese · Tag ${today.dayIndex} ${moonEmoji(today.moon.frac)}\n${rows.join('\n')}`
     + (impuls ? `\n„${impuls}“` : '')
-    + `\nhttps://www.horoskop.one/play`;
+    + `\n${url}`;
 }
 
 // --- Aktionsbereich --------------------------------------------------------
