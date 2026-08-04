@@ -1,9 +1,15 @@
-// Das Monatsbrett — Spiel-Frontend (Phase 1, docs/spielkonzept.md)
+// Das Monatsbrett — Spiel-Frontend (Phase 1.1, docs/spielkonzept.md)
 // Zustand liegt im LocalStorage; alles Orakelhafte kommt deterministisch vom
 // Server. LLM-/Nutzertexte werden ausschließlich per textContent gerendert.
+//
+// v2-Fixes gegenüber v1: Neueinsteiger starten bei ihrem heutigen Bretttag
+// (kein rückwirkendes Orakel-Nachholen einer nie gespielten Historie), das
+// Orakel wählt beim Nachholen abwechselnd statt stur den ersten Stein, und
+// die Oberfläche führt in klaren Schritten durch den Tag.
 
 type Positions = Record<string, number>;
-type Chapter = { day: number; stone: string; to: number; text: string; chips: string[] };
+type Chapter = { day: number; stone: string; to: number; text: string;
+                 chips: string[]; fieldName?: string };
 type Profile = { birthDate: string; birthPlace?: string; birthTime?: string };
 type BoardState = {
   boardId: string; positions: Positions; lastPlayedDay: number;
@@ -18,13 +24,13 @@ type Today = {
   stones: Record<string, string>;
 };
 
-const LS_KEY = 'brett_v1';
+const LS_KEY = 'brett_v2'; // v1 hatte den Einstiegs-Bug — bewusst frischer Schnitt
 const STONE_META: Record<string, { letter: string; color: string }> = {
-  fokus: { letter: 'F', color: '#d4af6a' },
-  werk:  { letter: 'W', color: '#8fb7d4' },
-  liebe: { letter: 'L', color: '#d48fa6' },
-  kraft: { letter: 'K', color: '#9ed48f' },
-  geist: { letter: 'G', color: '#b39fd4' },
+  fokus: { letter: 'F', color: '#b8860b' },
+  werk:  { letter: 'W', color: '#3d6a8f' },
+  liebe: { letter: 'L', color: '#b05070' },
+  kraft: { letter: 'K', color: '#4e7d3f' },
+  geist: { letter: 'G', color: '#7a5fa0' },
 };
 const SPECIAL_GLYPHS: Record<number, string> = { 15: '⟲', 26: '✶', 27: '≈', 28: '☰', 29: '☉', 30: '⌂' };
 
@@ -63,7 +69,7 @@ function fieldXY(n: number, cw: number, ch: number): [number, number] {
 }
 
 function renderBoard(positions: Positions, today: Today, legal: Record<string, number> | null,
-                     selected: string | null, onPick: ((stone: string) => void) | null) {
+                     onPick: ((stone: string) => void) | null) {
   const NS = 'http://www.w3.org/2000/svg';
   const cw = 100, ch = 106;
   const svg = document.createElementNS(NS, 'svg');
@@ -87,7 +93,6 @@ function renderBoard(positions: Positions, today: Today, legal: Record<string, n
       svg.appendChild(g);
     }
   }
-  // Steine: auf dem Brett mittig im Feld; Start/Aaru als Randreihen darunter.
   const byField: Record<number, string[]> = {};
   for (const s of Object.keys(STONE_META)) {
     const p = positions[s] ?? 0;
@@ -95,17 +100,14 @@ function renderBoard(positions: Positions, today: Today, legal: Record<string, n
   }
   for (const [fieldStr, stones] of Object.entries(byField)) {
     const f = Number(fieldStr);
+    if (f < 1 || f > 30) continue; // Start/Binsengefilde stehen in der Legende
     stones.forEach((stone, i) => {
-      let cx: number, cy: number;
-      if (f >= 1 && f <= 30) {
-        const [x, y] = fieldXY(f, cw, ch);
-        cx = x + cw / 2 + (i - (stones.length - 1) / 2) * 18;
-        cy = y + ch / 2 + 8;
-      } else { return; } // Start/Aaru werden in der Legende gezeigt
+      const [x, y] = fieldXY(f, cw, ch);
+      const cx = x + cw / 2 + (i - (stones.length - 1) / 2) * 18;
+      const cy = y + ch / 2 + 8;
       const meta = STONE_META[stone];
       const cls = ['stone'];
       if (legal && legal[stone] !== undefined) cls.push('stone-legal');
-      if (selected === stone) cls.push('stone-selected');
       const c = document.createElementNS(NS, 'circle');
       c.setAttribute('cx', String(cx)); c.setAttribute('cy', String(cy)); c.setAttribute('r', '15');
       c.setAttribute('fill', meta.color); c.setAttribute('class', cls.join(' '));
@@ -137,40 +139,52 @@ function renderBoard(positions: Positions, today: Today, legal: Record<string, n
 
 function renderTageslage(today: Today) {
   const el = $('tageslage'); el.innerHTML = '';
+  const step = document.createElement('h2'); step.className = 'card-step';
+  step.textContent = '1 · Die Tageslage';
   const head = document.createElement('div'); head.className = 'tageslage-head';
   const h2 = document.createElement('h2');
-  h2.textContent = `Tag ${today.dayIndex} ${moonEmoji(today.moon.frac)}`;
+  h2.textContent = `Tag ${today.dayIndex} von 30 ${moonEmoji(today.moon.frac)}`;
   const sub = document.createElement('span'); sub.className = 'tageslage-sub';
-  sub.textContent = `${today.moon.name} · I-Ging ${today.hexagram.index} „${today.hexagram.name}“ · ${today.ganzhi.label}`;
-  head.append(h2, sub); el.appendChild(head);
+  sub.textContent = `${today.moon.name} · I-Ging ${today.hexagram.index} „${today.hexagram.name}“ · Tageszeichen ${today.ganzhi.label}`;
+  head.append(h2, sub);
   const fld = document.createElement('div'); fld.className = 'tageslage-field';
-  const b = document.createElement('b'); b.textContent = `Feld ${today.field.index} — ${today.field.name}: `;
+  const b = document.createElement('b'); b.textContent = `Heutiges Feld ${today.field.index} — ${today.field.name}: `;
   fld.appendChild(b); fld.appendChild(document.createTextNode(today.field.core));
-  el.appendChild(fld);
+  el.append(step, head, fld);
 }
 
 // --- Kapitel & Share -------------------------------------------------------
 
-function renderChapters(state: BoardState) {
+function renderChapters(state: BoardState, today: Today) {
   const el = $('chapters'); el.innerHTML = '';
+  if (!state.chapters.length) return;
+  const h = document.createElement('h2'); h.className = 'chapters-heading';
+  h.textContent = 'Deine Monatsgeschichte';
+  el.appendChild(h);
   for (const ch of [...state.chapters].reverse().slice(0, 10)) {
     const card = document.createElement('section'); card.className = 'card chapter';
     const day = document.createElement('div'); day.className = 'chapter-day';
     day.textContent = `Tag ${ch.day}`;
-    const block = document.createElement('div'); block.className = 'reading-block';
-    const strong = document.createElement('strong');
-    strong.textContent = `Zug: ${ch.stone.charAt(0).toUpperCase() + ch.stone.slice(1)} → ${ch.to === 31 ? 'Binsengefilde' : 'Feld ' + ch.to}`;
-    const txt = document.createElement('div'); txt.textContent = ch.text;
-    block.append(strong, txt);
+    const title = document.createElement('div'); title.className = 'chapter-title';
+    const dot = document.createElement('span'); dot.className = 'dot';
+    dot.style.background = STONE_META[ch.stone]?.color || '#ccc';
+    const label = today.stones[ch.stone] || ch.stone;
+    const where = ch.to === 31 ? 'zieht aus ins Binsengefilde'
+      : `zieht auf Feld ${ch.to}${ch.fieldName ? ' · ' + ch.fieldName : ''}`;
+    const strong = document.createElement('strong'); strong.textContent = `${label} ${where}`;
+    title.append(dot, strong);
+    const txt = document.createElement('div'); txt.className = 'chapter-text';
+    txt.textContent = ch.text;
+    card.append(day, title, txt);
     if (ch.chips?.length) {
       const chips = document.createElement('div'); chips.className = 'reading-chips';
       for (const c of ch.chips) {
         const s = document.createElement('span'); s.className = 'reading-chip'; s.textContent = c;
         chips.appendChild(s);
       }
-      block.appendChild(chips);
+      card.appendChild(chips);
     }
-    card.append(day, block); el.appendChild(card);
+    el.appendChild(card);
   }
 }
 
@@ -185,9 +199,26 @@ function shareText(state: BoardState, today: Today): string {
 
 // --- Aktionsbereich --------------------------------------------------------
 
-function renderOnboarding(onDone: (p: Profile) => void) {
+function actionStep(el: HTMLElement, sub?: string) {
+  const step = document.createElement('h2'); step.className = 'card-step';
+  step.textContent = '2 · Dein Zug';
+  if (sub) {
+    const s = document.createElement('span'); s.className = 'step-sub'; s.textContent = sub;
+    step.appendChild(s);
+  }
+  el.appendChild(step);
+}
+
+function renderOnboarding(today: Today, onDone: (p: Profile) => void) {
   const el = $('action'); el.innerHTML = '';
-  const h = document.createElement('h2'); h.textContent = 'Dein Brett beginnt mit deinem Geburtstag';
+  const step = document.createElement('h2'); step.className = 'card-step';
+  step.textContent = 'Bevor es losgeht';
+  const h = document.createElement('h3');
+  h.textContent = 'Dein Brett beginnt mit deinem Geburtstag';
+  const intro = document.createElement('p'); intro.className = 'onboard-hint';
+  intro.textContent = `Aus deinem Geburtsdatum berechnet das Orakel deinen täglichen Wurf. `
+    + `Du steigst heute an Tag ${today.dayIndex} dieses Mondmonats ein — deine Geschichte beginnt mit deinem ersten Zug. `
+    + `Zum nächsten Neumond startet für alle ein frisches Brett.`;
   const grid = document.createElement('div'); grid.className = 'onboard-grid';
   const mk = (label: string, type: string, id: string, required: boolean, full = false) => {
     const lab = document.createElement('label'); if (full) lab.className = 'full';
@@ -199,31 +230,33 @@ function renderOnboarding(onDone: (p: Profile) => void) {
   const p = mk('Geburtsort (optional)', 'text', 'ob-place', false);
   const t = mk('Geburtszeit (optional — die wenigsten kennen sie)', 'time', 'ob-time', false);
   const hint = document.createElement('p'); hint.className = 'onboard-hint';
-  hint.textContent = 'Alles bleibt in deinem Browser (LocalStorage). Kein Konto, keine Cookies. '
-    + 'Das Orakel braucht nur das Datum — Ort und Zeit verfeinern die Deutung.';
+  hint.textContent = 'Alles bleibt in deinem Browser (Local Storage). Kein Konto, keine Cookies. '
+    + 'Das Orakel braucht nur das Datum — Ort und Zeit verfeinern später die Deutung.';
   const btn = document.createElement('button'); btn.className = 'btn-primary'; btn.textContent = 'Das Brett betreten';
   btn.addEventListener('click', () => {
     if (!d.value) { d.focus(); return; }
     const [y, m, dd] = d.value.split('-');
     onDone({ birthDate: `${dd}.${m}.${y}`, birthPlace: p.value.trim() || undefined, birthTime: t.value || undefined });
   });
-  el.append(h, grid, hint, btn);
+  el.append(step, h, intro, grid, hint, btn);
 }
 
 function setActionMessage(msg: string, sub?: string) {
   const el = $('action'); el.innerHTML = '';
+  actionStep(el);
   const p = document.createElement('p'); p.textContent = msg; el.appendChild(p);
-  if (sub) { const s = document.createElement('p'); s.className = 'onboard-hint'; s.textContent = sub; el.appendChild(s); }
+  if (sub) { const s = document.createElement('p'); s.className = 'action-hint'; s.textContent = sub; el.appendChild(s); }
 }
 
-function renderThrow(state: BoardState, today: Today, throwVal: number,
+function renderThrow(today: Today, throwVal: number,
                      legal: Record<string, number>, onMove: (stone: string) => void) {
   const el = $('action'); el.innerHTML = '';
+  actionStep(el, 'Das Orakel hat für dich geworfen. Du triffst genau eine Entscheidung pro Tag: Welcher Lebensbereich geht diesen Weg?');
   const row = document.createElement('div'); row.className = 'throw-row';
   const sticks = document.createElement('span'); sticks.className = 'throw-sticks';
   sticks.textContent = '▮'.repeat(throwVal) + '▯'.repeat(Math.max(0, 5 - throwVal));
-  const label = document.createElement('span');
-  label.textContent = `Das Orakel wirft ${throwVal}. Welchen Bereich ziehst du?`;
+  const label = document.createElement('span'); label.className = 'throw-label';
+  label.textContent = `Der Wurf: ${throwVal} ${throwVal === 1 ? 'Feld' : 'Felder'} weit.`;
   row.append(sticks, label); el.appendChild(row);
   const choices = document.createElement('div'); choices.className = 'stone-choices';
   for (const [stone, name] of Object.entries(today.stones)) {
@@ -233,19 +266,25 @@ function renderThrow(state: BoardState, today: Today, throwVal: number,
     const target = legal[stone];
     const tspan = document.createElement('span'); tspan.className = 'target';
     if (target === undefined) { btn.disabled = true; tspan.textContent = 'kein Zug möglich'; }
-    else tspan.textContent = target === 31 ? '→ Binsengefilde' : `→ Feld ${target}`;
+    else tspan.textContent = target === 31 ? '→ Auszug ins Binsengefilde' : `→ Feld ${target}`;
     btn.appendChild(tspan);
     if (target !== undefined) btn.addEventListener('click', () => onMove(stone));
     choices.appendChild(btn);
   }
   el.appendChild(choices);
+  const hint = document.createElement('p'); hint.className = 'action-hint';
+  hint.textContent = 'Tipp: Wähle den Bereich, der heute deine Aufmerksamkeit verdient — die Deutung entsteht aus Zug, Zielfeld und deinem Profil.';
+  el.appendChild(hint);
 }
 
 function renderPlayed(state: BoardState, today: Today) {
   const el = $('action'); el.innerHTML = '';
+  actionStep(el);
   const p = document.createElement('p');
-  p.textContent = 'Du hast heute gezogen. Morgen wirft das Orakel neu.';
-  el.appendChild(p);
+  p.textContent = '✓ Dein Zug für heute ist gemacht — die Deutung steht unten in deiner Monatsgeschichte.';
+  const nxt = document.createElement('p'); nxt.className = 'action-hint';
+  nxt.textContent = 'Morgen wirft das Orakel neu. Schau einfach wieder vorbei.';
+  el.append(p, nxt);
   const row = document.createElement('div'); row.className = 'share-row';
   const share = document.createElement('button'); share.className = 'btn-ghost';
   share.textContent = 'Brettstand teilen';
@@ -268,28 +307,29 @@ function renderPlayed(state: BoardState, today: Today) {
 
 // --- Hauptablauf -----------------------------------------------------------
 
-async function playDay(state: BoardState, today: Today, day: number, stone: string, silent: boolean) {
+async function playDay(state: BoardState, day: number, stone: string, silent: boolean) {
   const data = await api('/board/move', {
     birthDate: state.profile!.birthDate, birthPlace: state.profile!.birthPlace,
     positions: state.positions, stone, dayIndex: day,
   });
   state.positions = data.positions;
   state.chapters.push({ day, stone, to: data.moved.to, text: data.reading.text,
-                        chips: silent ? [] : data.reading.chips });
+                        chips: silent ? [] : data.reading.chips,
+                        fieldName: data.moved.field });
   state.lastPlayedDay = day;
   saveState(state);
 }
 
 async function catchUp(state: BoardState, today: Today) {
-  // Verpasste Tage: das Orakel zieht selbst (erster legaler Stein) — die
-  // Geschichte geht weiter, niemand wird bestraft (docs/spielkonzept.md §5).
+  // Verpasste Tage seit dem letzten eigenen Zug: das Orakel zieht behutsam
+  // weiter — abwechselnd statt stur denselben Stein (docs/spielkonzept.md §5).
   for (let day = state.lastPlayedDay + 1; day < today.dayIndex; day++) {
     try {
       const t = await api('/board/throw', {
         birthDate: state.profile!.birthDate, positions: state.positions, dayIndex: day });
       const stones = Object.keys(t.legalMoves);
       if (!stones.length) { state.lastPlayedDay = day; saveState(state); continue; }
-      await playDay(state, today, day, stones[0], true);
+      await playDay(state, day, stones[day % stones.length], true);
     } catch { break; } // z. B. Rate-Limit: morgen geht es weiter
   }
 }
@@ -297,17 +337,16 @@ async function catchUp(state: BoardState, today: Today) {
 async function startDay(state: BoardState, today: Today) {
   renderTageslage(today);
   if (state.boardId && state.boardId !== today.boardId) {
-    // Neumond → neues Brett, alte Geschichte schließt.
-    state.boardId = today.boardId; state.positions = {}; state.chapters = []; state.lastPlayedDay = 0;
+    // Neumond → neues Brett: alle beginnen wieder bei Tag 1 des neuen Zyklus.
+    state.boardId = today.boardId; state.positions = {}; state.chapters = [];
+    state.lastPlayedDay = today.dayIndex - 1; // Geschichte beginnt heute
     saveState(state);
-  } else if (!state.boardId) {
-    state.boardId = today.boardId; saveState(state);
   }
   await catchUp(state, today);
-  renderChapters(state);
+  renderChapters(state, today);
 
   if (state.lastPlayedDay >= today.dayIndex) {
-    renderBoard(state.positions, today, null, null, null);
+    renderBoard(state.positions, today, null, null);
     renderPlayed(state, today);
     return;
   }
@@ -316,19 +355,19 @@ async function startDay(state: BoardState, today: Today) {
       birthDate: state.profile!.birthDate, positions: state.positions, dayIndex: today.dayIndex });
     if (!Object.keys(t.legalMoves).length) {
       state.lastPlayedDay = today.dayIndex; saveState(state);
-      renderBoard(state.positions, today, null, null, null);
+      renderBoard(state.positions, today, null, null);
       setActionMessage('Stille: Heute ist kein Zug möglich.',
-        'Das Brett ruht — manchmal ist Nicht-Handeln der Zug.');
+        'Das Brett ruht — manchmal ist Nicht-Handeln der Zug. Morgen wirft das Orakel neu.');
       return;
     }
-    renderBoard(state.positions, today, t.legalMoves, null, pick);
-    renderThrow(state, today, t.throw, t.legalMoves, pick);
+    renderBoard(state.positions, today, t.legalMoves, pick);
+    renderThrow(today, t.throw, t.legalMoves, pick);
     async function pick(stone: string) {
       setActionMessage('Der Zug wird gedeutet …');
       try {
-        await playDay(state, today, today.dayIndex, stone, false);
-        renderBoard(state.positions, today, null, null, null);
-        renderChapters(state);
+        await playDay(state, today.dayIndex, stone, false);
+        renderBoard(state.positions, today, null, null);
+        renderChapters(state, today);
         renderPlayed(state, today);
       } catch (e: any) {
         setActionMessage('Fehler: ' + (e?.message || e), 'Bitte versuche es gleich noch einmal.');
@@ -345,9 +384,21 @@ async function init() {
   catch { setActionMessage('Die Tageslage konnte nicht geladen werden.', 'Bitte lade die Seite neu.'); return; }
   const state = loadState();
   renderTageslage(today);
-  renderBoard(state.positions, today, null, null, null);
+  renderBoard(state.positions, today, null, null);
   if (!state.profile) {
-    renderOnboarding((profile) => { state.profile = profile; saveState(state); startDay(state, today); });
+    // Erstbesuch: Hilfe aufklappen und Einstieg erklären.
+    const help = document.getElementById('help') as HTMLDetailsElement | null;
+    if (help) help.open = true;
+    renderOnboarding(today, (profile) => {
+      state.profile = profile;
+      state.boardId = today.boardId;
+      // Kern-Fix: Die Geschichte beginnt HEUTE — kein rückwirkendes
+      // Nachspielen von Tagen vor dem Einstieg.
+      state.lastPlayedDay = today.dayIndex - 1;
+      saveState(state);
+      if (help) help.open = false;
+      startDay(state, today);
+    });
   } else {
     startDay(state, today);
   }
