@@ -4,49 +4,41 @@
 `pyswisseph` — Aszendent/Häuser werden direkt in `main.py` berechnet
 (`swe_compute()`), es ist **kein** separater Aufruf nötig.
 
-## Deployment & DNS — aktueller Stand
+## Deployment & DNS
 
-> **Achtung:** Die Domain ist derzeit auf zwei Plattformen aufgeteilt.
-> Eine frühere Version dieser README behauptete, Railway sei die einzige
-> Produktionsplattform und Netlify nur Preview. **Das war falsch.**
-
-Tatsächlicher DNS-Stand:
-
-| Hostname | Ziel | Plattform |
-|---|---|---|
-| `horoskop.one` (Apex) | A → `75.2.60.5` | Netlify (Apex-Load-Balancer) |
-| `www.horoskop.one` | CNAME → `horoskopone-production-4739.up.railway.app` | Railway |
-
-Daraus folgen zwei bekannte Fehlerbilder:
-
-- **Apex liefert Netlifys 404.** Netlify publiziert aus dem **Repo-Root**
-  (deshalb war auch `_headers` dort wirksam). Seit die alten Root-HTML-
-  Dateien entfernt wurden, gibt es dort kein `index.html` mehr.
-- **www hat ein nicht passendes Zertifikat**
-  (`ERR_CERT_COMMON_NAME_INVALID`): `www.horoskop.one` zeigt per CNAME auf
-  Railway, ist dort aber nicht als Custom Domain registriert — Railway
-  liefert daher sein `*.up.railway.app`-Zertifikat aus.
-
-**Zielzustand: alles über Railway.** Der Code ist genau dafür gebaut —
+**Produktion läuft über Railway.** Der Code ist genau dafür gebaut —
 `src/readingApi.ts` nutzt `API_BASE = ''` (relative Aufrufe) und `main.py`
 mountet das gebaute Frontend (`dist/`) unter `/`. Frontend und API müssen
 deshalb dieselbe Origin haben; eine Aufteilung Frontend/API auf zwei Hosts
 funktioniert ohne zusätzlichen Proxy nicht.
 
-Migrationsschritte (manuell, außerhalb des Repos):
+DNS-Stand (Registrar/Zone: united-domains):
 
-1. In Railway → Settings → Networking **beide** Domains als Custom Domain
-   anlegen: `horoskop.one` und `www.horoskop.one`. Railway stellt dann
-   passende Zertifikate aus.
-2. Beim Registrar den Apex-A-Record `75.2.60.5` (Netlify) durch das von
-   Railway genannte Ziel ersetzen.
-3. Netlify-Integration entfernen. Danach ist `_headers` endgültig
-   wirkungslos — die Security-Header setzt die Middleware in `main.py`.
+| Hostname | Ziel | Status |
+|---|---|---|
+| `www.horoskop.one` | CNAME → `6ko1my9t.up.railway.app` | ✅ live, Zertifikat von Railway |
+| `horoskop.one` (Apex) | A → `75.2.60.5` (Netlify) | ❌ liefert 404, Migration offen |
 
-`swe_worker/` ist ein historischer, separat deploybarer Ephemeris-Worker
-(Python 3.11 + pyswisseph), den `main.py` aktuell **nicht** aufruft (keine
-`SWE_URL`-Nutzung im Code). Falls davon noch eine zweite Railway-Instanz
-läuft, kann sie ohne Auswirkung auf den Hauptservice gestoppt werden.
+**Offener Schritt — Apex reparieren.** united-domains erlaubt am Apex
+weder CNAME noch ALIAS ("CNAME nur für Subdomains"), Railway vergibt aber
+nur ein CNAME-Ziel und keine feste IP. Zwei gangbare Wege:
+
+1. **united-domains-Weiterleitung** (einfachster Weg): im Portal eine
+   Weiterleitung `horoskop.one` → `https://www.horoskop.one` (301)
+   einrichten. Kein neuer DNS-Record nötig.
+2. **DNS-Umzug zu Cloudflare** (nachhaltiger Weg): Nameserver wechseln,
+   dann per CNAME-Flattening den Apex direkt auf Railway zeigen lassen.
+   Domain bleibt bei united-domains registriert. SPF-TXT-Record
+   (`v=spf1 include:_smtp.udag.de ~all`) mit umziehen, sonst bricht
+   E-Mail-Authentifizierung.
+
+Danach die Netlify-GitHub-Integration entfernen (Netlify hat dann keine
+Funktion mehr). Die Security-Header setzt die Middleware in `main.py`.
+
+Hinweis: Ein früherer separater Ephemeris-Worker (`swe_worker/`) wurde aus
+dem Repo entfernt — `main.py` bündelt `pyswisseph` direkt und hat den
+Worker nie aufgerufen. Falls in Railway noch eine zweite Instanz davon
+läuft, kann sie ersatzlos gestoppt werden (im Dashboard prüfen).
 
 ## Deploy (Railway/Docker)
 

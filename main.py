@@ -55,9 +55,8 @@ app.add_middleware(
     allow_methods=["*"], allow_headers=["*"],
 )
 
-# Security headers — mirrors `_headers` (a Netlify-only convention that Railway/
-# uvicorn never reads). Applied here as real HTTP response headers so they take
-# effect regardless of which platform actually serves production traffic.
+# Security headers — applied as real HTTP response headers on every response
+# (API routes and the StaticFiles-mounted frontend alike).
 _SECURITY_HEADERS = {
     "X-Content-Type-Options": "nosniff",
     "X-Frame-Options": "DENY",
