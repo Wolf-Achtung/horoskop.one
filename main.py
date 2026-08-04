@@ -507,12 +507,30 @@ def swe_compute(bdate:dt.date,btime:Optional[dt.time],lat:Optional[float],lon:Op
         "utc":ut.isoformat()
     }
 
+def _chat_kwargs(model: str, temperature: float, seed: Optional[int] = None) -> Dict[str, Any]:
+    """Modellbewusste Parameter für chat.completions.
+
+    Die GPT-5-/o-Reasoning-Familie akzeptiert nur die Default-Temperatur und
+    ignoriert/verweigert `seed`; ein gesetzter `temperature`-Wert führt dort
+    zu einem 400-Fehler ("Unsupported value") — genau das ließ alle Readings
+    still auf den Fallback-Text zurückfallen. Für diese Modelle senden wir
+    stattdessen `reasoning_effort` (Default: minimal — schnelle, günstige
+    Kurztexte; per OPENAI_REASONING_EFFORT übersteuerbar).
+    """
+    kwargs: Dict[str, Any] = {"model": model}
+    if model.startswith(("gpt-5", "o1", "o3", "o4")):
+        kwargs["reasoning_effort"] = os.getenv("OPENAI_REASONING_EFFORT", "minimal")
+    else:
+        kwargs["temperature"] = temperature
+        if seed is not None:
+            kwargs["seed"] = seed
+    return kwargs
+
 def oa_text(prompt:str, seed:Optional[int]=None, temperature:float=0.8)->str:
-    kwargs=dict(model=MODEL, temperature=temperature, messages=[
+    kwargs=dict(_chat_kwargs(MODEL, temperature, seed), messages=[
         {"role":"system","content":"Du bist ein klarer, sachlicher und freundlicher Schreibassistent. Du schreibst verständlich, konkret und alltagsnah — ohne Esoterik, ohne Pathos, ohne blumige Metaphern."},
         {"role":"user","content":prompt},
     ])
-    if seed is not None: kwargs["seed"]=seed
     cr=client.chat.completions.create(**kwargs)
     return cr.choices[0].message.content
 
@@ -1246,12 +1264,11 @@ Gib nur JSON:
 
     try:
         raw = client.chat.completions.create(
-            model=MODEL, temperature=0.7,
+            **_chat_kwargs(MODEL, 0.7, req.seed),
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
             ],
-            **({"seed": req.seed} if req.seed is not None else {}),
         ).choices[0].message.content
         data = try_load_json(raw)
     except Exception as e:
@@ -1520,7 +1537,10 @@ schließe mit einem konkreten Tagesimpuls (Imperativ, 1 Satz). Keine Aufzählung
 keine Überschrift, keine medizinisch/juristisch/finanziell heiklen Ratschläge."""
     try:
         return oa_text(_tone_directive(req.tone) + "\n\n" + prompt, temperature=0.8).strip()
-    except Exception:
+    except Exception as e:
+        # Sichtbar loggen — ein stiller Fallback hat in Produktion wochenlang
+        # den Temperature-Bug der GPT-5-Umstellung verdeckt.
+        print(f"board reading LLM failed ({MODEL}): {e}")
         return fallback
 
 async def _board_move_impl(req: BoardMoveRequest):
