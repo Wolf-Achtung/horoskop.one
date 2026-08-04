@@ -535,12 +535,14 @@ def _chat_kwargs(model: str, temperature: float, seed: Optional[int] = None) -> 
     ignoriert/verweigert `seed`; ein gesetzter `temperature`-Wert führt dort
     zu einem 400-Fehler ("Unsupported value") — genau das ließ alle Readings
     still auf den Fallback-Text zurückfallen. Für diese Modelle senden wir
-    stattdessen `reasoning_effort` (Default: minimal — schnelle, günstige
-    Kurztexte; per OPENAI_REASONING_EFFORT übersteuerbar).
+    stattdessen `reasoning_effort` (Default: low; per OPENAI_REASONING_EFFORT
+    übersteuerbar). "minimal" erzeugte erfundene Wörter („zuprinzig") in den
+    deutschen Texten — die eine Stufe mehr Denken kostet bei Kurztexten kaum
+    etwas und hält die Prosa sauber.
     """
     kwargs: Dict[str, Any] = {"model": model}
     if model.startswith(("gpt-5", "o1", "o3", "o4")):
-        kwargs["reasoning_effort"] = os.getenv("OPENAI_REASONING_EFFORT", "minimal")
+        kwargs["reasoning_effort"] = os.getenv("OPENAI_REASONING_EFFORT", "low")
     else:
         kwargs["temperature"] = temperature
         if seed is not None:
@@ -549,7 +551,11 @@ def _chat_kwargs(model: str, temperature: float, seed: Optional[int] = None) -> 
 
 _LLM_DEFAULT_SYSTEM = ("Du bist ein klarer, sachlicher und freundlicher Schreibassistent. "
                        "Du schreibst verständlich, konkret und alltagsnah — ohne Esoterik, "
-                       "ohne Pathos, ohne blumige Metaphern.")
+                       "ohne Pathos, ohne blumige Metaphern. "
+                       "Du schreibst fehlerfreies, natürliches Deutsch und verwendest "
+                       "ausschließlich existierende deutsche Wörter — keine "
+                       "Wortneuschöpfungen, keine erfundenen Adjektive, keine gestelzten "
+                       "Komposita. Im Zweifel wähle das einfache, gebräuchliche Wort.")
 
 def _anthropic_text(system: str, user: str) -> str:
     """Ein Text-Call gegen die Anthropic Messages API.
@@ -1313,7 +1319,10 @@ Gib nur JSON:
                      else "- (Keine exakte Geburtszeit → keine Häuser/Aszendent-Berechnung)"),
     }
 
-    system_prompt = _deep_system_prompt(rtype) + "\n\nTon-Vorgabe: " + tone_block
+    system_prompt = (_deep_system_prompt(rtype) + "\n\nTon-Vorgabe: " + tone_block
+                     + "\n\nSprache: fehlerfreies, natürliches Deutsch; ausschließlich "
+                       "existierende Wörter — keine Wortneuschöpfungen oder erfundenen "
+                       "Adjektive. Im Zweifel das einfache, gebräuchliche Wort.")
     user_prompt = _deep_user_prompt(rtype, ctx)
     if mixer_block:
         user_prompt = mixer_block + "\n\n" + user_prompt

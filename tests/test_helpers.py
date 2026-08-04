@@ -380,7 +380,7 @@ class TestChatKwargs:
         kw = main._chat_kwargs("gpt-5-mini", 0.8, seed=42)
         assert "temperature" not in kw
         assert "seed" not in kw
-        assert kw["reasoning_effort"] == "minimal"
+        assert kw["reasoning_effort"] == "low"  # "minimal" halluzinierte Wörter
 
     def test_o_series_drops_temperature(self):
         kw = main._chat_kwargs("o3-mini", 0.4)
