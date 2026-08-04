@@ -56,6 +56,15 @@ const STONE_META: Record<string, { glyph: string; color: string }> = {
 const SPECIAL_FIELDS: Record<number, string> = {
   15: '⟲', 26: '✶', 27: '≈', 28: '☰', 29: '☉', 30: '⌂',
 };
+// Was die fünf Lebensbereiche alles abdecken — als Tooltip an jedem Stein
+// und als aufklappbare Erklärung bei der Zugwahl.
+const STONE_DESC: Record<string, string> = {
+  fokus: 'Klarheit & Richtung: Entscheidungen, Ziele, Prioritäten — der rote Faden, dem du gerade folgst.',
+  werk:  'Arbeit & Projekte: Job, Aufgaben, Lernen, Handwerk — alles, was du in die Welt baust.',
+  liebe: 'Beziehungen aller Art: Partnerschaft, Familie, Freundschaft — und wie liebevoll du mit dir selbst umgehst.',
+  kraft: 'Körper & Energie: Schlaf, Bewegung, Gesundheit, Ausdauer — dein Akku und wie du ihn lädst.',
+  geist: 'Intuition & Inneres: Gefühle, Träume, Stille, Kreativität — was unter der Oberfläche wirkt.',
+};
 
 const $ = (id: string) => document.getElementById(id)!;
 
@@ -547,6 +556,7 @@ function dockChip(stone: string, label: string, suffix: string,
                   clickable: boolean, onPick: ((stone: string) => void) | null): HTMLElement {
   const chip = document.createElement('span');
   chip.className = 'dock-chip' + (clickable ? ' legal' : '');
+  if (STONE_DESC[stone]) chip.title = STONE_DESC[stone];
   const orb = document.createElement('span'); orb.className = 'orb';
   orb.style.background = STONE_META[stone]?.color || '#ccc';
   orb.textContent = STONE_META[stone]?.glyph || '?';
@@ -869,6 +879,7 @@ function renderThrowChoices(today: Today, t: ThrowData, useAlt: boolean,
   for (const [stone, name] of Object.entries(today.stones)) {
     const btn = document.createElement('button'); btn.className = 'stone-btn';
     btn.style.borderColor = STONE_META[stone]?.color || '';
+    if (STONE_DESC[stone]) btn.title = STONE_DESC[stone];
     const g = document.createElement('span'); g.className = 'glyph';
     g.textContent = STONE_META[stone]?.glyph || '';
     btn.append(g, document.createTextNode(name));
@@ -881,6 +892,19 @@ function renderThrowChoices(today: Today, t: ThrowData, useAlt: boolean,
     choices.appendChild(btn);
   }
   el.appendChild(choices);
+  const stoneHelp = document.createElement('details'); stoneHelp.className = 'stone-help';
+  const shSum = document.createElement('summary');
+  shSum.textContent = 'Was decken die fünf Bereiche ab?';
+  stoneHelp.appendChild(shSum);
+  for (const [stone, name] of Object.entries(today.stones)) {
+    const p = document.createElement('p');
+    const b = document.createElement('b');
+    b.textContent = `${STONE_META[stone]?.glyph || ''} ${name}: `;
+    b.style.color = STONE_META[stone]?.color || '';
+    p.append(b, document.createTextNode(STONE_DESC[stone] || ''));
+    stoneHelp.appendChild(p);
+  }
+  el.appendChild(stoneHelp);
 }
 
 function renderPlayed(state: BoardState, today: Today) {
@@ -1028,6 +1052,13 @@ async function init() {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js').catch(() => {});
   }
+  // „Profil zurücksetzen" in der Hilfe — jederzeit erreichbar, nicht nur
+  // nach dem Tageszug (Playtest-Feedback).
+  document.getElementById('reset-profile')?.addEventListener('click', () => {
+    if (confirm('Profil und Spielstand aus diesem Browser löschen?')) {
+      localStorage.removeItem(LS_KEY); location.reload();
+    }
+  });
   let today: Today;
   try { today = await api('/board/today'); }
   catch { setActionMessage('Die Tageslage konnte nicht geladen werden.', 'Bitte lade die Seite neu.'); return; }

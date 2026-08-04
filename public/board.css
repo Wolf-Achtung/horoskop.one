@@ -63,6 +63,12 @@ html, body{
 
 /* Hilfe */
 .board-help summary{cursor:pointer;font-weight:700;color:#8a6420}
+.help-actions{margin:14px 0 0;padding-top:10px;border-top:1px dashed #dcca9e}
+
+/* Bereichs-Erklärung bei der Zugwahl */
+.stone-help{margin-top:12px;border-top:1px dashed #dcca9e;padding-top:8px}
+.stone-help summary{cursor:pointer;font-size:13.5px;color:#8a6420;font-weight:600}
+.stone-help p{margin:8px 0 0;font-size:14px;line-height:1.5;color:#4a3d26}
 .board-help ol{margin:10px 0 0;padding-left:20px;line-height:1.6}
 .board-help li{margin-bottom:8px}
 .board-help b{color:#5a4520}
