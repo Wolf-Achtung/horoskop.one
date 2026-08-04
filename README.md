@@ -19,21 +19,21 @@ DNS-Stand (Registrar/Zone: united-domains):
 | `www.horoskop.one` | CNAME → `6ko1my9t.up.railway.app` | ✅ live, Zertifikat von Railway |
 | `horoskop.one` (Apex) | A → `75.2.60.5` (Netlify) | ❌ liefert 404, Migration offen |
 
-**Offener Schritt — Apex reparieren.** united-domains erlaubt am Apex
-weder CNAME noch ALIAS ("CNAME nur für Subdomains"), Railway vergibt aber
-nur ein CNAME-Ziel und keine feste IP. Zwei gangbare Wege:
+**Apex-Lösung: Netlify als Redirect-Dienst.** united-domains erlaubt am
+Apex weder CNAME noch ALIAS, und das Portal-Formular für neue Records wie
+auch die Weiterleitungs-Funktion speichern derzeit fehlerhaft. Deshalb
+übernimmt Netlify (das den Apex ohnehin per A-Record bedient) die
+Umleitung: Die Datei `_redirects` im Repo-Root leitet alle Apex-Anfragen
+per 301 auf `https://www.horoskop.one` weiter, Pfad inklusive.
 
-1. **united-domains-Weiterleitung** (einfachster Weg): im Portal eine
-   Weiterleitung `horoskop.one` → `https://www.horoskop.one` (301)
-   einrichten. Kein neuer DNS-Record nötig.
-2. **DNS-Umzug zu Cloudflare** (nachhaltiger Weg): Nameserver wechseln,
-   dann per CNAME-Flattening den Apex direkt auf Railway zeigen lassen.
-   Domain bleibt bei united-domains registriert. SPF-TXT-Record
-   (`v=spf1 include:_smtp.udag.de ~all`) mit umziehen, sonst bricht
-   E-Mail-Authentifizierung.
+**Wichtig deshalb: Die Netlify-GitHub-Integration muss verbunden
+bleiben** — sie ist jetzt der Redirect-Dienst für den Apex. Erst bei
+einem späteren DNS-Umzug (z. B. zu Cloudflare mit CNAME-Flattening, etwa
+im Zuge einer neuen Produkt-Domain) kann Netlify entfallen. Bei einem
+solchen Umzug den SPF-TXT-Record (`v=spf1 include:_smtp.udag.de ~all`)
+mitnehmen, sonst bricht die E-Mail-Authentifizierung.
 
-Danach die Netlify-GitHub-Integration entfernen (Netlify hat dann keine
-Funktion mehr). Die Security-Header setzt die Middleware in `main.py`.
+Die Security-Header setzt die Middleware in `main.py`.
 
 Hinweis: Ein früherer separater Ephemeris-Worker (`swe_worker/`) wurde aus
 dem Repo entfernt — `main.py` bündelt `pyswisseph` direkt und hat den

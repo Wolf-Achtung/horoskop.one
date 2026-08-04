@@ -1,0 +1,5 @@
+# Netlify serves the apex domain (horoskop.one -> A 75.2.60.5) while the
+# actual site runs on Railway under www. Redirect everything to www,
+# preserving the path. The trailing "!" forces the rule even if a file
+# with the same path existed in the publish directory.
+/* https://www.horoskop.one/:splat 301!
