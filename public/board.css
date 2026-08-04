@@ -144,6 +144,26 @@ html, body{
 .guess-verdict{margin:6px 0 0;font-size:15.5px;line-height:1.5;color:#5a4c33}
 .guess-verdict.hit{color:#8a6420;font-weight:600}
 
+/* Ereignistage */
+.event-banner{margin:0 0 10px;padding:10px 14px;border-radius:12px;
+  background:linear-gradient(100deg,#fdf3d8,#f8e7c0);border:1px solid #d9b86a;
+  font-size:15px;line-height:1.5;color:#4a3d26;
+  box-shadow:0 1px 6px rgba(169,120,44,.18)}
+.event-banner b{color:#8a6420}
+.throw-switch{font-weight:600}
+.throw-switch.active{border-color:#a9782c;color:#8a6420;background:#f8efd8;
+  box-shadow:0 0 0 2px rgba(169,120,44,.25)}
+
+/* Partner-Resonanz */
+.resonanz-summary{cursor:pointer;font-weight:700;color:#8a6420;font-size:16px}
+.resonanz-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px}
+.resonanz-row input{padding:11px;border-radius:10px;border:1px solid #cdb476;
+  background:#fffdf7;color:#2b2317;font-size:16px}
+.resonanz-btn{margin-top:0;padding:11px 18px}
+.resonanz-out{margin-top:6px}
+.resonanz-out .reading-chips{margin-top:10px}
+.resonanz-text{margin:10px 0 0;line-height:1.65;font-size:16px}
+
 /* Sternzwillinge */
 .startwins-line{margin:12px 0 0;padding-top:10px;border-top:1px dashed #dcca9e;
   font-size:14.5px;line-height:1.55;color:#5a4c33}
