@@ -23,6 +23,15 @@ class TestSecurityHeaders:
         assert "default-src 'self'" in csp
         assert "frame-ancestors 'none'" in csp
 
+    def test_hsts_does_not_pin_subdomains(self):
+        """`includeSubDomains`/`preload` must stay off while the apex and the
+        www subdomain are served by different platforms — otherwise a
+        subdomain with a mismatched certificate becomes unreachable with no
+        click-through (ERR_CERT_COMMON_NAME_INVALID)."""
+        hsts = client.get("/health").headers["strict-transport-security"]
+        assert "includesubdomains" not in hsts.lower()
+        assert "preload" not in hsts.lower()
+
     def test_cache_stats_endpoint_removed(self):
         # Previously an unauthenticated info-disclosure endpoint; must be gone.
         assert client.get("/cache-stats").status_code == 404

@@ -4,17 +4,41 @@
 `pyswisseph` — Aszendent/Häuser werden direkt in `main.py` berechnet
 (`swe_compute()`), es ist **kein** separater Aufruf nötig.
 
-**Produktionsplattform:** Railway (Docker-Build via `Dockerfile`). Dieses
-Repo ist zusätzlich an eine Netlify-Integration angebunden, die
-PR-Deploy-Previews erzeugt — das ist ein reines Vorschau-Feature ohne
-Bezug zur Produktion (kein `netlify.toml`/`_redirects` vorhanden) und kann
-in den Netlify-Projekteinstellungen entfernt werden, falls nicht mehr
-gebraucht.
+## Deployment & DNS
 
-`swe_worker/` ist ein historischer, separat deploybarer Ephemeris-Worker
-(Python 3.11 + pyswisseph), den `main.py` aktuell **nicht** aufruft (keine
-`SWE_URL`-Nutzung im Code). Falls davon noch eine zweite Railway-Instanz
-läuft, kann sie ohne Auswirkung auf den Hauptservice gestoppt werden.
+**Produktion läuft über Railway.** Der Code ist genau dafür gebaut —
+`src/readingApi.ts` nutzt `API_BASE = ''` (relative Aufrufe) und `main.py`
+mountet das gebaute Frontend (`dist/`) unter `/`. Frontend und API müssen
+deshalb dieselbe Origin haben; eine Aufteilung Frontend/API auf zwei Hosts
+funktioniert ohne zusätzlichen Proxy nicht.
+
+DNS-Stand (Registrar/Zone: united-domains):
+
+| Hostname | Ziel | Status |
+|---|---|---|
+| `www.horoskop.one` | CNAME → `6ko1my9t.up.railway.app` | ✅ live, Zertifikat von Railway |
+| `horoskop.one` (Apex) | A → `75.2.60.5` (Netlify) | ❌ liefert 404, Migration offen |
+
+**Offener Schritt — Apex reparieren.** united-domains erlaubt am Apex
+weder CNAME noch ALIAS ("CNAME nur für Subdomains"), Railway vergibt aber
+nur ein CNAME-Ziel und keine feste IP. Zwei gangbare Wege:
+
+1. **united-domains-Weiterleitung** (einfachster Weg): im Portal eine
+   Weiterleitung `horoskop.one` → `https://www.horoskop.one` (301)
+   einrichten. Kein neuer DNS-Record nötig.
+2. **DNS-Umzug zu Cloudflare** (nachhaltiger Weg): Nameserver wechseln,
+   dann per CNAME-Flattening den Apex direkt auf Railway zeigen lassen.
+   Domain bleibt bei united-domains registriert. SPF-TXT-Record
+   (`v=spf1 include:_smtp.udag.de ~all`) mit umziehen, sonst bricht
+   E-Mail-Authentifizierung.
+
+Danach die Netlify-GitHub-Integration entfernen (Netlify hat dann keine
+Funktion mehr). Die Security-Header setzt die Middleware in `main.py`.
+
+Hinweis: Ein früherer separater Ephemeris-Worker (`swe_worker/`) wurde aus
+dem Repo entfernt — `main.py` bündelt `pyswisseph` direkt und hat den
+Worker nie aufgerufen. Falls in Railway noch eine zweite Instanz davon
+läuft, kann sie ersatzlos gestoppt werden (im Dashboard prüfen).
 
 ## Deploy (Railway/Docker)
 
