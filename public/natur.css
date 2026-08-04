@@ -7,15 +7,34 @@
    ============================================================ */
 
 html[data-theme="natur"], html[data-theme="natur"] body{
-  background:#e8e0cf url('/assets/material/grund-kalk.webp') repeat !important;
-  background-size:720px !important;
+  background:#eae3d2 url('/assets/material/grund-kalk.webp') repeat !important;
+  background-size:1400px !important;
   color:#2b241a !important;
+}
+/* Heller Schleier: die Textur tritt zurück, der Inhalt bekommt Ruhe. */
+html[data-theme="natur"] body::before{
+  content:''; position:fixed; inset:0; z-index:-1; pointer-events:none;
+  background:
+    radial-gradient(900px 1200px at 50% 12%, rgba(247,242,231,.78), rgba(247,242,231,.42) 60%, rgba(247,242,231,.28));
+}
+/* Das eine Museumsobjekt im Leerraum: der Orakelknochen, groß und still. */
+@media (min-width: 1200px){
+  html[data-theme="natur"] body::after{
+    content:''; position:fixed; right:4vw; top:16vh; width:220px; height:300px;
+    background:url('/assets/material/orakelknochen.webp') center/contain no-repeat;
+    mix-blend-mode:multiply; opacity:.6; transform:rotate(7deg);
+    pointer-events:none; z-index:-1;
+  }
+}
+/* Lesetext: Buchserife statt UI-Schrift. */
+html[data-theme="natur"] .board-container{
+  font-family:'Cormorant Garamond', Georgia, serif; font-size:17.5px;
 }
 
 /* --- Typografie: verwitterter Buchdruck + Handschrift ------------- */
 html[data-theme="natur"] .site-header .brand strong{
   font-family:'IM Fell English', Georgia, serif;
-  font-size:34px; letter-spacing:.06em; color:#2b241a; font-weight:400;
+  font-size:42px; letter-spacing:.06em; color:#2b241a; font-weight:400;
   font-style:italic;
 }
 html[data-theme="natur"] .site-header .tagline,
@@ -32,34 +51,34 @@ html[data-theme="natur"] .card-step{
   color:#6b4f2a; letter-spacing:.22em; font-weight:400;
 }
 html[data-theme="natur"] .moon-img{
-  width:34px; height:34px; vertical-align:-4px;
+  width:42px; height:42px; vertical-align:-7px;
 }
+html[data-theme="natur"] .tageslage-head h2{font-size:34px}
 
 /* --- Karten: Kalkflächen mit Tusche-Rand und Geflecht-Kante ------- */
 html[data-theme="natur"] .board-container .card{
-  background:rgba(250,246,238,.55);
-  border:1px solid rgba(43,36,26,.4);
-  border-radius:3px;
-  box-shadow:0 1px 0 rgba(43,36,26,.15);
+  background:rgba(252,248,241,.92);
+  border:1.4px solid rgba(43,36,26,.55);
+  border-radius:255px 10px 245px 12px / 12px 240px 10px 250px;
+  box-shadow:0 2px 10px rgba(43,36,26,.12);
   position:relative;
   overflow:visible;
 }
-html[data-theme="natur"] .board-container .card::before{
-  content:''; position:absolute; top:-5px; left:14px; right:14px; height:9px;
+html[data-theme="natur"] .board-container .card:nth-of-type(odd){transform:rotate(-.3deg)}
+html[data-theme="natur"] .board-container .card:nth-of-type(even){transform:rotate(.25deg)}
+/* Geflecht nur noch EINMAL: als Trennkante unter dem Seitenkopf. */
+html[data-theme="natur"] .site-header{position:relative; padding-bottom:18px}
+html[data-theme="natur"] .site-header::after{
+  content:''; position:absolute; left:50%; transform:translateX(-50%);
+  bottom:0; width:min(680px, 92%); height:10px;
   background:url('/assets/material/geflecht.webp') repeat-x;
   background-size:auto 100%;
-  mix-blend-mode:multiply; opacity:.85; border-radius:2px;
-  pointer-events:none;
+  mix-blend-mode:multiply; opacity:.8; border-radius:2px;
 }
 
 /* Orakelknochen als stilles Wappen der Tageslage */
 html[data-theme="natur"] .hero-wheel{display:none}
-html[data-theme="natur"] .tageslage-card::after{
-  content:''; position:absolute; right:-8px; top:-14px; width:110px; height:150px;
-  background:url('/assets/material/orakelknochen.webp') center/contain no-repeat;
-  mix-blend-mode:multiply; opacity:.45; transform:rotate(8deg);
-  pointer-events:none;
-}
+
 html[data-theme="natur"] .tageslage-sub{color:#5c4d36}
 html[data-theme="natur"] .tageslage-field b,
 html[data-theme="natur"] .feld-zeile b{color:#8a5a28}
