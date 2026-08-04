@@ -1788,6 +1788,101 @@ def board_fields_route():
     identisch für alle, daher unbegrenzt cachebar."""
     return {"fields": [{"index": i + 1, **f} for i, f in enumerate(FIELD_EVENTS)]}
 
+# --- Profil-Karte („Sternzeichen als Stenografie", docs/tonalitaet.md §3.2) --
+# Statische Charakter-Sätze in der Produktstimme: Stärke + kleine Aufgabe.
+# Kein LLM, keine Kosten — die Identitätskarte, über die man spricht.
+
+_ZODIAC_SYMBOLS: Dict[str, str] = {
+    "Widder": "♈", "Stier": "♉", "Zwillinge": "♊", "Krebs": "♋",
+    "Löwe": "♌", "Jungfrau": "♍", "Waage": "♎", "Skorpion": "♏",
+    "Schütze": "♐", "Steinbock": "♑", "Wassermann": "♒", "Fische": "♓",
+}
+_ZODIAC_TRAITS: Dict[str, str] = {
+    "Widder": "Du gehst zuerst — Energie, Mut und ein Herz, das schnell Feuer fängt. "
+              "Anfangen ist leicht für dich; dranbleiben ist dein Wachstum.",
+    "Stier": "Du baust, was bleibt: Ruhe, Sinnlichkeit, Verlässlichkeit. "
+             "Veränderung darf dich einladen — überrennen muss sie dich nicht.",
+    "Zwillinge": "Wach, neugierig, wortgewandt — du verbindest Menschen und Ideen. "
+                 "Deine Übung: bei einer Sache bleiben, wenn sie tief wird.",
+    "Krebs": "Du fühlst Räume, bevor andere sie betreten — Fürsorge ist deine Superkraft. "
+             "Pass auf, dass du dich dabei nicht selbst vergisst.",
+    "Löwe": "Wärme, Stolz, Großzügigkeit — wenn du strahlst, wird es für alle heller. "
+            "Dein Wachstum: Applaus genießen, ohne ihn zu brauchen.",
+    "Jungfrau": "Du siehst, was andere übersehen, und machst Dinge wirklich besser. "
+                "Sei mit dir selbst so nachsichtig wie mit deinen Liebsten.",
+    "Waage": "Schönheit, Ausgleich, Verbindung — du bringst Menschen ins Gespräch. "
+             "Deine Übung: entscheiden, auch wenn es jemandem nicht gefällt.",
+    "Skorpion": "Du gehst tief oder gar nicht — Intensität, Loyalität, Wandlungskraft. "
+                "Vertrauen zu schenken ist für dich Mut, und er lohnt sich.",
+    "Schütze": "Weite, Humor, Aufbruch — du erinnerst alle daran, dass mehr möglich ist. "
+               "Dein Anker: das Gute auch im Nahen sehen.",
+    "Steinbock": "Ausdauer, Würde, leiser Ehrgeiz — du kommst an, weil du weitergehst. "
+                 "Gönn dir Pausen, bevor der Berg sie verlangt.",
+    "Wassermann": "Eigensinn im besten Sinn: Ideen, Freiheit, Gemeinschaftsgeist. "
+                  "Nähe ist kein Käfig — lass sie öfter zu.",
+    "Fische": "Du spürst, was zwischen den Zeilen schwimmt — Empathie, Fantasie, Hingabe. "
+              "Grenzen sind dein Schwimmring: Nutz ihn.",
+}
+_LIFEPATH_FRIENDLY: Dict[int, str] = {
+    1: "Die Pionierin in dir will anfangen, führen, eigene Wege gehen. "
+       "Unabhängigkeit tut dir gut — Einsamkeit nicht: Hol andere dazu.",
+    2: "Du bist die Brücke: feinfühlig, diplomatisch, verbindend. "
+       "Deine Übung heißt Grenzen — Nähe geht auch, ohne zu verschmelzen.",
+    3: "Ausdruck ist dein Element: Sprache, Kreativität, Leichtigkeit. "
+       "Tiefe entsteht, wenn du bei einer Sache bleibst.",
+    4: "Auf dich ist Verlass: Struktur, Ausdauer, ein Fundament für andere. "
+       "Beweglich zu bleiben ist dein Wachstum.",
+    5: "Freiheit und Wandel sind dein Sauerstoff — du bringst Bewegung mit. "
+       "Verbindlichkeit muss keine Enge sein.",
+    6: "Du hütest Menschen und Harmonie — Verantwortung liegt dir im Blut. "
+       "Deine eigenen Bedürfnisse gehören mit auf die Liste.",
+    7: "Du suchst die Tiefe: verstehen, analysieren, allein auftanken. "
+       "Vertrau auch dem, was du nicht allein herausfindest.",
+    8: "Du kannst gestalten und tragen: Wirkung, Struktur, Materie. "
+       "Macht wird schön, wenn sie großzügig bleibt.",
+    9: "Du denkst in größeren Kreisen: Weisheit, Mitgefühl, Loslassen. "
+       "Auch du darfst empfangen — Selbstaufgabe ist keine Pflicht.",
+    11: "Meisterzahl 11: feine Antennen, große Vision, viel Empfindsamkeit. "
+        "Schone dein Nervensystem — Ruhe ist Teil deiner Kraft.",
+    22: "Meisterzahl 22: die Baumeisterin — Visionen, die tragfähig werden. "
+        "Große Werke brauchen Pausen, sonst brennen sie dich aus.",
+    33: "Meisterzahl 33: Du lehrst durch Liebe und gibst viel. "
+        "Grenzen machen dein Geben erst nachhaltig.",
+}
+_ANIMAL_EMOJI: Dict[str, str] = {
+    "Ratte": "🐀", "Büffel": "🐂", "Tiger": "🐅", "Hase": "🐇",
+    "Drache": "🐉", "Schlange": "🐍", "Pferd": "🐴", "Ziege": "🐐",
+    "Affe": "🐒", "Hahn": "🐓", "Hund": "🐕", "Schwein": "🐖",
+}
+
+def _und_join(traits: str) -> str:
+    """„a, b, c" → „a, b und c" für lesbare Sätze."""
+    parts = [t.strip() for t in traits.split(",")]
+    return ", ".join(parts[:-1]) + " und " + parts[-1] if len(parts) > 1 else traits
+
+@app.get("/profil")
+def profil_route(birthDate: str = ""):
+    """Die Profil-Karte: Sternzeichen, Lebenszahl und chinesisches
+    Jahreszeichen mit Charakter-Sätzen — statisch, cachebar pro Datum."""
+    d = parse_birth_date(birthDate)
+    if not d:
+        return JSONResponse(status_code=422, content={
+            "detail": "Bitte ein Geburtsdatum angeben (TT.MM.JJJJ)."})
+    z = zodiac_from_date(d)
+    lp = life_path_number(d)
+    animal = chinese_animal(d.year)
+    blocks = [
+        {"key": "zodiac", "title": f"{_ZODIAC_SYMBOLS.get(z, '✦')} Sternzeichen · {z}",
+         "text": _ZODIAC_TRAITS.get(z, "")},
+        {"key": "lifepath", "title": f"№ Lebenszahl · {lp}",
+         "text": _LIFEPATH_FRIENDLY.get(lp, "")},
+        {"key": "animal", "title": f"{_ANIMAL_EMOJI.get(animal, '✦')} Jahreszeichen · {animal}",
+         "text": f"Dein Jahrgang gilt als {_und_join(_ANIMAL_TRAITS.get(animal, ''))} — "
+                 f"diese Farbe bringst du in jeden Raum mit."},
+    ]
+    return {"zodiac": z, "lifePath": lp, "animal": animal, "blocks": blocks,
+            "link": "/methoden.html"}
+
 @app.post("/board/throw")
 def board_throw_route(req: BoardThrowRequest = Body(...)):
     today = board_today()
@@ -2003,6 +2098,8 @@ try:
     here = os.path.dirname(__file__)
     dist_dir = os.path.join(here, 'dist')
     if os.path.isdir(dist_dir):
+        import mimetypes
+        mimetypes.add_type("application/manifest+json", ".webmanifest")
         app.mount('/', StaticFiles(directory=dist_dir, html=True), name='static')
 except OSError as _e:
     print('Static mount failed:', _e)

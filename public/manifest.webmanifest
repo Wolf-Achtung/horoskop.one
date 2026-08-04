@@ -1,0 +1,17 @@
+{
+  "id": "/play",
+  "name": "Das Monatsbrett — dein Zug unter den Sternen",
+  "short_name": "Monatsbrett",
+  "description": "Ein Senet-Brett ist dein Mondmonat. Jeden Tag wirft das Orakel — du entscheidest, welcher Lebensbereich zieht.",
+  "start_url": "/play",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f1e6cf",
+  "theme_color": "#f1e6cf",
+  "lang": "de",
+  "icons": [
+    { "src": "/assets/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
