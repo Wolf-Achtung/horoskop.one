@@ -1,8 +1,8 @@
 {
   "id": "/play",
-  "name": "Das Monatsbrett — dein Zug unter den Sternen",
-  "short_name": "Monatsbrett",
-  "description": "Ein Senet-Brett ist dein Mondmonat. Jeden Tag wirft das Orakel — du entscheidest, welcher Lebensbereich zieht.",
+  "name": "Die Mondlese — jeden Tag ein Zug unter dem Mond",
+  "short_name": "Mondlese",
+  "description": "Die Mondlese: Ein Senet-Brett ist dein Mondmonat. Jeden Tag wirft das Orakel — du entscheidest, welcher Lebensbereich zieht.",
   "start_url": "/play",
   "scope": "/",
   "display": "standalone",

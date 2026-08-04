@@ -186,6 +186,12 @@ class TestBoardEndpoints:
         r = client.get("/play")
         assert r.status_code in (200, 404)
 
+    def test_mondlese_host_serves_board_as_homepage(self):
+        r = client.get("/", headers={"host": "www.mondlese.de"})
+        assert r.status_code in (200, 404)
+        if r.status_code == 200:
+            assert "MONDLESE" in r.text
+
 
 class TestEventDays:
     def test_event_deterministic_valid_and_rare(self):
@@ -410,7 +416,7 @@ class TestPWAManifest:
         root = pathlib.Path(__file__).parent.parent / "public"
         m = json.loads((root / "manifest.webmanifest").read_text(encoding="utf-8"))
         assert m["start_url"] == "/play" and m["display"] == "standalone"
-        assert m["short_name"] == "Monatsbrett"
+        assert m["short_name"] == "Mondlese"
         for icon in m["icons"]:
             assert (root / icon["src"].lstrip("/")).exists(), icon["src"]
         assert (root / "assets" / "apple-touch-icon.png").exists()

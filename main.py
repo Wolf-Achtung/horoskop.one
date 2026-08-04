@@ -2363,15 +2363,15 @@ else:
         return await _compare_impl(birthDate, stone)
 
 
-# Host-/Pfad-Routing für die Spiel-Beta: play.horoskop.one (und der Pfad
-# /play auf jeder Domain) liefern das Brett statt der klassischen Startseite.
+# Host-/Pfad-Routing: Auf der Mondlese-Domain IST das Brett die Startseite;
+# auf horoskop.one bleibt es unter /play (bzw. play.-Subdomain) erreichbar.
 @app.middleware("http")
 async def play_subdomain_rewrite(request: Request, call_next):
     host = (request.headers.get("host") or "").split(":")[0].lower()
     path = request.scope.get("path", "")
     if path == "/play" or path == "/play/":
         request.scope["path"] = "/play.html"
-    elif host.startswith("play.") and path == "/":
+    elif path == "/" and (host.startswith("play.") or "mondlese" in host):
         request.scope["path"] = "/play.html"
     return await call_next(request)
 
