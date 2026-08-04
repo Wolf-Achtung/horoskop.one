@@ -88,8 +88,8 @@ zum Neumond** (bereits im Spielkonzept §6 als Premium-Kandidat).
 | # | Baustein | Wirkung | Aufwand | Voraussetzung |
 |---|---|---|---|---|
 | 1 | Stimme + Satz für heute | Ton = Produkt | S | ✓ erledigt |
-| 2 | Profil-Karte („Stenografie") | Identität/Gespräch | S | keine |
-| 3 | PWA-Manifest (installierbar) | Ritual-Grundstein | S–M | keine |
+| 2 | Profil-Karte („Stenografie") | Identität/Gespräch | S | ✓ erledigt |
+| 3 | PWA-Manifest (installierbar) | Ritual-Grundstein | S–M | ✓ erledigt |
 | 4 | Resonanz-Ausbau („Deine Menschen") | sozialer Kern | M | keine |
 | 5 | Wochenlesung Sonntag | Rhythmus | M | keine |
 | 6 | Web-Push „Satz für heute" | Ritual komplett | M–L | PWA + Phase 3 |

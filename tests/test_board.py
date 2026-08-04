@@ -306,6 +306,44 @@ class TestSternzwillinge:
                 assert t["known"].strip(), (day, t)
 
 
+class TestProfil:
+    def test_shape_and_content(self):
+        r = client.get("/profil", params={"birthDate": "27.07.1966"})
+        assert r.status_code == 200
+        data = r.json()
+        assert data["zodiac"] == "Löwe" and data["animal"] == "Pferd"
+        assert [b["key"] for b in data["blocks"]] == ["zodiac", "lifepath", "animal"]
+        for b in data["blocks"]:
+            assert b["title"] and b["text"]
+
+    def test_rejects_bad_date(self):
+        assert client.get("/profil", params={"birthDate": "quatsch"}).status_code == 422
+        assert client.get("/profil").status_code == 422
+
+    def test_all_zodiac_signs_covered(self):
+        import datetime as dtm
+        names = {main.zodiac_from_date(dtm.date(2024, 1, 1) + dtm.timedelta(days=i))
+                 for i in range(366)}
+        assert names == set(main._ZODIAC_TRAITS) == set(main._ZODIAC_SYMBOLS)
+
+    def test_all_animals_and_lifepaths_covered(self):
+        animals = {main.chinese_animal(y) for y in range(1900, 1913)}
+        assert animals == set(main._ANIMAL_EMOJI) <= set(main._ANIMAL_TRAITS)
+        assert set(main._LIFEPATH_FRIENDLY) == set(main._LIFEPATH_ARCHETYPES)
+
+
+class TestPWAManifest:
+    def test_manifest_valid_and_icons_exist(self):
+        import json, pathlib
+        root = pathlib.Path(__file__).parent.parent / "public"
+        m = json.loads((root / "manifest.webmanifest").read_text(encoding="utf-8"))
+        assert m["start_url"] == "/play" and m["display"] == "standalone"
+        assert m["short_name"] == "Monatsbrett"
+        for icon in m["icons"]:
+            assert (root / icon["src"].lstrip("/")).exists(), icon["src"]
+        assert (root / "assets" / "apple-touch-icon.png").exists()
+
+
 class TestExplanations:
     def test_today_carries_four_explanations(self):
         data = client.get("/board/today").json()

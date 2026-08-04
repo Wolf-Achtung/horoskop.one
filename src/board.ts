@@ -18,7 +18,10 @@ type BoardState = {
   album?: number[];      // je entdecktes Feld (1–30), überdauert Monatsbretter
   gespuer?: Gespuer;     // Vorahnungs-Zähler, resettet mit jedem neuen Brett
   resonanz?: Resonanz;   // letzte Partner-Resonanz (1 LLM-Call pro Tag reicht)
+  profil?: ProfilData;   // Profil-Karte, gecacht pro Geburtsdatum
 };
+type ProfilBlock = { key: string; title: string; text: string };
+type ProfilData = { birthDate: string; blocks: ProfilBlock[]; link?: string };
 type FieldCard = { index: number; name: string; core: string };
 type StarTwin = { name: string; year: number; known: string };
 type BoardEvent = { key: string; symbol: string; name: string; text: string };
@@ -156,6 +159,40 @@ async function renderStarTwins(profile: Profile) {
     line.appendChild(jw);
   }
   el.appendChild(line);
+}
+
+// --- Profil-Karte ----------------------------------------------------------
+
+async function renderProfil(state: BoardState) {
+  const el = document.getElementById('profil');
+  if (!el || !state.profile) return;
+  if (!state.profil || state.profil.birthDate !== state.profile.birthDate) {
+    try {
+      const data = await api('/profil?birthDate=' + encodeURIComponent(state.profile.birthDate));
+      state.profil = { birthDate: state.profile.birthDate, blocks: data.blocks, link: data.link };
+      saveState(state);
+    } catch { return; }
+  }
+  el.hidden = false;
+  el.innerHTML = '';
+  const det = document.createElement('details');
+  const sum = document.createElement('summary'); sum.className = 'resonanz-summary';
+  sum.textContent = '✦ Dein Profil — was deine Zeichen über dich erzählen';
+  det.appendChild(sum);
+  for (const b of state.profil.blocks) {
+    const block = document.createElement('div'); block.className = 'explain-block';
+    const t = document.createElement('h3'); t.textContent = b.title;
+    const p = document.createElement('p'); p.textContent = b.text;
+    block.append(t, p);
+    det.appendChild(block);
+  }
+  if (state.profil.link) {
+    const a = document.createElement('a'); a.href = state.profil.link;
+    a.className = 'explain-link';
+    a.textContent = 'Woher das kommt: das Methoden-Lexikon →';
+    det.appendChild(a);
+  }
+  el.appendChild(det);
 }
 
 // --- Partner-Resonanz ------------------------------------------------------
@@ -742,6 +779,7 @@ async function startDay(state: BoardState, today: Today) {
   await catchUp(state, today);
   renderChapters(state, today);
   renderAlbum(state);
+  renderProfil(state);
   renderResonanz(state, today);
 
   if (state.lastPlayedDay >= today.dayIndex) {
