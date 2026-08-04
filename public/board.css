@@ -45,6 +45,18 @@ html, body{
   font-family:'Cormorant Garamond',Georgia,serif;font-size:19px}
 .tageslage-field b{color:#8a6420;font-weight:600}
 
+/* „Was bedeutet das?" in der Tageslage */
+.explain{margin-top:14px;border-top:1px dashed #dcca9e;padding-top:10px}
+.explain summary{cursor:pointer;font-weight:700;color:#8a6420;font-size:14.5px}
+.explain-block{margin:12px 0 0;padding:12px 14px;background:#faf3e0;
+  border:1px solid #e6d8b4;border-radius:10px}
+.explain-block h3{margin:0 0 6px;font-family:'Cormorant Garamond',Georgia,serif;
+  font-size:18px;color:#5a4520}
+.explain-block p{margin:0 0 6px;line-height:1.55;font-size:14.5px}
+.explain-block b{color:#8a6420}
+.explain-bg{color:#6b5c40}
+.explain-link{font-size:13.5px;color:#8a6420;text-decoration-color:rgba(138,100,32,.5)}
+
 /* Hilfe */
 .board-help summary{cursor:pointer;font-weight:700;color:#8a6420}
 .board-help ol{margin:10px 0 0;padding-left:20px;line-height:1.6}

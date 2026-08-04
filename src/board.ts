@@ -14,6 +14,7 @@ type BoardState = {
   boardId: string; positions: Positions; lastPlayedDay: number;
   profile: Profile | null; chapters: Chapter[];
 };
+type Explain = { key: string; title: string; heute: string; hintergrund: string; link: string };
 type Today = {
   date: string; boardId: string; dayIndex: number;
   moon: { name: string; frac: number };
@@ -21,6 +22,7 @@ type Today = {
   ganzhi: { index: number; pinyin: string; label: string };
   field: { index: number; name: string; core: string };
   stones: Record<string, string>;
+  explain?: Explain[];
 };
 
 const LS_KEY = 'brett_v2';
@@ -196,6 +198,32 @@ function renderTageslage(today: Today) {
   const b = document.createElement('b'); b.textContent = `Heutiges Feld ${today.field.index} — ${today.field.name}: `;
   fld.appendChild(b); fld.appendChild(document.createTextNode(today.field.core));
   el.append(step, head, fld);
+
+  // „Was bedeutet das?" — Herkunft & Deutung der vier Tageslage-Elemente,
+  // statisch vom Server geliefert (kein LLM, keine Kosten).
+  if (today.explain?.length) {
+    const det = document.createElement('details'); det.className = 'explain';
+    const sum = document.createElement('summary');
+    sum.textContent = 'Was bedeutet das alles?';
+    det.appendChild(sum);
+    for (const ex of today.explain) {
+      const block = document.createElement('div'); block.className = 'explain-block';
+      const t = document.createElement('h3'); t.textContent = ex.title;
+      const heute = document.createElement('p');
+      const hb = document.createElement('b'); hb.textContent = 'Heute: ';
+      heute.appendChild(hb); heute.appendChild(document.createTextNode(ex.heute));
+      const hg = document.createElement('p'); hg.className = 'explain-bg';
+      hg.textContent = ex.hintergrund;
+      block.append(t, heute, hg);
+      if (ex.link) {
+        const a = document.createElement('a'); a.href = ex.link; a.className = 'explain-link';
+        a.textContent = 'Mehr im Methoden-Lexikon →';
+        block.appendChild(a);
+      }
+      det.appendChild(block);
+    }
+    el.appendChild(det);
+  }
 }
 
 // --- Kapitel & Share -------------------------------------------------------
