@@ -296,30 +296,47 @@ function renderTageslage(today: Today) {
   fld.appendChild(b); fld.appendChild(document.createTextNode(today.field.core));
   el.append(step, head, fld);
 
-  // „Was bedeutet das?" — Herkunft & Deutung der vier Tageslage-Elemente,
-  // statisch vom Server geliefert (kein LLM, keine Kosten).
+  // „Was bedeutet das?" — die ausführlichen Erklärungen stehen als eigene
+  // Karte am Seitenende (hier wurden sie nur überscrollt); in der Tageslage
+  // bleibt ein Sprunglink als Wegweiser.
   if (today.explain?.length) {
-    const det = document.createElement('details'); det.className = 'explain';
-    const sum = document.createElement('summary');
-    sum.textContent = 'Was bedeutet das alles?';
-    det.appendChild(sum);
-    for (const ex of today.explain) {
-      const block = document.createElement('div'); block.className = 'explain-block';
-      const t = document.createElement('h3'); t.textContent = ex.title;
-      const heute = document.createElement('p');
-      const hb = document.createElement('b'); hb.textContent = 'Heute: ';
-      heute.appendChild(hb); heute.appendChild(document.createTextNode(ex.heute));
-      const hg = document.createElement('p'); hg.className = 'explain-bg';
-      hg.textContent = ex.hintergrund;
-      block.append(t, heute, hg);
-      if (ex.link) {
-        const a = document.createElement('a'); a.href = ex.link; a.className = 'explain-link';
-        a.textContent = 'Mehr im Methoden-Lexikon →';
-        block.appendChild(a);
-      }
-      det.appendChild(block);
+    const jump = document.createElement('p'); jump.className = 'explain-jump';
+    const a = document.createElement('a'); a.href = '#erklaerungen';
+    a.textContent = 'Was bedeutet das alles? ↓ Erklärungen am Seitenende';
+    jump.appendChild(a);
+    el.appendChild(jump);
+    renderExplainCard(today);
+  }
+}
+
+function renderExplainCard(today: Today) {
+  const el = document.getElementById('explaincard');
+  if (!el || !today.explain?.length) return;
+  el.innerHTML = '';
+  (el as HTMLElement).hidden = false;
+  const step = document.createElement('h2'); step.className = 'card-step';
+  step.textContent = 'Zum Nachlesen';
+  const h = document.createElement('h3'); h.className = 'explain-heading';
+  h.textContent = 'Was bedeutet das alles?';
+  const intro = document.createElement('p'); intro.className = 'explain-intro';
+  intro.textContent = 'Die vier Elemente der heutigen Tageslage — woher sie kommen, '
+    + 'wer sie nutzt und was sie heute sagen.';
+  el.append(step, h, intro);
+  for (const ex of today.explain) {
+    const block = document.createElement('div'); block.className = 'explain-block';
+    const t = document.createElement('h3'); t.textContent = ex.title;
+    const heute = document.createElement('p');
+    const hb = document.createElement('b'); hb.textContent = 'Heute: ';
+    heute.appendChild(hb); heute.appendChild(document.createTextNode(ex.heute));
+    const hg = document.createElement('p'); hg.className = 'explain-bg';
+    hg.textContent = ex.hintergrund;
+    block.append(t, heute, hg);
+    if (ex.link) {
+      const a = document.createElement('a'); a.href = ex.link; a.className = 'explain-link';
+      a.textContent = 'Mehr im Methoden-Lexikon →';
+      block.appendChild(a);
     }
-    el.appendChild(det);
+    el.appendChild(block);
   }
 }
 
