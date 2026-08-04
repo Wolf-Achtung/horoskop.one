@@ -63,7 +63,13 @@ _SECURITY_HEADERS = {
     "X-Frame-Options": "DENY",
     "Referrer-Policy": "strict-origin-when-cross-origin",
     "Permissions-Policy": "geolocation=(self), camera=(), microphone=()",
-    "Strict-Transport-Security": "max-age=63072000; includeSubDomains; preload",
+    # HSTS without `includeSubDomains`/`preload` on purpose: the apex and the
+    # www subdomain are currently served by different platforms, and a
+    # subdomain whose certificate does not match turns an HSTS pin into an
+    # unbypassable browser error (ERR_CERT_COMMON_NAME_INVALID with no
+    # click-through). Re-add `includeSubDomains; preload` only once *every*
+    # subdomain serves a valid certificate. Overridable via HSTS_HEADER.
+    "Strict-Transport-Security": os.getenv("HSTS_HEADER", "max-age=31536000"),
     "Content-Security-Policy": (
         "default-src 'self'; script-src 'self'; "
         "connect-src 'self' https://horoskopone-production-4739.up.railway.app "
