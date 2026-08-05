@@ -312,8 +312,10 @@ html[data-theme="natur"] .sticks-row::after{
 
 /* --- Orientierung im Naturgrund ------------------------------------ */
 html[data-theme="natur"] .view-nav{
-  background:rgba(251,250,247,.94);
-  border-bottom:1px solid rgba(43,36,26,.28);
+  background:rgba(251,250,247,.92);
+  border:1px solid rgba(43,36,26,.4);
+  border-radius:4px 22px 6px 20px;
+  box-shadow:0 3px 14px rgba(43,36,26,.14);
 }
 html[data-theme="natur"] .view-nav button{
   font-family:'IM Fell English', Georgia, serif; font-weight:400;
