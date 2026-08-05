@@ -14,28 +14,34 @@ html[data-theme="natur"], html[data-theme="natur"] body{
    verschmilzt ihren Weißgrund mit der Wand. Nur Desktop — mobil bleibt
    die Wand leer und die Objekte leben im Inhalt (Steine, Stäbe). */
 @media (min-width: 1320px){
+  /* Komposition statt Parkplatz: drei Größenordnungen, zwei Anschnitte.
+     Die Freisteller haben echten Alphakanal — Schatten erden sie. */
   html[data-theme="natur"]::before{
-    content:''; position:fixed; left:2vw; top:6vh; width:170px; height:170px;
+    content:''; position:fixed; left:2.5vw; top:7vh; width:130px; height:130px;
     background:url('/assets/material/objekt-feder.webp') center/contain no-repeat;
-    mix-blend-mode:multiply; opacity:.95; transform:rotate(-24deg);
+    transform:rotate(-28deg);
+    filter:drop-shadow(4px 10px 14px rgba(43,36,26,.22));
     pointer-events:none; z-index:0;
   }
   html[data-theme="natur"]::after{
-    content:''; position:fixed; left:1.5vw; bottom:5vh; width:130px; height:380px;
+    content:''; position:fixed; left:-52px; top:34vh; width:160px; height:460px;
     background:url('/assets/material/objekt-ast.webp') center/contain no-repeat;
-    mix-blend-mode:multiply; opacity:.9; transform:rotate(6deg);
+    transform:rotate(16deg);
+    filter:drop-shadow(6px 12px 16px rgba(43,36,26,.22));
     pointer-events:none; z-index:0;
   }
   html[data-theme="natur"] body::before{
-    content:''; position:fixed; right:1.5vw; bottom:3vh; width:250px; height:300px;
+    content:''; position:fixed; right:-80px; bottom:-56px; width:480px; height:500px;
     background:url('/assets/material/objekt-wurzel.webp') center/contain no-repeat;
-    mix-blend-mode:multiply; opacity:.95; transform:rotate(-4deg);
+    transform:rotate(-9deg);
+    filter:drop-shadow(-8px 14px 22px rgba(43,36,26,.26));
     pointer-events:none; z-index:0;
   }
   html[data-theme="natur"] body::after{
-    content:''; position:fixed; right:3vw; top:8vh; width:200px; height:270px;
+    content:''; position:fixed; right:-26px; top:7vh; width:220px; height:300px;
     background:url('/assets/material/orakelknochen.webp') center/contain no-repeat;
-    mix-blend-mode:multiply; opacity:.85; transform:rotate(7deg);
+    transform:rotate(10deg);
+    filter:drop-shadow(-5px 10px 16px rgba(43,36,26,.22));
     pointer-events:none; z-index:0;
   }
 }
@@ -170,14 +176,16 @@ html[data-theme="natur"] .stick{
   border-radius:0 !important;
   background-position:center !important; background-repeat:no-repeat !important;
   background-size:contain !important;
-  mix-blend-mode:multiply;
+  filter:drop-shadow(2px 4px 5px rgba(43,36,26,.3));
 }
 html[data-theme="natur"] .stick[data-i="1"]{background-image:url('/assets/material/stab-1.webp') !important}
 html[data-theme="natur"] .stick[data-i="2"]{background-image:url('/assets/material/stab-2.webp') !important}
 html[data-theme="natur"] .stick[data-i="3"]{background-image:url('/assets/material/stab-3.webp') !important}
 html[data-theme="natur"] .stick[data-i="4"]{background-image:url('/assets/material/stab-4.webp') !important}
 /* dunkle Seite oben = Stab „gedreht" */
-html[data-theme="natur"] .stick:not(.light){filter:brightness(.5) saturate(.75) contrast(1.05)}
+html[data-theme="natur"] .stick:not(.light){
+  filter:brightness(.5) saturate(.75) contrast(1.05) drop-shadow(2px 4px 5px rgba(43,36,26,.3));
+}
 
 /* --- Knöpfe: Rost als warmer Akzent -------------------------------- */
 html[data-theme="natur"] .btn-primary{
@@ -267,7 +275,7 @@ html[data-theme="natur"] .site-footer::before{
   content:''; position:absolute; top:6px; left:50%; transform:translateX(-50%) rotate(-6deg);
   width:52px; height:52px;
   background:url('/assets/material/astragal.webp') center/contain no-repeat;
-  mix-blend-mode:multiply; opacity:.7;
+  filter:drop-shadow(2px 5px 8px rgba(43,36,26,.25));
 }
 html[data-theme="natur"] ::selection{background:#8a5a28; color:#f4ead8}
 
@@ -278,21 +286,22 @@ html[data-theme="natur"] .site-header .brand strong::after{
   content:''; display:inline-block; width:52px; height:52px; margin-left:14px;
   vertical-align:-14px;
   background:url('/assets/material/objekt-feder.webp') center/contain no-repeat;
-  mix-blend-mode:multiply; transform:rotate(-18deg);
+  transform:rotate(-18deg);
+  filter:drop-shadow(2px 4px 6px rgba(43,36,26,.25));
 }
 /* Die Rinde eröffnet die Monatsgeschichte. */
 html[data-theme="natur"] .chapters-heading::before{
   content:''; display:inline-block; width:34px; height:34px; margin-right:12px;
   vertical-align:-11px;
   background:url('/assets/material/objekt-rinde.webp') center/contain no-repeat;
-  mix-blend-mode:multiply;
+  filter:drop-shadow(2px 4px 6px rgba(43,36,26,.25));
 }
 /* Das Moos wächst am Feld-Album. */
 html[data-theme="natur"] .album summary::before{
   content:''; display:inline-block; width:30px; height:30px; margin-right:10px;
   vertical-align:-9px;
   background:url('/assets/material/objekt-moos.webp') center/contain no-repeat;
-  mix-blend-mode:multiply;
+  filter:drop-shadow(2px 4px 6px rgba(43,36,26,.25));
 }
 /* Das Fell liegt unter dem Ereignis-Banner (dunkle Deckschicht bleibt). */
 html[data-theme="natur"] .event-banner{
@@ -304,5 +313,6 @@ html[data-theme="natur"] .event-banner{
 html[data-theme="natur"] .sticks-row::after{
   content:''; display:inline-block; width:44px; height:44px; margin-left:16px;
   background:url('/assets/material/astragal.webp') center/contain no-repeat;
-  mix-blend-mode:multiply; transform:rotate(-10deg); align-self:flex-end;
+  transform:rotate(-10deg); align-self:flex-end;
+  filter:drop-shadow(2px 5px 7px rgba(43,36,26,.28));
 }
