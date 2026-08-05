@@ -664,10 +664,9 @@ function renderTageslage(today: Today) {
   if (today.explain?.length) {
     const jump = document.createElement('p'); jump.className = 'explain-jump';
     const a = document.createElement('a'); a.href = '#explaincard';
-    a.textContent = 'Was bedeutet das alles? → Erklärungen unter „Für dich"';
+    a.textContent = 'Was bedeutet das alles? ↓ Erklärungen weiter unten';
     a.addEventListener('click', (ev) => {
       ev.preventDefault();
-      switchView('fuerdich');
       const d = document.getElementById('erklaerungen-det') as HTMLDetailsElement | null;
       if (d) d.open = true;
       document.getElementById('explaincard')?.scrollIntoView({ block: 'start' });
@@ -1176,11 +1175,6 @@ function initViewNav() {
       window.scrollTo({ top: 0 });
     });
   });
-}
-
-function switchView(view: string) {
-  const btn = document.querySelector<HTMLButtonElement>(`.view-nav button[data-view="${view}"]`);
-  btn?.click();
 }
 
 async function init() {
