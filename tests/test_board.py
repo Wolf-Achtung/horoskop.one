@@ -449,6 +449,30 @@ class TestShareImageAndSticks:
             assert f"stab-fall-{i}.webp" in css, i
 
 
+class TestErklaerungenUndNickname:
+    def _src(self):
+        import pathlib
+        return (pathlib.Path(__file__).parent.parent / "src" / "board.ts").read_text(encoding="utf-8")
+
+    def test_explanation_blocks_live_inside_the_disclosure(self):
+        # Die Blöcke hingen am Container statt am <details> und standen
+        # deshalb immer offen da.
+        src = self._src()
+        assert "det.appendChild(block);" in src
+        assert "el.appendChild(block);" not in src
+
+    def test_explanations_renamed(self):
+        src = self._src()
+        assert "Woher kommen die Zeichen?" in src
+        assert "Was bedeutet das alles?" not in src
+
+    def test_nickname_is_asked_and_editable(self):
+        src = self._src()
+        assert "'ob-nick'" in src          # beim Einstieg
+        assert "nick.id = 'nickname'" in src   # später im Profil änderbar
+        assert "${meName(state)} & " in src    # steht vor jeder Resonanz
+
+
 class TestExplanations:
     def test_today_carries_four_explanations(self):
         data = client.get("/board/today").json()

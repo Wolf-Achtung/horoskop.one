@@ -9,7 +9,8 @@
 type Positions = Record<string, number>;
 type Chapter = { day: number; stone: string; to: number; text: string;
                  chips: string[]; fieldName?: string };
-type Profile = { birthDate: string; birthPlace?: string; birthTime?: string };
+type Profile = { birthDate: string; birthPlace?: string; birthTime?: string;
+                 nickname?: string };
 type Gespuer = { boardId: string; guessed: number; right: number };
 type Resonanz = { date: string; partnerDate: string; text: string; chips: string[] };
 type Person = { name: string; date: string; profil?: ProfilBlock[]; lastReading?: Resonanz };
@@ -186,7 +187,12 @@ async function renderStarTwins(profile: Profile) {
 
 // --- Profil-Karte ----------------------------------------------------------
 
-async function renderProfil(state: BoardState) {
+/** Wie das Orakel dich anspricht — ohne Namen bleibt es beim schlichten „Du". */
+function meName(state: BoardState): string {
+  return state.profile?.nickname?.trim() || 'Du';
+}
+
+async function renderProfil(state: BoardState, today: Today) {
   const el = document.getElementById('profil');
   if (!el || !state.profile) return;
   if (!state.profil || state.profil.birthDate !== state.profile.birthDate) {
@@ -202,6 +208,31 @@ async function renderProfil(state: BoardState) {
   const sum = document.createElement('summary'); sum.className = 'resonanz-summary';
   sum.textContent = '✦ Dein Profil — was deine Zeichen über dich erzählen';
   det.appendChild(sum);
+
+  // Dein Name — steht später vor jeder Resonanz („Wolf & kessi").
+  const nickRow = document.createElement('div'); nickRow.className = 'nick-row';
+  const nickLab = document.createElement('label');
+  nickLab.htmlFor = 'nickname'; nickLab.textContent = 'Wie sollen wir dich nennen?';
+  const nick = document.createElement('input');
+  nick.type = 'text'; nick.id = 'nickname'; nick.maxLength = 24;
+  nick.placeholder = 'dein Name oder Spitzname';
+  nick.value = state.profile.nickname || '';
+  const nickHint = document.createElement('span'); nickHint.className = 'nick-saved';
+  nickHint.hidden = true; nickHint.textContent = 'gespeichert ✓';
+  const speichern = () => {
+    const v = nick.value.trim();
+    if ((state.profile!.nickname || '') === v) return;
+    state.profile!.nickname = v || undefined;
+    saveState(state);
+    nickHint.hidden = false;
+    window.setTimeout(() => { nickHint.hidden = true; }, 1800);
+    renderMenschen(state, today);        // Überschrift „Du & …" mitziehen
+  };
+  nick.addEventListener('change', speichern);
+  nick.addEventListener('blur', speichern);
+  nickRow.append(nickLab, nick, nickHint);
+  det.appendChild(nickRow);
+
   for (const b of state.profil.blocks) {
     const block = document.createElement('div'); block.className = 'explain-block';
     const t = document.createElement('h3'); t.textContent = b.title;
@@ -313,9 +344,13 @@ function renderMenschen(state: BoardState, today: Today, selected = -1) {
     const out = document.createElement('div'); out.className = 'resonanz-out';
     det.appendChild(out);
     const h = document.createElement('h3'); h.className = 'person-heading';
-    h.textContent = `Du & ${person.name || person.date}`;
+    h.textContent = `${meName(state)} & ${person.name || person.date}`;
     out.appendChild(h);
 
+    // Zwei verschiedene Zeitebenen — das muss man sehen können.
+    const lblFest = document.createElement('p'); lblFest.className = 'resonanz-part';
+    lblFest.textContent = 'Eure Zeichen — das bleibt';
+    out.appendChild(lblFest);
     const blocksWrap = document.createElement('div');
     out.appendChild(blocksWrap);
     const renderBlocks = (blocks: ProfilBlock[]) => {
@@ -336,6 +371,9 @@ function renderMenschen(state: BoardState, today: Today, selected = -1) {
         .catch(() => {});
     }
 
+    const lblHeute = document.createElement('p'); lblHeute.className = 'resonanz-part';
+    lblHeute.textContent = 'Zwischen euch heute — jeden Tag neu';
+    out.appendChild(lblHeute);
     const daily = document.createElement('div');
     out.appendChild(daily);
     if (person.lastReading && person.lastReading.date === today.date) {
@@ -664,7 +702,7 @@ function renderTageslage(today: Today) {
   if (today.explain?.length) {
     const jump = document.createElement('p'); jump.className = 'explain-jump';
     const a = document.createElement('a'); a.href = '#explaincard';
-    a.textContent = 'Was bedeutet das alles? ↓ Erklärungen weiter unten';
+    a.textContent = 'Woher kommen die Zeichen? ↓ Nachlesen weiter unten';
     a.addEventListener('click', (ev) => {
       ev.preventDefault();
       const d = document.getElementById('erklaerungen-det') as HTMLDetailsElement | null;
@@ -684,7 +722,7 @@ function renderExplainCard(today: Today) {
   (el as HTMLElement).hidden = false;
   const det = document.createElement('details'); det.id = 'erklaerungen-det';
   const h = document.createElement('summary'); h.className = 'explain-heading';
-  h.textContent = 'Was bedeutet das alles?';
+  h.textContent = 'Woher kommen die Zeichen?';
   det.appendChild(h);
   const intro = document.createElement('p'); intro.className = 'explain-intro';
   intro.textContent = 'Die vier Elemente der heutigen Tageslage — woher sie kommen, '
@@ -705,7 +743,7 @@ function renderExplainCard(today: Today) {
       a.textContent = 'Mehr im Methoden-Lexikon →';
       block.appendChild(a);
     }
-    el.appendChild(block);
+    det.appendChild(block);   // in die Klappe, sonst steht alles immer offen da
   }
 }
 
@@ -822,6 +860,8 @@ function renderOnboarding(today: Today, onDone: (p: Profile) => void) {
   };
   const d = mk('Geburtsdatum *', 'date', 'ob-date', true, true);
   d.max = new Date().toISOString().slice(0, 10); // Fehler vermeiden: keine Zukunft
+  const n = mk('Wie sollen wir dich nennen? (optional)', 'text', 'ob-nick', false);
+  n.maxLength = 24; n.placeholder = 'dein Name oder Spitzname';
   const p = mk('Geburtsort (optional)', 'text', 'ob-place', false);
   const t = mk('Geburtszeit (optional — die wenigsten kennen sie)', 'time', 'ob-time', false);
   const err = document.createElement('p'); err.className = 'form-error';
@@ -841,7 +881,8 @@ function renderOnboarding(today: Today, onDone: (p: Profile) => void) {
       return;
     }
     const [y, m, dd] = d.value.split('-');
-    onDone({ birthDate: `${dd}.${m}.${y}`, birthPlace: p.value.trim() || undefined, birthTime: t.value || undefined });
+    onDone({ birthDate: `${dd}.${m}.${y}`, birthPlace: p.value.trim() || undefined,
+             birthTime: t.value || undefined, nickname: n.value.trim() || undefined });
   });
   d.addEventListener('input', () => {
     if (d.value) {
@@ -1100,7 +1141,7 @@ async function startDay(state: BoardState, today: Today) {
   await catchUp(state, today);
   renderChapters(state, today);
   renderAlbum(state);
-  renderProfil(state);
+  renderProfil(state, today);
   renderMenschen(state, today);
   renderWochenlesung(state, today);
 
