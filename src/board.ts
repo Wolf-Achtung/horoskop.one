@@ -56,6 +56,10 @@ const STONE_META: Record<string, { glyph: string; color: string }> = {
 const SPECIAL_FIELDS: Record<number, string> = {
   15: '⟲', 26: '✶', 27: '≈', 28: '☰', 29: '☉', 30: '⌂',
 };
+// Naturgrund-Theme: die fotografierten Pigmentsteine
+const STONE_IMG: Record<string, string> = {
+  fokus: 'ocker', werk: 'graphit', liebe: 'rost', kraft: 'moos', geist: 'umbra',
+};
 // Was die fünf Lebensbereiche alles abdecken — als Tooltip an jedem Stein
 // und als aufklappbare Erklärung bei der Zugwahl.
 const STONE_DESC: Record<string, string> = {
@@ -487,6 +491,8 @@ function renderBoard(positions: Positions, today: Today, legal: Record<string, n
   const NS = 'http://www.w3.org/2000/svg';
   const svg = document.createElementNS(NS, 'svg');
   svg.setAttribute('viewBox', `0 0 ${CW * 10} ${CH * 3}`);
+  const defs = document.createElementNS(NS, 'defs');
+  svg.appendChild(defs);
 
   for (let n = 1; n <= 30; n++) {
     const [x, y] = fieldXY(n);
@@ -536,16 +542,41 @@ function renderBoard(positions: Positions, today: Today, legal: Record<string, n
       const meta = STONE_META[stone];
       const cls = ['stone'];
       if (legal && legal[stone] !== undefined) cls.push('stone-legal');
-      const c = document.createElementNS(NS, 'circle');
-      c.setAttribute('cx', String(cx)); c.setAttribute('cy', String(cy)); c.setAttribute('r', '17');
-      c.setAttribute('fill', meta.color); c.setAttribute('class', cls.join(' '));
-      if (legal && legal[stone] !== undefined && onPick) c.addEventListener('click', () => onPick(stone));
-      svg.appendChild(c);
-      const t = document.createElementNS(NS, 'text');
-      t.setAttribute('x', String(cx)); t.setAttribute('y', String(cy + 5));
-      t.setAttribute('text-anchor', 'middle'); t.setAttribute('class', 'stone-label');
-      t.textContent = meta.glyph;
-      svg.appendChild(t);
+      const clickable = !!(legal && legal[stone] !== undefined && onPick);
+      if (isNatur()) {
+        // Der echte Pigmentstein, rund beschnitten — die Ritzungen sichtbar.
+        const cid = `steinclip-${f}-${stone}`;
+        const cp = document.createElementNS(NS, 'clipPath'); cp.setAttribute('id', cid);
+        const cc = document.createElementNS(NS, 'circle');
+        cc.setAttribute('cx', String(cx)); cc.setAttribute('cy', String(cy));
+        cc.setAttribute('r', '20');
+        cp.appendChild(cc); defs.appendChild(cp);
+        const img = document.createElementNS(NS, 'image');
+        img.setAttribute('href', `/assets/material/stein-${STONE_IMG[stone]}.webp`);
+        img.setAttribute('x', String(cx - 21)); img.setAttribute('y', String(cy - 21));
+        img.setAttribute('width', '42'); img.setAttribute('height', '42');
+        img.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+        img.setAttribute('clip-path', `url(#${cid})`);
+        img.setAttribute('class', cls.join(' '));
+        if (clickable) img.addEventListener('click', () => onPick!(stone));
+        svg.appendChild(img);
+        const ring = document.createElementNS(NS, 'circle');
+        ring.setAttribute('cx', String(cx)); ring.setAttribute('cy', String(cy));
+        ring.setAttribute('r', '20'); ring.setAttribute('fill', 'none');
+        ring.setAttribute('class', 'stone-ring');
+        svg.appendChild(ring);
+      } else {
+        const c = document.createElementNS(NS, 'circle');
+        c.setAttribute('cx', String(cx)); c.setAttribute('cy', String(cy)); c.setAttribute('r', '17');
+        c.setAttribute('fill', meta.color); c.setAttribute('class', cls.join(' '));
+        if (clickable) c.addEventListener('click', () => onPick!(stone));
+        svg.appendChild(c);
+        const t = document.createElementNS(NS, 'text');
+        t.setAttribute('x', String(cx)); t.setAttribute('y', String(cy + 5));
+        t.setAttribute('text-anchor', 'middle'); t.setAttribute('class', 'stone-label');
+        t.textContent = meta.glyph;
+        svg.appendChild(t);
+      }
     });
   }
   const wrap = $('board-wrap'); wrap.innerHTML = ''; wrap.appendChild(svg);
