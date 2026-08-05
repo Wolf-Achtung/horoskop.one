@@ -178,13 +178,38 @@ html[data-theme="natur"] .stick{
   background-size:contain !important;
   filter:drop-shadow(2px 4px 5px rgba(43,36,26,.3));
 }
-html[data-theme="natur"] .stick[data-i="1"]{background-image:url('/assets/material/stab-1.webp') !important}
-html[data-theme="natur"] .stick[data-i="2"]{background-image:url('/assets/material/stab-2.webp') !important}
-html[data-theme="natur"] .stick[data-i="3"]{background-image:url('/assets/material/stab-3.webp') !important}
-html[data-theme="natur"] .stick[data-i="4"]{background-image:url('/assets/material/stab-4.webp') !important}
-/* dunkle Seite oben = Stab „gedreht" */
+/* Die Fotoserie enthält beide Seiten: stab-1 und stab-3 zeigen die helle
+   Knochenseite, stab-2 und stab-4 die dunkle Holzseite. Welches Foto ein
+   Stab trägt, muss darum am Wurf hängen und nicht an seiner Position —
+   sonst lägen Stäbe 2 und 4 immer dunkel da, egal was geworfen wurde.
+   Der Wechsel zwischen den beiden Aufnahmen je Seite hält sie unterscheidbar. */
+html[data-theme="natur"] .stick.light[data-i="1"],
+html[data-theme="natur"] .stick.light[data-i="3"]{background-image:url('/assets/material/stab-1.webp') !important}
+html[data-theme="natur"] .stick.light[data-i="2"],
+html[data-theme="natur"] .stick.light[data-i="4"]{background-image:url('/assets/material/stab-3.webp') !important}
+html[data-theme="natur"] .stick:not(.light)[data-i="1"],
+html[data-theme="natur"] .stick:not(.light)[data-i="3"]{background-image:url('/assets/material/stab-2.webp') !important}
+html[data-theme="natur"] .stick:not(.light)[data-i="2"],
+html[data-theme="natur"] .stick:not(.light)[data-i="4"]{background-image:url('/assets/material/stab-4.webp') !important}
+/* Die dunklen Aufnahmen sind schon dunkel — nur ein Hauch mehr Tiefe. */
 html[data-theme="natur"] .stick:not(.light){
-  filter:brightness(.5) saturate(.75) contrast(1.05) drop-shadow(2px 4px 5px rgba(43,36,26,.3));
+  filter:brightness(.92) saturate(.9) drop-shadow(2px 4px 5px rgba(43,36,26,.3));
+}
+/* Im Flug: die zweite Fotoserie — dieselben Stäbe, mitten in der Luft
+   aufgenommen, runder und plastischer. Hell/dunkel bleibt hier neutral,
+   das Ergebnis zeigt sich erst beim Aufkommen. */
+html[data-theme="natur"] .sticks-row.tossing .stick{
+  filter:drop-shadow(3px 7px 9px rgba(43,36,26,.32)) !important;
+}
+html[data-theme="natur"] .sticks-row.tossing .stick[data-i="1"]{background-image:url('/assets/material/stab-fall-1.webp') !important}
+html[data-theme="natur"] .sticks-row.tossing .stick[data-i="2"]{background-image:url('/assets/material/stab-fall-2.webp') !important}
+html[data-theme="natur"] .sticks-row.tossing .stick[data-i="3"]{background-image:url('/assets/material/stab-fall-3.webp') !important}
+html[data-theme="natur"] .sticks-row.tossing .stick[data-i="4"]{background-image:url('/assets/material/stab-fall-4.webp') !important}
+@media (prefers-reduced-motion: reduce){
+  html[data-theme="natur"] .sticks-row.tossing .stick[data-i="1"]{background-image:url('/assets/material/stab-1.webp') !important}
+  html[data-theme="natur"] .sticks-row.tossing .stick[data-i="2"]{background-image:url('/assets/material/stab-2.webp') !important}
+  html[data-theme="natur"] .sticks-row.tossing .stick[data-i="3"]{background-image:url('/assets/material/stab-3.webp') !important}
+  html[data-theme="natur"] .sticks-row.tossing .stick[data-i="4"]{background-image:url('/assets/material/stab-4.webp') !important}
 }
 
 /* --- Knöpfe: Rost als warmer Akzent -------------------------------- */
