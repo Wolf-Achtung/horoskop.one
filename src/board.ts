@@ -166,9 +166,11 @@ async function renderStarTwins(profile: Profile) {
   } catch { return; }
   if (!twins.length) return;
   el.innerHTML = '';
+  const det = document.createElement('details'); det.className = 'startwins-det';
+  const sum = document.createElement('summary');
+  sum.textContent = '✦ Deine Sternzwillinge';
+  det.appendChild(sum);
   const line = document.createElement('p'); line.className = 'startwins-line';
-  const star = document.createElement('b'); star.textContent = '✦ Deine Sternzwillinge: ';
-  line.appendChild(star);
   const names = twins.map(t => `${t.name} (${t.known}, *${t.year})`).join(' · ');
   line.appendChild(document.createTextNode(names
     + (twins.length === 1 ? ' hat' : ' haben') + ' am selben Tag Geburtstag wie du.'));
@@ -178,7 +180,8 @@ async function renderStarTwins(profile: Profile) {
     jw.textContent = ` ${same.name} sogar im selben Jahr — dein Jahrgangszwilling!`;
     line.appendChild(jw);
   }
-  el.appendChild(line);
+  det.appendChild(line);
+  el.appendChild(det);
 }
 
 // --- Profil-Karte ----------------------------------------------------------
@@ -660,8 +663,12 @@ function renderTageslage(today: Today) {
   // bleibt ein Sprunglink als Wegweiser.
   if (today.explain?.length) {
     const jump = document.createElement('p'); jump.className = 'explain-jump';
-    const a = document.createElement('a'); a.href = '#erklaerungen';
+    const a = document.createElement('a'); a.href = '#explaincard';
     a.textContent = 'Was bedeutet das alles? ↓ Erklärungen am Seitenende';
+    a.addEventListener('click', () => {
+      const d = document.getElementById('erklaerungen-det') as HTMLDetailsElement | null;
+      if (d) d.open = true;
+    });
     jump.appendChild(a);
     el.appendChild(jump);
     renderExplainCard(today);
@@ -673,14 +680,15 @@ function renderExplainCard(today: Today) {
   if (!el || !today.explain?.length) return;
   el.innerHTML = '';
   (el as HTMLElement).hidden = false;
-  const step = document.createElement('h2'); step.className = 'card-step';
-  step.textContent = 'Zum Nachlesen';
-  const h = document.createElement('h3'); h.className = 'explain-heading';
+  const det = document.createElement('details'); det.id = 'erklaerungen-det';
+  const h = document.createElement('summary'); h.className = 'explain-heading';
   h.textContent = 'Was bedeutet das alles?';
+  det.appendChild(h);
   const intro = document.createElement('p'); intro.className = 'explain-intro';
   intro.textContent = 'Die vier Elemente der heutigen Tageslage — woher sie kommen, '
     + 'wer sie nutzt und was sie heute sagen.';
-  el.append(step, h, intro);
+  det.appendChild(intro);
+  el.appendChild(det);
   for (const ex of today.explain) {
     const block = document.createElement('div'); block.className = 'explain-block';
     const t = document.createElement('h3'); t.textContent = ex.title;
@@ -720,9 +728,12 @@ function todaysImpuls(state: BoardState, today: Today): string | null {
 function renderChapters(state: BoardState, today: Today) {
   const el = $('chapters'); el.innerHTML = '';
   if (!state.chapters.length) return;
-  const h = document.createElement('h2'); h.className = 'chapters-heading';
-  h.textContent = 'Deine Monatsgeschichte';
-  el.appendChild(h);
+  const det = document.createElement('details'); det.className = 'chapters-det';
+  det.open = state.lastPlayedDay >= today.dayIndex; // am Spieltag offen
+  const h = document.createElement('summary'); h.className = 'chapters-heading';
+  h.textContent = `Deine Monatsgeschichte — ${state.chapters.length} ${state.chapters.length === 1 ? 'Kapitel' : 'Kapitel'}`;
+  det.appendChild(h);
+  el.appendChild(det);
   for (const ch of [...state.chapters].reverse().slice(0, 10)) {
     const card = document.createElement('section'); card.className = 'card chapter';
     const day = document.createElement('div'); day.className = 'chapter-day';
@@ -754,7 +765,7 @@ function renderChapters(state: BoardState, today: Today) {
       }
       card.appendChild(chips);
     }
-    el.appendChild(card);
+    det.appendChild(card);
   }
 }
 
@@ -775,14 +786,19 @@ function shareText(state: BoardState, today: Today): string {
 
 // --- Aktionsbereich --------------------------------------------------------
 
-function actionStep(el: HTMLElement, sub?: string) {
+function actionStep(el: HTMLElement, sub?: string, where?: string) {
   const step = document.createElement('h2'); step.className = 'card-step';
   step.textContent = 'Dein Zug';
+  el.appendChild(step);
+  if (where) {
+    const w = document.createElement('p'); w.className = 'step-where';
+    w.textContent = where;
+    el.appendChild(w);
+  }
   if (sub) {
     const s = document.createElement('span'); s.className = 'step-sub'; s.textContent = sub;
     step.appendChild(s);
   }
-  el.appendChild(step);
 }
 
 function renderOnboarding(today: Today, onDone: (p: Profile) => void) {
@@ -872,7 +888,7 @@ function eventBanner(event: BoardEvent): HTMLElement {
 function renderThrowIntro(gespuer: Gespuer | undefined, event: BoardEvent | null,
                           onThrow: (guess: Guess) => void) {
   const el = $('action'); el.innerHTML = '';
-  actionStep(el, 'Vier Wurfstäbe entscheiden, wie weit du heute ziehst. Hast du eine Vorahnung, wie sie fallen?');
+  actionStep(el, 'Vier Wurfstäbe entscheiden, wie weit du heute ziehst.', 'Schritt 1 von 2 — tippe deine Vorahnung');
   const wrap = document.createElement('div'); wrap.className = 'throw-intro';
   if (event) wrap.appendChild(eventBanner(event));
   wrap.appendChild(sticksRow(null, false));
@@ -908,7 +924,7 @@ function renderThrowChoices(today: Today, t: ThrowData, useAlt: boolean,
                             onSwitch: (useAlt: boolean) => void,
                             guess: Guess, gespuer: Gespuer | undefined) {
   const el = $('action'); el.innerHTML = '';
-  actionStep(el, 'Die Stäbe sind gefallen. Du triffst genau eine Entscheidung pro Tag: Welcher Lebensbereich geht diesen Weg?');
+  actionStep(el, 'Die Stäbe sind gefallen. Eine Entscheidung pro Tag: Welcher Lebensbereich geht diesen Weg?', 'Schritt 2 von 2 — wähle deinen Bereich');
   if (t.event) el.appendChild(eventBanner(t.event));
   const shownThrow = useAlt && t.alt ? t.alt.throw : t.throw;
   const legal = useAlt && t.alt ? t.alt.legalMoves : t.legalMoves;
@@ -981,7 +997,7 @@ function renderThrowChoices(today: Today, t: ThrowData, useAlt: boolean,
 
 function renderPlayed(state: BoardState, today: Today) {
   const el = $('action'); el.innerHTML = '';
-  actionStep(el);
+  actionStep(el, undefined, 'Für heute erledigt ✓ — morgen wirft das Orakel neu');
   const p = document.createElement('p');
   p.textContent = '✓ Dein Zug für heute ist gemacht — die Deutung steht unten in deiner Monatsgeschichte.';
   el.appendChild(p);
