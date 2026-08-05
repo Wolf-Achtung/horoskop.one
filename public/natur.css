@@ -13,30 +13,30 @@ html[data-theme="natur"], html[data-theme="natur"] body{
 /* Die weiße Galerie-Wand: gefundene Objekte im Leerraum, multiply
    verschmilzt ihren Weißgrund mit der Wand. Nur Desktop — mobil bleibt
    die Wand leer und die Objekte leben im Inhalt (Steine, Stäbe). */
-@media (min-width: 1200px){
+@media (min-width: 1320px){
   html[data-theme="natur"]::before{
-    content:''; position:fixed; left:3vw; top:7vh; width:150px; height:150px;
+    content:''; position:fixed; left:2vw; top:6vh; width:170px; height:170px;
     background:url('/assets/material/objekt-feder.webp') center/contain no-repeat;
-    mix-blend-mode:multiply; opacity:.85; transform:rotate(-24deg);
-    pointer-events:none; z-index:-1;
+    mix-blend-mode:multiply; opacity:.95; transform:rotate(-24deg);
+    pointer-events:none; z-index:0;
   }
   html[data-theme="natur"]::after{
-    content:''; position:fixed; left:2vw; bottom:6vh; width:120px; height:340px;
+    content:''; position:fixed; left:1.5vw; bottom:5vh; width:130px; height:380px;
     background:url('/assets/material/objekt-ast.webp') center/contain no-repeat;
-    mix-blend-mode:multiply; opacity:.8; transform:rotate(6deg);
-    pointer-events:none; z-index:-1;
+    mix-blend-mode:multiply; opacity:.9; transform:rotate(6deg);
+    pointer-events:none; z-index:0;
   }
   html[data-theme="natur"] body::before{
-    content:''; position:fixed; right:2vw; bottom:4vh; width:240px; height:290px;
+    content:''; position:fixed; right:1.5vw; bottom:3vh; width:250px; height:300px;
     background:url('/assets/material/objekt-wurzel.webp') center/contain no-repeat;
-    mix-blend-mode:multiply; opacity:.85; transform:rotate(-4deg);
-    pointer-events:none; z-index:-1;
+    mix-blend-mode:multiply; opacity:.95; transform:rotate(-4deg);
+    pointer-events:none; z-index:0;
   }
   html[data-theme="natur"] body::after{
-    content:''; position:fixed; right:4vw; top:9vh; width:190px; height:260px;
+    content:''; position:fixed; right:3vw; top:8vh; width:200px; height:270px;
     background:url('/assets/material/orakelknochen.webp') center/contain no-repeat;
-    mix-blend-mode:multiply; opacity:.7; transform:rotate(7deg);
-    pointer-events:none; z-index:-1;
+    mix-blend-mode:multiply; opacity:.85; transform:rotate(7deg);
+    pointer-events:none; z-index:0;
   }
 }
 /* Lesetext: Buchserife statt UI-Schrift. */
@@ -83,15 +83,15 @@ html[data-theme="natur"] .board-container .card{
 }
 /* Drei verschiedene handgezogene Rahmen + Kippungen im Wechsel */
 html[data-theme="natur"] .board-container .card:nth-of-type(3n+1){
-  border-radius:255px 10px 245px 12px / 12px 240px 10px 250px;
+  border-radius:8px 26px 10px 30px / 30px 10px 26px 8px;
   transform:rotate(-.35deg);
 }
 html[data-theme="natur"] .board-container .card:nth-of-type(3n+2){
-  border-radius:14px 230px 12px 250px / 245px 12px 235px 10px;
+  border-radius:28px 8px 24px 10px / 10px 28px 8px 24px;
   transform:rotate(.3deg);
 }
 html[data-theme="natur"] .board-container .card:nth-of-type(3n){
-  border-radius:225px 245px 10px 235px / 10px 235px 250px 12px;
+  border-radius:12px 22px 14px 26px / 24px 12px 26px 10px;
   transform:rotate(-.15deg);
 }
 /* Das Brett bekommt den Knochengrund — jedes Material hat EINE Heimat. */
@@ -270,3 +270,39 @@ html[data-theme="natur"] .site-footer::before{
   mix-blend-mode:multiply; opacity:.7;
 }
 html[data-theme="natur"] ::selection{background:#8a5a28; color:#f4ead8}
+
+/* --- Objekte im Inhalt (alle Bildschirmgrößen) --------------------- */
+/* Die Feder liegt neben der Wortmarke. */
+html[data-theme="natur"] .site-header .brand{position:relative}
+html[data-theme="natur"] .site-header .brand strong::after{
+  content:''; display:inline-block; width:52px; height:52px; margin-left:14px;
+  vertical-align:-14px;
+  background:url('/assets/material/objekt-feder.webp') center/contain no-repeat;
+  mix-blend-mode:multiply; transform:rotate(-18deg);
+}
+/* Die Rinde eröffnet die Monatsgeschichte. */
+html[data-theme="natur"] .chapters-heading::before{
+  content:''; display:inline-block; width:34px; height:34px; margin-right:12px;
+  vertical-align:-11px;
+  background:url('/assets/material/objekt-rinde.webp') center/contain no-repeat;
+  mix-blend-mode:multiply;
+}
+/* Das Moos wächst am Feld-Album. */
+html[data-theme="natur"] .album summary::before{
+  content:''; display:inline-block; width:30px; height:30px; margin-right:10px;
+  vertical-align:-9px;
+  background:url('/assets/material/objekt-moos.webp') center/contain no-repeat;
+  mix-blend-mode:multiply;
+}
+/* Das Fell liegt unter dem Ereignis-Banner (dunkle Deckschicht bleibt). */
+html[data-theme="natur"] .event-banner{
+  background:
+    linear-gradient(rgba(28,14,6,.5), rgba(28,14,6,.5)),
+    url('/assets/material/objekt-fell.webp') center/cover !important;
+}
+/* Der Astragal begleitet die Wurfstäbe im Ritual. */
+html[data-theme="natur"] .sticks-row::after{
+  content:''; display:inline-block; width:44px; height:44px; margin-left:16px;
+  background:url('/assets/material/astragal.webp') center/contain no-repeat;
+  mix-blend-mode:multiply; transform:rotate(-10deg); align-self:flex-end;
+}
