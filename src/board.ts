@@ -664,10 +664,13 @@ function renderTageslage(today: Today) {
   if (today.explain?.length) {
     const jump = document.createElement('p'); jump.className = 'explain-jump';
     const a = document.createElement('a'); a.href = '#explaincard';
-    a.textContent = 'Was bedeutet das alles? ↓ Erklärungen am Seitenende';
-    a.addEventListener('click', () => {
+    a.textContent = 'Was bedeutet das alles? → Erklärungen unter „Für dich"';
+    a.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      switchView('fuerdich');
       const d = document.getElementById('erklaerungen-det') as HTMLDetailsElement | null;
       if (d) d.open = true;
+      document.getElementById('explaincard')?.scrollIntoView({ block: 'start' });
     });
     jump.appendChild(a);
     el.appendChild(jump);
@@ -998,9 +1001,19 @@ function renderThrowChoices(today: Today, t: ThrowData, useAlt: boolean,
 function renderPlayed(state: BoardState, today: Today) {
   const el = $('action'); el.innerHTML = '';
   actionStep(el, undefined, 'Für heute erledigt ✓ — morgen wirft das Orakel neu');
-  const p = document.createElement('p');
-  p.textContent = '✓ Dein Zug für heute ist gemacht — die Deutung steht unten in deiner Monatsgeschichte.';
-  el.appendChild(p);
+  const todayCh = [...state.chapters].reverse().find(c => c.day === today.dayIndex);
+  if (todayCh) {
+    const head = document.createElement('h3');
+    const label = today.stones[todayCh.stone] || todayCh.stone;
+    head.textContent = todayCh.to === 31
+      ? `${label} zieht aus ins Binsengefilde`
+      : `${label} zieht auf Feld ${todayCh.to}${todayCh.fieldName ? ' · ' + todayCh.fieldName : ''}`;
+    el.appendChild(head);
+    const { body } = splitImpuls(todayCh.text);
+    const txt = document.createElement('p'); txt.className = 'chapter-text';
+    txt.textContent = body;
+    el.appendChild(txt);
+  }
   const impuls = todaysImpuls(state, today);
   if (impuls) {
     const hero = document.createElement('div'); hero.className = 'impuls-hero';
@@ -1152,8 +1165,27 @@ function isNatur(): boolean {
   return document.documentElement.dataset.theme === 'natur';
 }
 
+function initViewNav() {
+  const root = document.documentElement;
+  if (!root.dataset.view) root.dataset.view = 'heute';
+  document.querySelectorAll<HTMLButtonElement>('.view-nav button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      root.dataset.view = btn.dataset.view || 'heute';
+      document.querySelectorAll<HTMLButtonElement>('.view-nav button').forEach(b =>
+        b.setAttribute('aria-current', b === btn ? 'true' : 'false'));
+      window.scrollTo({ top: 0 });
+    });
+  });
+}
+
+function switchView(view: string) {
+  const btn = document.querySelector<HTMLButtonElement>(`.view-nav button[data-view="${view}"]`);
+  btn?.click();
+}
+
 async function init() {
   bootTheme();
+  initViewNav();
   // Service Worker (nur Push/Notification, kein Caching) früh registrieren.
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js').catch(() => {});
