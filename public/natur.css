@@ -309,3 +309,19 @@ html[data-theme="natur"] .sticks-row::after{
   transform:rotate(-10deg); align-self:flex-end;
   filter:drop-shadow(2px 5px 7px rgba(43,36,26,.28));
 }
+
+/* --- Orientierung im Naturgrund ------------------------------------ */
+html[data-theme="natur"] .zone-label{
+  font-family:'IM Fell English', Georgia, serif; font-weight:400;
+  color:#6b4f2a; letter-spacing:.24em;
+}
+html[data-theme="natur"] .zone-label span{
+  font-family:'Cormorant Garamond', Georgia, serif; color:#4a3e2c;
+  font-style:italic;
+}
+html[data-theme="natur"] .zone-label::before{
+  background:linear-gradient(90deg,transparent,rgba(43,36,26,.4),transparent);
+}
+html[data-theme="natur"] .step-where{color:#8a5a28}
+html[data-theme="natur"] .startwins-det summary,
+html[data-theme="natur"] .chapters-det summary{color:#8a5a28}
