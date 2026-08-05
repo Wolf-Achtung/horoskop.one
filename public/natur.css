@@ -7,22 +7,35 @@
    ============================================================ */
 
 html[data-theme="natur"], html[data-theme="natur"] body{
-  background:#eae3d2 url('/assets/material/grund-kalk.webp') repeat !important;
-  background-size:1400px !important;
+  background:#fbfaf7 !important;
   color:#2b241a !important;
 }
-/* Heller Schleier: die Textur tritt zurück, der Inhalt bekommt Ruhe. */
-html[data-theme="natur"] body::before{
-  content:''; position:fixed; inset:0; z-index:-1; pointer-events:none;
-  background:
-    radial-gradient(900px 1200px at 50% 12%, rgba(247,242,231,.78), rgba(247,242,231,.42) 60%, rgba(247,242,231,.28));
-}
-/* Das eine Museumsobjekt im Leerraum: der Orakelknochen, groß und still. */
+/* Die weiße Galerie-Wand: gefundene Objekte im Leerraum, multiply
+   verschmilzt ihren Weißgrund mit der Wand. Nur Desktop — mobil bleibt
+   die Wand leer und die Objekte leben im Inhalt (Steine, Stäbe). */
 @media (min-width: 1200px){
+  html[data-theme="natur"]::before{
+    content:''; position:fixed; left:3vw; top:7vh; width:150px; height:150px;
+    background:url('/assets/material/objekt-feder.webp') center/contain no-repeat;
+    mix-blend-mode:multiply; opacity:.85; transform:rotate(-24deg);
+    pointer-events:none; z-index:-1;
+  }
+  html[data-theme="natur"]::after{
+    content:''; position:fixed; left:2vw; bottom:6vh; width:120px; height:340px;
+    background:url('/assets/material/objekt-ast.webp') center/contain no-repeat;
+    mix-blend-mode:multiply; opacity:.8; transform:rotate(6deg);
+    pointer-events:none; z-index:-1;
+  }
+  html[data-theme="natur"] body::before{
+    content:''; position:fixed; right:2vw; bottom:4vh; width:240px; height:290px;
+    background:url('/assets/material/objekt-wurzel.webp') center/contain no-repeat;
+    mix-blend-mode:multiply; opacity:.85; transform:rotate(-4deg);
+    pointer-events:none; z-index:-1;
+  }
   html[data-theme="natur"] body::after{
-    content:''; position:fixed; right:4vw; top:16vh; width:220px; height:300px;
+    content:''; position:fixed; right:4vw; top:9vh; width:190px; height:260px;
     background:url('/assets/material/orakelknochen.webp') center/contain no-repeat;
-    mix-blend-mode:multiply; opacity:.6; transform:rotate(7deg);
+    mix-blend-mode:multiply; opacity:.7; transform:rotate(7deg);
     pointer-events:none; z-index:-1;
   }
 }
@@ -62,9 +75,9 @@ html[data-theme="natur"] .tageslage-head h2{font-size:34px}
 
 /* --- Karten: Kalkflächen mit Tusche-Rand und Geflecht-Kante ------- */
 html[data-theme="natur"] .board-container .card{
-  background:rgba(253,252,248,.97);
+  background:#fff;
   border:1.3px solid rgba(43,36,26,.5);
-  box-shadow:0 2px 12px rgba(43,36,26,.14);
+  box-shadow:0 2px 14px rgba(43,36,26,.08);
   position:relative;
   overflow:visible;
 }
@@ -84,7 +97,7 @@ html[data-theme="natur"] .board-container .card:nth-of-type(3n){
 /* Das Brett bekommt den Knochengrund — jedes Material hat EINE Heimat. */
 html[data-theme="natur"] .board-card{
   background:
-    linear-gradient(rgba(253,252,248,.82), rgba(253,252,248,.88)),
+    linear-gradient(rgba(255,255,255,.88), rgba(255,255,255,.92)),
     url('/assets/material/grund-knochen.webp') center/900px !important;
 }
 /* Geflecht nur noch EINMAL: als Trennkante unter dem Seitenkopf. */
@@ -218,7 +231,7 @@ html[data-theme="natur"] .stone-label{fill:#f4ead8}
 
 /* --- Album, Erklärungen, Resonanz ---------------------------------- */
 html[data-theme="natur"] .album-tile{
-  background:#fdfcf8; border:none;
+  background:#faf8f2; border:none;
   border-bottom:1.5px solid rgba(43,36,26,.25);
   border-radius:0;
 }
@@ -228,7 +241,7 @@ html[data-theme="natur"] .album-tile.found{
 }
 html[data-theme="natur"] .album-tile.found .album-num{color:#8a5a28}
 html[data-theme="natur"] .explain-block{
-  background:#fdfcf8; border:none;
+  background:#faf8f2; border:none;
   border-left:2.5px solid rgba(138,90,40,.55);
   border-radius:0; padding:14px 16px;
 }
