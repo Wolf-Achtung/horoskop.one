@@ -311,16 +311,22 @@ html[data-theme="natur"] .sticks-row::after{
 }
 
 /* --- Orientierung im Naturgrund ------------------------------------ */
-html[data-theme="natur"] .zone-label{
+html[data-theme="natur"] .view-nav{
+  background:rgba(251,250,247,.94);
+  border-bottom:1px solid rgba(43,36,26,.28);
+}
+html[data-theme="natur"] .view-nav button{
   font-family:'IM Fell English', Georgia, serif; font-weight:400;
-  color:#6b4f2a; letter-spacing:.24em;
+  font-size:16px; letter-spacing:.05em;
+  background:rgba(252,249,242,.85); border:1px solid rgba(43,36,26,.45);
+  border-radius:3px 14px 4px 12px; color:#4a3e2c;
 }
-html[data-theme="natur"] .zone-label span{
-  font-family:'Cormorant Garamond', Georgia, serif; color:#4a3e2c;
-  font-style:italic;
+html[data-theme="natur"] .view-nav button:hover{
+  border-color:#2b241a; color:#2b241a;
 }
-html[data-theme="natur"] .zone-label::before{
-  background:linear-gradient(90deg,transparent,rgba(43,36,26,.4),transparent);
+html[data-theme="natur"] .view-nav button[aria-current="true"]{
+  background:#8a5a28; border-color:#5c3c1a; color:#f4ead8;
+  box-shadow:inset 0 1px 4px rgba(28,14,6,.4);
 }
 html[data-theme="natur"] .step-where{color:#8a5a28}
 html[data-theme="natur"] .startwins-det summary,
