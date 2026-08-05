@@ -1148,13 +1148,19 @@ async function startDay(state: BoardState, today: Today) {
 }
 
 function bootTheme() {
-  // Theme-Weiche: ?theme=natur aktiviert die Materialwelt (LocalStorage
-  // merkt sich die Wahl), ?theme=standard stellt zurück.
+  // Naturgrund ist das Standard-Theme (im HTML gesetzt, kein Aufblitzen).
+  // ?theme=standard stellt aufs alte Theme zurück (LocalStorage merkt
+  // sich die Wahl), ?theme=natur hebt das wieder auf.
   try {
     const q = new URLSearchParams(location.search).get('theme');
-    if (q === 'natur') localStorage.setItem('mondlese_theme', 'natur');
-    if (q === 'standard') localStorage.removeItem('mondlese_theme');
+    if (q === 'standard') localStorage.setItem('mondlese_theme', 'standard');
+    if (q === 'natur') localStorage.removeItem('mondlese_theme');
     if (localStorage.getItem('mondlese_theme') === 'natur') {
+      localStorage.removeItem('mondlese_theme'); // Altlast aus der Testphase
+    }
+    if (localStorage.getItem('mondlese_theme') === 'standard') {
+      delete document.documentElement.dataset.theme;
+    } else {
       document.documentElement.dataset.theme = 'natur';
     }
   } catch {}
