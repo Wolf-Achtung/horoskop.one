@@ -16,11 +16,13 @@ html[data-theme="natur"], html[data-theme="natur"] body{
 @media (min-width: 1320px){
   /* Komposition statt Parkplatz: drei Größenordnungen, zwei Anschnitte.
      Die Freisteller haben echten Alphakanal — Schatten erden sie. */
+  /* Die Feder kommt von oben links in den Raum hinein — freistehend wirkte
+     sie als einziges Objekt klein und verloren. */
   html[data-theme="natur"]::before{
-    content:''; position:fixed; left:2.5vw; top:7vh; width:130px; height:130px;
+    content:''; position:fixed; left:-58px; top:-72px; width:270px; height:270px;
     background:url('/assets/material/objekt-feder.webp') center/contain no-repeat;
-    transform:rotate(-28deg);
-    filter:drop-shadow(4px 10px 14px rgba(43,36,26,.22));
+    transform:rotate(-52deg);
+    filter:drop-shadow(6px 12px 16px rgba(43,36,26,.22));
     pointer-events:none; z-index:0;
   }
   html[data-theme="natur"]::after{
@@ -290,7 +292,12 @@ html[data-theme="natur"] .startwins-line b{color:#8a5a28}
 html[data-theme="natur"] .chapter-title{
   font-family:'IM Fell English', Georgia, serif; font-weight:400;
 }
+html[data-theme="natur"] .resonanz-part{
+  font-family:'IM Fell English', Georgia, serif; font-weight:400;
+  color:#6b4f2a; letter-spacing:.18em;
+}
 html[data-theme="natur"] .onboard-grid input,
+html[data-theme="natur"] .nick-row input,
 html[data-theme="natur"] .resonanz-row input{
   background:rgba(252,249,242,.8); border:1px solid rgba(43,36,26,.45);
   border-radius:3px; color:#2b241a;

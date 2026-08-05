@@ -197,6 +197,16 @@ html, body{
   background:#fffdf7;color:#2b2317;font-size:16px}
 .resonanz-btn{margin-top:0;padding:11px 18px}
 .resonanz-out{margin-top:6px}
+/* Was dauerhaft gilt und was heute gilt, sind zwei verschiedene Dinge. */
+.resonanz-part{margin:18px 0 6px;font-size:12.5px;letter-spacing:.13em;
+  text-transform:uppercase;color:#a9782c;font-weight:700}
+
+/* Dein Name — steht vor jeder Resonanz */
+.nick-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:12px 0 4px}
+.nick-row label{font-size:14.5px;color:#5a4c33}
+.nick-row input{padding:9px 11px;border-radius:10px;border:1px solid #cdb476;
+  background:#fffdf7;color:#2b2317;font-size:16px;max-width:200px}
+.nick-saved{font-size:13.5px;color:#6b7a4a;font-weight:600}
 .resonanz-out .reading-chips{margin-top:10px}
 .resonanz-text{margin:10px 0 0;line-height:1.65;font-size:16px}
 
