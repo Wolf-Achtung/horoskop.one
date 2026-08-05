@@ -85,7 +85,7 @@ html, body{
 @keyframes todayglow{
   0%,100%{filter:drop-shadow(0 0 2px rgba(169,120,44,.35))}
   50%{filter:drop-shadow(0 0 9px rgba(169,120,44,.75))}}
-.cell-num{fill:#a2915f;font-size:11px}
+.cell-num{fill:#7a6a48;font-size:11px}
 .cell-glyph{fill:#8a6420;font-size:19px;font-weight:700}
 .stone{stroke:rgba(60,40,10,.5);stroke-width:1.2;cursor:default}
 .stone-label{fill:#fffaf0;font-size:15px;font-weight:700;pointer-events:none}
@@ -101,7 +101,7 @@ html, body{
   color:#a2915f;min-width:110px}
 .dock-chip{display:inline-flex;align-items:center;gap:6px;font-size:13.5px;
   color:#4a3d26;background:#f7edd3;border:1px solid #dcca9e;border-radius:999px;
-  padding:4px 12px 4px 5px}
+  padding:9px 14px 9px 6px;min-height:44px;box-sizing:border-box}
 .dock-chip .orb{display:inline-flex;align-items:center;justify-content:center;
   width:24px;height:24px;border-radius:50%;color:#fffaf0;font-size:13px;
   border:1px solid rgba(60,40,10,.35)}
@@ -244,4 +244,15 @@ html, body{
 @media(max-width:480px){
   .tageslage-head h2{font-size:24px}
   .hero-wheel{width:140px;height:140px;right:-40px;top:-40px}
+}
+
+/* --- Barrierefreiheit ------------------------------------------------ */
+.form-error{margin:2px 0 0;color:#8a3020;font-size:14.5px;font-weight:600}
+.input-error{border-color:#8a3020 !important;box-shadow:0 0 0 2px rgba(138,48,32,.25)}
+button:focus-visible,a:focus-visible,input:focus-visible,
+summary:focus-visible,.dock-chip:focus-visible{
+  outline:2.5px solid #a9782c;outline-offset:2px;border-radius:4px}
+@media (prefers-reduced-motion: reduce){
+  .cell-today,.stone-legal,.sticks-row.tossing .stick,.hero-wheel,
+  .stone-btn,.btn-primary{animation:none !important;transition:none !important}
 }

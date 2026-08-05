@@ -60,6 +60,9 @@ const SPECIAL_FIELDS: Record<number, string> = {
 const STONE_IMG: Record<string, string> = {
   fokus: 'ocker', werk: 'graphit', liebe: 'rost', kraft: 'moos', geist: 'umbra',
 };
+const STONES_LABELS: Record<string, string> = {
+  fokus: 'Fokus', werk: 'Werk', liebe: 'Liebe', kraft: 'Kraft', geist: 'Geist',
+};
 // Was die fünf Lebensbereiche alles abdecken — als Tooltip an jedem Stein
 // und als aufklappbare Erklärung bei der Zugwahl.
 const STONE_DESC: Record<string, string> = {
@@ -558,6 +561,9 @@ function renderBoard(positions: Positions, today: Today, legal: Record<string, n
         img.setAttribute('preserveAspectRatio', 'xMidYMid slice');
         img.setAttribute('clip-path', `url(#${cid})`);
         img.setAttribute('class', cls.join(' '));
+        const itip = document.createElementNS(NS, 'title');
+        itip.textContent = `${STONES_LABELS[stone] || stone} · Feld ${f}`;
+        img.appendChild(itip);
         if (clickable) img.addEventListener('click', () => onPick!(stone));
         svg.appendChild(img);
         const ring = document.createElementNS(NS, 'circle');
@@ -569,6 +575,9 @@ function renderBoard(positions: Positions, today: Today, legal: Record<string, n
         const c = document.createElementNS(NS, 'circle');
         c.setAttribute('cx', String(cx)); c.setAttribute('cy', String(cy)); c.setAttribute('r', '17');
         c.setAttribute('fill', meta.color); c.setAttribute('class', cls.join(' '));
+        const ctip = document.createElementNS(NS, 'title');
+        ctip.textContent = `${STONES_LABELS[stone] || stone} · Feld ${f}`;
+        c.appendChild(ctip);
         if (clickable) c.addEventListener('click', () => onPick!(stone));
         svg.appendChild(c);
         const t = document.createElementNS(NS, 'text');
@@ -626,7 +635,7 @@ function renderDock(positions: Positions, today: Today,
 function renderTageslage(today: Today) {
   const el = $('tageslage'); el.innerHTML = '';
   const step = document.createElement('h2'); step.className = 'card-step';
-  step.textContent = '1 · Die Tageslage';
+  step.textContent = 'Die Tageslage';
   const head = document.createElement('div'); head.className = 'tageslage-head';
   const h2 = document.createElement('h2');
   if (isNatur()) {
@@ -768,7 +777,7 @@ function shareText(state: BoardState, today: Today): string {
 
 function actionStep(el: HTMLElement, sub?: string) {
   const step = document.createElement('h2'); step.className = 'card-step';
-  step.textContent = '2 · Dein Zug';
+  step.textContent = 'Dein Zug';
   if (sub) {
     const s = document.createElement('span'); s.className = 'step-sub'; s.textContent = sub;
     step.appendChild(s);
@@ -794,18 +803,35 @@ function renderOnboarding(today: Today, onDone: (p: Profile) => void) {
     lab.appendChild(inp); grid.appendChild(lab); return inp;
   };
   const d = mk('Geburtsdatum *', 'date', 'ob-date', true, true);
+  d.max = new Date().toISOString().slice(0, 10); // Fehler vermeiden: keine Zukunft
   const p = mk('Geburtsort (optional)', 'text', 'ob-place', false);
   const t = mk('Geburtszeit (optional — die wenigsten kennen sie)', 'time', 'ob-time', false);
+  const err = document.createElement('p'); err.className = 'form-error';
+  err.id = 'ob-error'; err.hidden = true;
+  err.textContent = 'Bitte gib dein Geburtsdatum ein — nur daraus entsteht dein Wurf.';
   const hint = document.createElement('p'); hint.className = 'onboard-hint';
   hint.textContent = 'Alles bleibt in deinem Browser (Local Storage). Kein Konto, keine Cookies. '
     + 'Das Orakel braucht nur das Datum — Ort und Zeit verfeinern später die Deutung.';
   const btn = document.createElement('button'); btn.className = 'btn-primary'; btn.textContent = 'Das Brett betreten';
   btn.addEventListener('click', () => {
-    if (!d.value) { d.focus(); return; }
+    if (!d.value) {
+      err.hidden = false;
+      d.setAttribute('aria-describedby', 'ob-error');
+      d.setAttribute('aria-invalid', 'true');
+      d.classList.add('input-error');
+      d.focus();
+      return;
+    }
     const [y, m, dd] = d.value.split('-');
     onDone({ birthDate: `${dd}.${m}.${y}`, birthPlace: p.value.trim() || undefined, birthTime: t.value || undefined });
   });
-  el.append(step, h, intro, grid, hint, btn);
+  d.addEventListener('input', () => {
+    if (d.value) {
+      err.hidden = true; d.classList.remove('input-error');
+      d.removeAttribute('aria-invalid');
+    }
+  });
+  el.append(step, h, intro, grid, err, hint, btn);
 }
 
 function setActionMessage(msg: string, sub?: string) {
