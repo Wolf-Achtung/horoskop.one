@@ -168,7 +168,9 @@ html[data-theme="natur"] .stick:not(.light){filter:brightness(.5) saturate(.75) 
 
 /* --- Knöpfe: Rost als warmer Akzent -------------------------------- */
 html[data-theme="natur"] .btn-primary{
-  background:#5a3518 url('/assets/material/rost.webp') center/cover !important;
+  background:
+    linear-gradient(rgba(28,14,6,.38), rgba(28,14,6,.38)),
+    url('/assets/material/rost.webp') center/cover, #5a3518 !important;
   color:#f4ead8 !important; text-shadow:0 1px 3px rgba(0,0,0,.75);
   border:1px solid #3a2312 !important; border-radius:3px !important;
   box-shadow:0 2px 6px rgba(43,36,26,.35) !important;
@@ -179,7 +181,9 @@ html[data-theme="natur"] .btn-ghost{
   color:#3a2f20;
 }
 html[data-theme="natur"] .event-banner{
-  background:url('/assets/material/rost.webp') center/cover !important;
+  background:
+    linear-gradient(rgba(28,14,6,.38), rgba(28,14,6,.38)),
+    url('/assets/material/rost.webp') center/cover !important;
   border:1px solid #3a2312 !important; color:#f4ead8 !important;
   text-shadow:0 1px 3px rgba(0,0,0,.75); border-radius:3px;
 }
