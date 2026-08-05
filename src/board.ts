@@ -877,6 +877,16 @@ function sticksRow(throwVal: number | null, tossing: boolean): HTMLElement {
   return row;
 }
 
+function preloadFallingSticks() {
+  // Die Flugfotos erst laden, wenn das Ritual beginnt — dann liegen sie
+  // im Cache, bevor der Wurf sie braucht.
+  if (!isNatur()) return;
+  for (let i = 1; i <= 4; i++) {
+    const img = new Image();
+    img.src = `/assets/material/stab-fall-${i}.webp`;
+  }
+}
+
 type Guess = 'kurz' | 'weit' | null;
 
 function eventBanner(event: BoardEvent): HTMLElement {
@@ -891,6 +901,7 @@ function renderThrowIntro(gespuer: Gespuer | undefined, event: BoardEvent | null
                           onThrow: (guess: Guess) => void) {
   const el = $('action'); el.innerHTML = '';
   actionStep(el, 'Vier Wurfstäbe entscheiden, wie weit du heute ziehst.', 'Schritt 1 von 2 — tippe deine Vorahnung');
+  preloadFallingSticks();
   const wrap = document.createElement('div'); wrap.className = 'throw-intro';
   if (event) wrap.appendChild(eventBanner(event));
   wrap.appendChild(sticksRow(null, false));
@@ -1121,14 +1132,14 @@ async function startDay(state: BoardState, today: Today) {
           saveState(state);
         }
         const el = $('action'); el.innerHTML = '';
-        actionStep(el);
+        actionStep(el, undefined, 'Die Stäbe fliegen …');
         el.appendChild(sticksRow(t.throw, true));
         const show = (useAlt: boolean) => {
           const legal = useAlt && t.alt ? t.alt.legalMoves : t.legalMoves;
           renderBoard(state.positions, today, legal, s => pick(s, useAlt));
           renderThrowChoices(today, t, useAlt, s => pick(s, useAlt), show, guess, state.gespuer);
         };
-        setTimeout(() => show(false), 1150);
+        setTimeout(() => show(false), 1320);
       });
     async function pick(stone: string, useAlt: boolean) {
       setActionMessage('Der Zug wird gedeutet …');

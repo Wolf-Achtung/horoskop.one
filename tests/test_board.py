@@ -422,6 +422,33 @@ class TestPWAManifest:
         assert (root / "assets" / "apple-touch-icon.png").exists()
 
 
+class TestShareImageAndSticks:
+    def test_og_image_is_referenced_and_present(self):
+        import pathlib, re
+        root = pathlib.Path(__file__).parent.parent / "public"
+        html = (root / "play.html").read_text(encoding="utf-8")
+        m = re.search(r'property="og:image" content="([^"]+)"', html)
+        assert m, "play.html braucht ein og:image"
+        # Absolute URL, damit WhatsApp & Co. das Bild überhaupt laden.
+        assert m.group(1).startswith("https://"), m.group(1)
+        assert (root / "assets" / "og-mondlese.jpg").exists()
+        assert 'name="twitter:card" content="summary_large_image"' in html
+
+    def test_falling_stick_cutouts_exist(self):
+        import pathlib
+        mat = pathlib.Path(__file__).parent.parent / "public" / "assets" / "material"
+        for i in range(1, 5):
+            assert (mat / f"stab-fall-{i}.webp").exists(), i
+            assert (mat / f"stab-{i}.webp").exists(), i
+
+    def test_toss_swaps_to_falling_photos(self):
+        import pathlib
+        css = (pathlib.Path(__file__).parent.parent / "public" / "natur.css").read_text(encoding="utf-8")
+        for i in range(1, 5):
+            assert f".sticks-row.tossing .stick[data-i=\"{i}\"]" in css, i
+            assert f"stab-fall-{i}.webp" in css, i
+
+
 class TestExplanations:
     def test_today_carries_four_explanations(self):
         data = client.get("/board/today").json()
