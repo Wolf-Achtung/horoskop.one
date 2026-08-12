@@ -449,6 +449,24 @@ class TestShareImageAndSticks:
             assert f"stab-fall-{i}.webp" in css, i
 
 
+class TestEinfuehrung:
+    def test_intro_covers_what_how_and_where_from(self):
+        import pathlib
+        html = (pathlib.Path(__file__).parent.parent / "public" / "play.html").read_text(encoding="utf-8")
+        assert 'id="intro-det"' in html
+        assert "Was ist die Mondlese?" in html
+        for ueberschrift in ("Wie es läuft", "Woher das kommt", "Was es nicht ist"):
+            assert ueberschrift in html, ueberschrift
+        assert "Senet" in html            # Herkunft benannt
+        assert "Keine Vorhersage" in html  # und die Grenze auch
+
+    def test_intro_opens_only_on_the_very_first_visit(self):
+        import pathlib
+        src = (pathlib.Path(__file__).parent.parent / "src" / "board.ts").read_text(encoding="utf-8")
+        assert "if (intro) intro.open = true;" in src
+        assert "if (intro) intro.open = false;" in src
+
+
 class TestErklaerungenUndNickname:
     def _src(self):
         import pathlib

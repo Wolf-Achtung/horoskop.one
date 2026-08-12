@@ -201,6 +201,19 @@ html, body{
 .resonanz-part{margin:18px 0 6px;font-size:12.5px;letter-spacing:.13em;
   text-transform:uppercase;color:#a9782c;font-weight:700}
 
+/* Einführung: „Was ist die Mondlese?" */
+.intro-heading{cursor:pointer;font-family:'Cormorant Garamond',Georgia,serif;
+  font-size:21px;font-weight:600;color:#8a6420}
+/* Zugeklappt soll die Zeile schon sagen, was drinsteht. */
+.intro-sub{display:block;margin-left:22px;font-family:inherit;font-size:15px;
+  font-weight:400;font-style:italic;color:#6b5c40}
+.intro-card .intro-lead{margin:12px 0 0;font-size:17.5px;line-height:1.6;
+  color:#3a3020}
+.intro-card h3{margin:20px 0 6px;font-size:12.5px;letter-spacing:.13em;
+  text-transform:uppercase;color:#a9782c;font-weight:700}
+.intro-card p{margin:0 0 10px;line-height:1.68}
+.intro-card details[open] .intro-heading{margin-bottom:2px}
+
 /* Dein Name — steht vor jeder Resonanz */
 .nick-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:12px 0 4px}
 .nick-row label{font-size:14.5px;color:#5a4c33}
