@@ -292,6 +292,17 @@ html[data-theme="natur"] .startwins-line b{color:#8a5a28}
 html[data-theme="natur"] .chapter-title{
   font-family:'IM Fell English', Georgia, serif; font-weight:400;
 }
+html[data-theme="natur"] .intro-heading{
+  font-family:'IM Fell English', Georgia, serif; font-weight:400;
+  font-size:24px; color:#2b241a; letter-spacing:.02em;
+}
+html[data-theme="natur"] .intro-card h3{
+  font-family:'IM Fell English', Georgia, serif; font-weight:400;
+  color:#6b4f2a; letter-spacing:.18em;
+}
+html[data-theme="natur"] .intro-card .intro-lead{
+  font-size:19px; font-style:italic; color:#2b241a;
+}
 html[data-theme="natur"] .resonanz-part{
   font-family:'IM Fell English', Georgia, serif; font-weight:400;
   color:#6b4f2a; letter-spacing:.18em;

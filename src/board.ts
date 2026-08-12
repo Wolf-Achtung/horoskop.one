@@ -1259,15 +1259,19 @@ async function init() {
     .catch(() => {});
   renderTageslage(today);
   renderBoard(state.positions, today, null, null);
+  // Beim allerersten Besuch steht die Einführung offen — da weiß noch
+  // niemand, was das hier ist. Ab dem Einstieg bleibt sie eine schmale
+  // Zeile, damit das Ritual oben steht. (Die Spielregeln liegen im Reiter
+  // „Brett" und würden hier ungesehen aufgehen.)
+  const intro = document.getElementById('intro-det') as HTMLDetailsElement | null;
   if (!state.profile) {
-    const help = document.getElementById('help') as HTMLDetailsElement | null;
-    if (help) help.open = true;
+    if (intro) intro.open = true;
     renderOnboarding(today, (profile) => {
       state.profile = profile;
       state.boardId = today.boardId;
       state.lastPlayedDay = today.dayIndex - 1; // Geschichte beginnt heute
       saveState(state);
-      if (help) help.open = false;
+      if (intro) intro.open = false;
       startDay(state, today);
     });
   } else {
